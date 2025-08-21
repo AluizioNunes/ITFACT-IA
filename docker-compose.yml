@@ -16,14 +16,15 @@ volumes:
 
 services:
   nginx:
-    image: nginx:alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     container_name: nginx
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - /opt/docker/certificados/cmm_am_gov_br_inter.crt:/etc/ssl/certs/server.crt:ro
       - /opt/docker/certificados/cmm_am_gov_br.key:/etc/ssl/certs/server.key:ro
       - frontend_dist:/usr/share/nginx/html:ro
@@ -72,31 +73,24 @@ services:
       - postgres
 
   prometheus:
-    image: prom/prometheus:latest
+    build:
+      context: ./prometheus
+      dockerfile: Dockerfile
     container_name: prometheus
     restart: unless-stopped
     volumes:
-      - ./prometheus:/etc/prometheus
       - prometheus_data:/prometheus
     networks:
       - cmm_network
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-      - '--web.external-url=/prometheus'
-      - '--web.route-prefix=/'
 
   grafana:
-    image: grafana/grafana:latest
+    build:
+      context: .
+      dockerfile: grafana/Dockerfile
     container_name: grafana
     restart: unless-stopped
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
     networks:
       - cmm_network
     depends_on:
