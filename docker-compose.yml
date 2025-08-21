@@ -42,16 +42,13 @@ services:
       dockerfile: Dockerfile
     container_name: frontend-builder
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
       - frontend_dist:/dist
     networks:
       - cmm_network
     command: >
       sh -c "
-        npm install &&
-        npm run build &&
-        cp -r dist/* /dist/
+        cp -r dist/* /dist/ &&
+        tail -f /dev/null
       "
 
   automation-api:

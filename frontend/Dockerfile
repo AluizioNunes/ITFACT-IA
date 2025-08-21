@@ -2,17 +2,17 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copiar package.json e package-lock.json (se existir)
-COPY package*.json ./
+# Copiar todos os arquivos do projeto
+COPY . .
 
 # Instalar dependências
 RUN npm install
 
-# Copiar arquivos do projeto
-COPY . .
+# Construir a aplicação
+RUN npm run build
 
 # Expor porta
 EXPOSE 5173
 
 # Comando de inicialização
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "preview"]
