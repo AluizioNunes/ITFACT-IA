@@ -3,9 +3,6 @@ FROM prom/prometheus:latest
 # Copiar arquivo de configuração
 COPY prometheus.yml /etc/prometheus/prometheus.yml
 
-# Definir permissões corretas
-RUN chmod 644 /etc/prometheus/prometheus.yml
-
 # Comando padrão
 ENTRYPOINT [ "/bin/prometheus" ]
 CMD [ "--config.file=/etc/prometheus/prometheus.yml", \
