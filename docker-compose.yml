@@ -1,0 +1,135 @@
+version: '3.9'
+
+networks:
+  cmm_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  frontend_dist:
+    driver: local
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /opt/docker/certificados/cmm_am_gov_br_inter.crt:/etc/ssl/certs/server.crt:ro
+      - /opt/docker/certificados/cmm_am_gov_br.key:/etc/ssl/certs/server.key:ro
+      - frontend_dist:/usr/share/nginx/html:ro
+    networks:
+      - cmm_network
+    depends_on:
+      - prometheus
+      - grafana
+      - postgres
+      - automation-api
+
+  frontend-builder:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend-builder
+    volumes:
+      - ./frontend:/app
+      - frontend_dist:/dist
+    networks:
+      - cmm_network
+    command: >
+      sh -c "
+        npm install &&
+        npm run build &&
+        cp -r dist/* /dist/
+      "
+
+  automation-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: automation-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    networks:
+      - cmm_network
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=Admin
+      - POSTGRES_PASSWORD=Ricardo@1964
+      - POSTGRES_DB=postgres
+    depends_on:
+      - postgres
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - cmm_network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+      - '--web.external-url=/prometheus'
+      - '--web.route-prefix=/'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - cmm_network
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=Admin
+      - GF_SECURITY_ADMIN_PASSWORD=Ricardo@1964
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=automacao.cmm.am.gov.br
+      - GF_SERVER_ROOT_URL=https://automacao.cmm.am.gov.br/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SECURITY_COOKIE_SECURE=true
+      - GF_SECURITY_COOKIE_SAMESITE=strict
+      - GF_SECURITY_STRICT_TRANSPORT_SECURITY=true
+      - TZ=America/Manaus
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+
+  postgres:
+    image: postgres:17.6
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=Admin
+      - POSTGRES_PASSWORD=Ricardo@1964
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cmm_network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h localhost -U Admin -d postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
