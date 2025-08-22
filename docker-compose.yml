@@ -52,19 +52,12 @@ services:
       - frontend_dist:/dist
     networks:
       - cmm_network
-    command: >
-      sh -c "
-        npm run build &&
-        cp -r dist/* /dist/ &&
-        echo 'Frontend build completed' &&
-        tail -f /dev/null
-      "
     healthcheck:
       test: ["CMD", "ls", "/dist/index.html"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 120s
 
   backend:
     build:
