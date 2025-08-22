@@ -31,12 +31,12 @@ services:
     volumes:
       - /opt/docker/certificados/cmm_am_gov_br_inter.crt:/etc/ssl/certs/server.crt:ro
       - /opt/docker/certificados/cmm_am_gov_br.key:/etc/ssl/certs/server.key:ro
-      - frontend_dist:/usr/share/nginx/html:ro
+      - ./frontend/dist:/usr/share/nginx/html:rw
     networks:
       - cmm_network
     depends_on:
       frontend:
-        condition: service_started
+        condition: service_healthy
       prometheus:
         condition: service_started
       grafana:
@@ -63,9 +63,9 @@ services:
     ports:
       - "3000:80"
     volumes:
-      - frontend_dist:/usr/share/nginx/html
+      - ./frontend/dist:/usr/share/nginx/html:rw
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost/"]
+      test: ["CMD", "ls", "/usr/share/nginx/html/index.html"]
       interval: 30s
       timeout: 10s
       retries: 3
