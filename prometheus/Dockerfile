@@ -15,6 +15,5 @@ CMD [ \
   "--storage.tsdb.retention.time=200h", \
   "--web.enable-lifecycle", \
   "--web.enable-admin-api", \
-  "--web.external-url=/", \
   "--web.listen-address=:9090" \
 ]
