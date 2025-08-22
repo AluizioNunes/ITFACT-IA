@@ -1,18 +1,12 @@
 FROM node:24.6.0
 
-# Instalar dependências do sistema
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
-# Copiar arquivos de dependências
-COPY package*.json ./
+# Copiar tudo de uma vez
+COPY . .
 
 # Instalar dependências
 RUN npm install
-
-# Copiar código fonte
-COPY . .
 
 # Build da aplicação
 RUN npm run build
@@ -23,5 +17,5 @@ RUN mkdir -p /dist
 # Copiar arquivos buildados
 RUN cp -r dist/* /dist/
 
-# Comando para manter container rodando
+# Comando simples
 CMD ["sh", "-c", "echo 'Frontend ready!' && tail -f /dev/null"]
