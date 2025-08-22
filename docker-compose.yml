@@ -31,11 +31,11 @@ services:
     networks:
       - cmm_network
     depends_on:
-      - frontend-builder
+      - frontend
       - prometheus
       - grafana
       - postgres
-      - automation-api
+      - backend
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
       interval: 30s
@@ -43,11 +43,11 @@ services:
       retries: 3
       start_period: 60s
 
-  frontend-builder:
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: frontend-builder
+    container_name: frontend
     volumes:
       - frontend_dist:/dist
     networks:
@@ -66,11 +66,11 @@ services:
       retries: 3
       start_period: 60s
 
-  automation-api:
+  backend:
     build:
       context: ./api
       dockerfile: Dockerfile
-    container_name: automation-api
+    container_name: backend
     restart: unless-stopped
     ports:
       - "3001:3001"
