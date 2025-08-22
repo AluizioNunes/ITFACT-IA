@@ -1,0 +1,43 @@
+# Instruções para modificar a rota do Grafana no Frontend
+
+## 1. Localizar os arquivos que precisam ser modificados:
+
+1. **Arquivo de rotas** (provavelmente em `src/routes` ou `src/App.tsx`):
+   - Procure por `<Route path="/grafana"` ou algo similar
+   - Mude para `<Route path="/coregrafana"`
+
+2. **Componente de navegação** (menu/header):
+   - Procure por links que apontam para `/grafana`
+   - Mude para `/coregrafana`
+
+3. **Qualquer referência em código**:
+   - Busque por `"/grafana"` em todo o projeto
+   - Substitua por `"/coregrafana"`
+
+## 2. Exemplo de modificação:
+
+### Antes:
+```jsx
+<Route path="/grafana" element={<GrafanaPage />} />
+```
+
+### Depois:
+```jsx
+<Route path="/coregrafana" element={<GrafanaPage />} />
+```
+
+## 3. Atualizar links de navegação:
+
+### Antes:
+```jsx
+<Link to="/grafana">Grafana</Link>
+```
+
+### Depois:
+```jsx
+<Link to="/coregrafana">Grafana</Link>
+```
+
+## 4. Após fazer as mudanças:
+1. Reconstrua o frontend: `npm run build`
+2. Reimplante a aplicação
