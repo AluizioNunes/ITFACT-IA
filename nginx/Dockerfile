@@ -1,4 +1,4 @@
-FROM nginx:alpine
+FROM nginx:1.28.0
 
 # Copiar arquivo de configuração
 COPY nginx.conf /etc/nginx/nginx.conf

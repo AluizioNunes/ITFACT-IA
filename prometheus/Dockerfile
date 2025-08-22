@@ -1,4 +1,4 @@
-FROM prom/prometheus:latest
+FROM prom/prometheus:3.5.0
 
 # Copiar arquivo de configuração
 COPY prometheus.yml /etc/prometheus/prometheus.yml
