@@ -163,9 +163,12 @@ services:
 
   # Serviço para atualização de configurações
   config-updater:
-    image: docker:cli
+    image: alpine:latest
     command: >
       sh -c "
+        # Instalar docker-cli no Alpine
+        apk add --no-cache docker-cli;
+        
         # Função para atualizar configurações
         update-configs() {
           echo 'Atualizando configurações...';
