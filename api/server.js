@@ -31,6 +31,20 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Endpoint raiz da API
+app.get('/api/', (req, res) => {
+  res.json({ 
+    message: 'API de Automação',
+    version: '1.0.0',
+    endpoints: [
+      '/api/health',
+      '/api/postgres/info',
+      '/api/postgres/databases',
+      '/api/postgres/stats'
+    ]
+  });
+});
+
 // Obter informações do PostgreSQL
 app.get('/api/postgres/info', async (req, res) => {
   try {

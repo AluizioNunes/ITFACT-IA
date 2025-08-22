@@ -88,8 +88,11 @@ O frontend foi desenvolvido com:
 ## API de Automação
 
 A API de automação expõe endpoints para integração com os serviços:
+- `/api/`: Informações sobre a API
+- `/api/health`: Health check da API
 - `/api/postgres/info`: Informações gerais do PostgreSQL
 - `/api/postgres/databases`: Lista de bancos de dados
+- `/api/postgres/stats`: Estatísticas do PostgreSQL
 
 ## Comandos úteis
 
