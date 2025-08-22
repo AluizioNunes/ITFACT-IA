@@ -20,8 +20,8 @@
 - **Usado em**: Proxy reverso e servidor web
 
 ### Prometheus
-- **Versão**: `3.5.0` (LTS)
-- **Imagem**: `prom/prometheus:3.5.0`
+- **Versão**: `3.4.1` (LTS)
+- **Imagem**: `prom/prometheus:v3.4.1`
 - **Usado em**: Sistema de monitoramento
 
 ### Grafana
@@ -40,7 +40,7 @@
 - **Node.js 24.6.0** é uma versão LTS (Long Term Support)
 - **PostgreSQL 17.6** é uma versão LTS estável
 - **Nginx 1.28.0** é uma versão LTS com recursos avançados
-- **Prometheus 3.5.0** é uma versão LTS com melhorias de performance
+- **Prometheus 3.4.1** é uma versão LTS com melhorias de performance
 - **Grafana 12.1.1** é uma versão LTS com novos recursos
 
 ## Controle de Versões

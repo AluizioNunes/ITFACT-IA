@@ -26,7 +26,7 @@
 
 ### 4. Prometheus
 - **Antes**: `prom/prometheus:latest` (2.50.x)
-- **Depois**: `prom/prometheus:3.5.0` (LTS)
+- **Depois**: `prom/prometheus:v3.4.1` (LTS)
 - **Arquivo**: `prometheus/Dockerfile`
 - **Nota**: Versão LTS com melhorias de performance
 
@@ -59,7 +59,7 @@
 2. `frontend/Dockerfile.simple` - Node.js 24.6.0 ✅
 3. `api/Dockerfile` - Node.js 24.6.0 ✅
 4. `nginx/Dockerfile` - Nginx 1.28.0 ✅
-5. `prometheus/Dockerfile` - Prometheus 3.5.0 ✅
+5. `prometheus/Dockerfile` - Prometheus 3.4.1 ✅
 6. `grafana/Dockerfile` - Grafana 12.1.1 ✅
 7. `docker-compose.yml` - PostgreSQL 17.6 ✅
 8. `VERSIONS.md` - Documentação atualizada ✅
