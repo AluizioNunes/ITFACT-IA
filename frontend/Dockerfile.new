@@ -2,7 +2,7 @@ FROM node:24.6.0
 
 WORKDIR /app
 
-# Copiar arquivos
+# Copiar tudo
 COPY . .
 
 # Instalar dependências
@@ -11,8 +11,8 @@ RUN npm install
 # Build
 RUN npm run build
 
-# Criar diretório de saída
+# Preparar saída
 RUN mkdir -p /dist && cp -r dist/* /dist/
 
 # Comando
-CMD ["sh", "-c", "echo 'Ready' && tail -f /dev/null"] 
+CMD ["sh", "-c", "echo 'Frontend ready!' && tail -f /dev/null"] 
