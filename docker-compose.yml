@@ -102,7 +102,7 @@ services:
       - "9090:9090"
     volumes:
       - prometheus_data:/prometheus
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/:/etc/prometheus/
     networks:
       - cmm_network
     user: "1000:1000"  # Usar o mesmo usuário do host para evitar problemas de permissão
