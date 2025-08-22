@@ -8,7 +8,7 @@ Este ambiente inclui:
 - Frontend React com Vite, TypeScript, Ant Design e Framer Motion
 - API de automação para integração com serviços
 
-## Como usar
+## Como usar (Linux/macOS)
 
 1. Certifique-se de ter o Docker e o Docker Compose instalados
 2. Execute o ambiente:
@@ -18,10 +18,38 @@ Este ambiente inclui:
 
 ## Acesso aos serviços
 
+### Após iniciar os containers Docker:
+
 - **Frontend (Painel de Controle)**: https://automacao.cmm.am.gov.br
 - **Grafana**: https://automacao.cmm.am.gov.br/grafana
 - **Prometheus**: https://automacao.cmm.am.gov.br/prometheus
 - **API de Automação**: https://automacao.cmm.am.gov.br/api/
+
+## Serviços Adicionais
+
+O ambiente inclui serviços auxiliares para facilitar a gestão:
+
+### Atualização de Configurações
+- Serviço: `config-updater`
+- Atualizar configurações: `docker-compose exec config-updater update-configs`
+
+### Monitoramento
+- Serviço: `monitor`
+- Verificar saúde: `docker-compose exec monitor check-health`
+
+### Backup
+- Serviço: `backup`
+- Criar backup: `docker-compose exec backup create-backup`
+- Listar backups: `docker-compose exec backup list-backups`
+
+### Logs Centralizados
+- Serviço: `log-collector`
+- Coletar logs: `docker-compose exec log-collector collect-logs`
+- Listar logs: `docker-compose exec log-collector list-logs`
+
+### Ferramentas de Desenvolvimento
+- Serviço: `dev-tools`
+- Ambiente com ferramentas Node.js e Docker CLI
 
 ## Arquitetura
 
@@ -32,6 +60,11 @@ Todos os serviços são gerenciados automaticamente pelo Docker Compose:
 - `prometheus`: Coleta de métricas
 - `grafana`: Visualização de métricas
 - `postgres`: Banco de dados
+- `config-updater`: Serviço para atualização de configurações
+- `monitor`: Serviço de monitoramento
+- `backup`: Serviço de backup
+- `log-collector`: Serviço de coleta de logs
+- `dev-tools`: Ferramentas de desenvolvimento
 
 ## Funcionalidades do Frontend
 
@@ -60,6 +93,7 @@ A API de automação expõe endpoints para integração com os serviços:
 
 ## Comandos úteis
 
+### Linux/macOS:
 - Parar todos os serviços:
   ```bash
   docker-compose down
@@ -77,6 +111,27 @@ A API de automação expõe endpoints para integração com os serviços:
 
 - Reconstruir todos os serviços:
   ```bash
+  docker-compose up -d --build
+  ```
+
+### Windows:
+- Parar todos os serviços:
+  ```cmd
+  docker-compose down
+  ```
+
+- Ver logs de um serviço específico:
+  ```cmd
+  docker-compose logs -f <nome-do-serviço>
+  ```
+
+- Reiniciar um serviço específico:
+  ```cmd
+  docker-compose restart <nome-do-serviço>
+  ```
+
+- Reconstruir todos os serviços:
+  ```cmd
   docker-compose up -d --build
   ```
 

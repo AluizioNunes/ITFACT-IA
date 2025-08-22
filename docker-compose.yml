@@ -13,6 +13,8 @@ volumes:
     driver: local
   frontend_dist:
     driver: local
+  backups:
+    driver: local
 
 services:
   nginx:
@@ -36,6 +38,12 @@ services:
       - grafana
       - postgres
       - automation-api
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   frontend-builder:
     build:
@@ -53,6 +61,12 @@ services:
         echo 'Frontend build completed' &&
         tail -f /dev/null
       "
+    healthcheck:
+      test: ["CMD", "ls", "/dist/index.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   automation-api:
     build:
@@ -72,6 +86,12 @@ services:
       - POSTGRES_DB=postgres
     depends_on:
       - postgres
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   prometheus:
     build:
@@ -83,6 +103,12 @@ services:
       - prometheus_data:/prometheus
     networks:
       - cmm_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   grafana:
     build:
@@ -109,6 +135,12 @@ services:
       - TZ=America/Manaus
       - GF_ANALYTICS_REPORTING_ENABLED=false
       - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   postgres:
     image: postgres:17.6
@@ -128,3 +160,232 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  # Serviço para atualização de configurações
+  config-updater:
+    image: docker:cli
+    command: >
+      sh -c "
+        # Função para atualizar configurações
+        update-configs() {
+          echo 'Atualizando configurações...';
+          
+          # Atualizar configuração do Nginx
+          echo 'Atualizando Nginx...';
+          docker cp /configs/nginx/nginx.conf nginx:/etc/nginx/nginx.conf 2>/dev/null || echo 'Erro ao atualizar Nginx';
+          docker exec nginx nginx -s reload 2>/dev/null || echo 'Erro ao recarregar Nginx';
+          
+          # Atualizar configuração do Prometheus
+          echo 'Atualizando Prometheus...';
+          docker cp /configs/prometheus/prometheus.yml prometheus:/etc/prometheus/prometheus.yml 2>/dev/null || echo 'Erro ao atualizar Prometheus';
+          docker exec prometheus kill -HUP 1 2>/dev/null || echo 'Erro ao recarregar Prometheus';
+          
+          # Atualizar configuração do Grafana
+          echo 'Atualizando Grafana...';
+          docker cp /configs/grafana/provisioning grafana:/etc/grafana/ 2>/dev/null || echo 'Erro ao atualizar Grafana';
+          echo 'Atualização concluída!';
+        }
+        
+        export -f update-configs;
+        
+        echo 'Serviço de atualização de configurações pronto';
+        echo 'Para atualizar as configurações, execute:';
+        echo 'docker-compose exec config-updater update-configs';
+        tail -f /dev/null
+      "
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./nginx/nginx.conf:/configs/nginx/nginx.conf:ro
+      - ./prometheus/prometheus.yml:/configs/prometheus/prometheus.yml:ro
+      - ./grafana/provisioning:/configs/grafana/provisioning:ro
+    networks:
+      - cmm_network
+    restart: unless-stopped
+
+  # Serviço de monitoramento
+  monitor:
+    image: alpine:latest
+    command: >
+      sh -c "
+        # Função para verificar saúde dos serviços
+        check-health() {
+          echo '=== Verificando saúde dos serviços ===';
+          
+          # Verificar Nginx
+          if wget --quiet --tries=1 --spider http://nginx/health 2>/dev/null; then
+            echo '✓ Nginx: OK';
+          else
+            echo '✗ Nginx: ERRO';
+          fi
+          
+          # Verificar API
+          if wget --quiet --tries=1 --spider http://automation-api:3001/api/health 2>/dev/null; then
+            echo '✓ API: OK';
+          else
+            echo '✗ API: ERRO';
+          fi
+          
+          # Verificar Prometheus
+          if wget --quiet --tries=1 --spider http://prometheus:9090/-/healthy 2>/dev/null; then
+            echo '✓ Prometheus: OK';
+          else
+            echo '✗ Prometheus: ERRO';
+          fi
+          
+          # Verificar Grafana
+          if wget --quiet --tries=1 --spider http://grafana:3000/api/health 2>/dev/null; then
+            echo '✓ Grafana: OK';
+          else
+            echo '✗ Grafana: ERRO';
+          fi
+          
+          # Verificar PostgreSQL
+          if docker exec postgres pg_isready -h localhost -U Admin -d postgres >/dev/null 2>&1; then
+            echo '✓ PostgreSQL: OK';
+          else
+            echo '✗ PostgreSQL: ERRO';
+          fi
+        }
+        
+        export -f check-health;
+        
+        echo 'Serviço de monitoramento pronto';
+        echo 'Para verificar a saúde dos serviços, execute:';
+        echo 'docker-compose exec monitor check-health';
+        tail -f /dev/null
+      "
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - cmm_network
+    restart: unless-stopped
+    depends_on:
+      - nginx
+      - automation-api
+      - prometheus
+      - grafana
+      - postgres
+
+  # Serviço de backup
+  backup:
+    image: alpine:latest
+    command: >
+      sh -c "
+        # Função para fazer backup
+        create-backup() {
+          echo 'Iniciando backup...';
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S);
+          
+          # Criar diretório de backup
+          BACKUP_DIR=/backups/backup_${TIMESTAMP};
+          mkdir -p ${BACKUP_DIR};
+          
+          echo 'Fazendo backup do PostgreSQL...';
+          docker exec postgres pg_dump -U Admin -d postgres > ${BACKUP_DIR}/postgres_backup.sql 2>/dev/null || echo 'Erro no backup do PostgreSQL';
+          
+          echo 'Fazendo backup do Grafana...';
+          tar -czf ${BACKUP_DIR}/grafana_backup.tar.gz /var/lib/grafana 2>/dev/null || echo 'Erro no backup do Grafana';
+          
+          echo 'Fazendo backup do Prometheus...';
+          tar -czf ${BACKUP_DIR}/prometheus_backup.tar.gz /prometheus 2>/dev/null || echo 'Erro no backup do Prometheus';
+          
+          echo 'Backup concluído em ${BACKUP_DIR}';
+        }
+        
+        # Função para listar backups
+        list-backups() {
+          echo 'Backups disponíveis:';
+          ls -la /backups/;
+        }
+        
+        export -f create-backup list-backups;
+        
+        echo 'Serviço de backup pronto';
+        echo 'Para criar um backup, execute:';
+        echo 'docker-compose exec backup create-backup';
+        echo 'Para listar backups, execute:';
+        echo 'docker-compose exec backup list-backups';
+        tail -f /dev/null
+      "
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - backups:/backups
+    networks:
+      - cmm_network
+    restart: unless-stopped
+
+  # Serviço de logs centralizados
+  log-collector:
+    image: alpine:latest
+    command: >
+      sh -c "
+        # Função para coletar logs
+        collect-logs() {
+          echo '=== Coletando logs de todos os serviços ===';
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S);
+          LOG_DIR=/logs/logs_${TIMESTAMP};
+          mkdir -p ${LOG_DIR};
+          
+          echo 'Coletando logs do Nginx...';
+          docker logs nginx > ${LOG_DIR}/nginx.log 2>&1 || echo 'Erro ao coletar logs do Nginx';
+          
+          echo 'Coletando logs da API...';
+          docker logs automation-api > ${LOG_DIR}/api.log 2>&1 || echo 'Erro ao coletar logs da API';
+          
+          echo 'Coletando logs do Prometheus...';
+          docker logs prometheus > ${LOG_DIR}/prometheus.log 2>&1 || echo 'Erro ao coletar logs do Prometheus';
+          
+          echo 'Coletando logs do Grafana...';
+          docker logs grafana > ${LOG_DIR}/grafana.log 2>&1 || echo 'Erro ao coletar logs do Grafana';
+          
+          echo 'Coletando logs do PostgreSQL...';
+          docker logs postgres > ${LOG_DIR}/postgres.log 2>&1 || echo 'Erro ao coletar logs do PostgreSQL';
+          
+          echo 'Logs coletados em ${LOG_DIR}';
+        }
+        
+        # Função para listar logs
+        list-logs() {
+          echo 'Logs disponíveis:';
+          ls -la /logs/;
+        }
+        
+        export -f collect-logs list-logs;
+        
+        echo 'Serviço de coleta de logs pronto';
+        echo 'Para coletar logs, execute:';
+        echo 'docker-compose exec log-collector collect-logs';
+        echo 'Para listar logs, execute:';
+        echo 'docker-compose exec log-collector list-logs';
+        tail -f /dev/null
+      "
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./logs:/logs
+    networks:
+      - cmm_network
+    restart: unless-stopped
+
+  # Serviço de desenvolvimento
+  dev-tools:
+    image: node:18-alpine
+    command: >
+      sh -c "
+        # Instalar ferramentas de desenvolvimento
+        apk add --no-cache docker-cli curl wget;
+        
+        echo 'Ferramentas de desenvolvimento prontas';
+        echo 'Comandos disponíveis:';
+        echo '- npm install packageName: Instalar pacote Node.js';
+        echo '- docker-compose exec serviceName command: Executar comando em serviço';
+        echo '- curl http://service:port: Testar conectividade entre serviços';
+        tail -f /dev/null
+      "
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./frontend:/app/frontend
+      - ./api:/app/api
+    working_dir: /app
+    networks:
+      - cmm_network
+    restart: unless-stopped
