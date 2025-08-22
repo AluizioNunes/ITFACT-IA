@@ -79,8 +79,8 @@ O frontend foi desenvolvido com:
 ### Páginas disponíveis:
 - Dashboard com visão geral do ambiente
 - Página do Nginx com métricas em tempo real
-- Página do Prometheus com informações do monitoramento
-- Página do Grafana
+- Página do Prometheus com informações do monitoramento (acessada via /coreprometheus no frontend)
+- Página do Grafana (acessada via /coregrafana no frontend)
 - Página do PostgreSQL com dados reais do banco
 - Página do Docker com status dos containers
 - Páginas para N8N, Evolution API, Chatwoot, WhatsApp, Redis e RabbitMQ

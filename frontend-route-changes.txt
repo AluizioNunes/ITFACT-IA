@@ -1,0 +1,102 @@
+# Instruções para modificar as rotas do Frontend
+
+## 1. Modificar rotas do Grafana
+
+### Localizar arquivos:
+- `src/routes/index.ts` ou `src/App.tsx` ou `src/App.jsx`
+- Componentes de navegação/menu
+- Qualquer componente que referencie a rota antiga
+
+### Mudanças necessárias:
+
+1. **Rota do Grafana**:
+   - Antes: `/grafana`
+   - Depois: `/coregrafana`
+
+2. **Exemplo de modificação de rota**:
+   ```jsx
+   // Antes
+   <Route path="/grafana" element={<GrafanaPage />} />
+   
+   // Depois
+   <Route path="/coregrafana" element={<GrafanaPage />} />
+   ```
+
+3. **Links de navegação**:
+   ```jsx
+   // Antes
+   <Link to="/grafana">Grafana</Link>
+   
+   // Depois
+   <Link to="/coregrafana">Grafana</Link>
+   ```
+
+4. **useNavigate ou history.push**:
+   ```javascript
+   // Antes
+   navigate('/grafana');
+   
+   // Depois
+   navigate('/coregrafana');
+   ```
+
+## 2. Modificar rotas do Prometheus
+
+### Mudanças necessárias:
+
+1. **Rota do Prometheus**:
+   - Antes: `/prometheus`
+   - Depois: `/coreprometheus`
+
+2. **Exemplo de modificação de rota**:
+   ```jsx
+   // Antes
+   <Route path="/prometheus" element={<PrometheusPage />} />
+   
+   // Depois
+   <Route path="/coreprometheus" element={<PrometheusPage />} />
+   ```
+
+3. **Links de navegação**:
+   ```jsx
+   // Antes
+   <Link to="/prometheus">Prometheus</Link>
+   
+   // Depois
+   <Link to="/coreprometheus">Prometheus</Link>
+   ```
+
+## 3. Buscar e substituir em todo o projeto
+
+### Strings para buscar e substituir:
+1. `"/grafana"` → `"/coregrafana"`
+2. `'/grafana'` → `'/coregrafana'`
+3. `"/prometheus"` → `"/coreprometheus"`
+4. `'/prometheus'` → `'/coreprometheus'`
+
+### Arquivos comuns para verificar:
+- `src/routes/*`
+- `src/components/Navigation/*`
+- `src/components/Header/*`
+- `src/pages/*`
+- `src/App.*`
+- Arquivos de configuração
+
+## 4. Após as mudanças:
+
+1. **Testar localmente**:
+   ```bash
+   npm run dev
+   ```
+   Acesse http://localhost:5173/coregrafana e http://localhost:5173/coreprometheus
+
+2. **Build e deploy**:
+   ```bash
+   npm run build
+   ```
+
+## 5. Verificar links no menu
+
+Certifique-se de que os itens de menu apontam para as novas rotas:
+- Grafana: `/coregrafana`
+- Prometheus: `/coreprometheus`
