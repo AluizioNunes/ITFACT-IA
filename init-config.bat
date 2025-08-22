@@ -1,3 +1,0 @@
-@echo off
-echo Copiando arquivos de configuracao...
-echo Arquivos de configuracao copiados com sucesso!

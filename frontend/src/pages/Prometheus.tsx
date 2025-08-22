@@ -15,6 +15,7 @@ const Prometheus: React.FC = () => {
       description="Sistema de monitoramento e alerta de código aberto. Acesse a aplicação real em /prometheus/"
       icon={<BarChartOutlined style={{ fontSize: '24px', color: '#e60000' }} />}
       metrics={metrics}
+      externalUrl="/prometheus/"
     />
   );
 };

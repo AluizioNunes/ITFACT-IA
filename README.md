@@ -1,155 +1,153 @@
-# Ambiente Docker Compose com Nginx, PostgreSQL, Prometheus, Grafana e Frontend
+# Sistema de Automação CMM AM
 
-Este ambiente inclui:
-- Nginx como proxy reverso com certificados SSL
-- PostgreSQL 17.6
-- Prometheus para coleta de métricas
-- Grafana com dashboards pré-configurados para Nginx
-- Frontend React com Vite, TypeScript, Ant Design e Framer Motion
-- API de automação para integração com serviços
+Sistema completo de monitoramento e automação para a CMM AM, incluindo frontend React, API Node.js, Prometheus, Grafana, PostgreSQL e Nginx.
 
-## Como usar (Linux/macOS)
+## 🚀 Funcionalidades
 
-1. Certifique-se de ter o Docker e o Docker Compose instalados
-2. Execute o ambiente:
-   ```bash
-   docker-compose up -d
-   ```
+- **Dashboard Centralizado**: Interface única para monitorar todos os serviços
+- **Monitoramento**: Prometheus para coleta de métricas
+- **Visualização**: Grafana para dashboards e alertas
+- **Banco de Dados**: PostgreSQL para armazenamento de dados
+- **Proxy Reverso**: Nginx para roteamento e SSL
+- **API REST**: Backend Node.js para integração
 
-## Acesso aos serviços
+## 🏗️ Arquitetura
 
-### Após iniciar os containers Docker:
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Nginx         │    │   Prometheus    │
+│   (React)       │◄──►│   (Proxy)       │◄──►│   (Métricas)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │                       ▼                       │
+         │              ┌─────────────────┐              │
+         │              │   Grafana       │              │
+         │              │   (Dashboards)  │              │
+         │              └─────────────────┘              │
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   API Node.js   │    │   PostgreSQL    │    │   Volumes       │
+│   (Backend)     │    │   (Database)    │    │   (Dados)       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
 
-- **Frontend (Painel de Controle)**: https://automacao.cmm.am.gov.br
-- **Grafana**: https://automacao.cmm.am.gov.br/grafana
-- **Prometheus**: https://automacao.cmm.am.gov.br/prometheus
-- **API de Automação**: https://automacao.cmm.am.gov.br/api/
+## 📋 Pré-requisitos
 
-## Serviços Adicionais
+- Docker e Docker Compose instalados
+- Certificados SSL válidos para o domínio `automacao.cmm.am.gov.br`
+- Acesso ao servidor Linux remoto (IP: 172.18.1.32)
 
-O ambiente inclui serviços auxiliares para facilitar a gestão:
+## 🔧 Configuração
 
-### Atualização de Configurações
-- Serviço: `config-updater`
-- Atualizar configurações: `docker-compose exec config-updater update-configs`
+### 1. Preparar Certificados SSL
 
-### Monitoramento
-- Serviço: `monitor`
-- Verificar saúde: `docker-compose exec monitor check-health`
+Coloque os certificados SSL no diretório `/opt/docker/certificados/`:
+- `cmm_am_gov_br_inter.crt` - Certificado público
+- `cmm_am_gov_br.key` - Chave privada
 
-### Backup
-- Serviço: `backup`
-- Criar backup: `docker-compose exec backup create-backup`
-- Listar backups: `docker-compose exec backup list-backups`
+### 2. Deploy no Servidor Remoto
 
-### Logs Centralizados
-- Serviço: `log-collector`
-- Coletar logs: `docker-compose exec log-collector collect-logs`
-- Listar logs: `docker-compose exec log-collector list-logs`
+```bash
+# Conectar ao servidor remoto
+ssh usuario@172.18.1.32
 
-### Ferramentas de Desenvolvimento
-- Serviço: `dev-tools`
-- Ambiente com ferramentas Node.js e Docker CLI
+# Clonar ou copiar o projeto
+git clone <repositorio> /caminho/para/automacao
+cd /caminho/para/automacao
 
-## Arquitetura
+# Executar o sistema
+docker-compose up -d
+```
 
-Todos os serviços são gerenciados automaticamente pelo Docker Compose:
-- `nginx`: Proxy reverso e servidor web
-- `frontend-builder`: Constrói e serve o frontend React
-- `automation-api`: API para integração com PostgreSQL e outros serviços
-- `prometheus`: Coleta de métricas
-- `grafana`: Visualização de métricas
-- `postgres`: Banco de dados
-- `config-updater`: Serviço para atualização de configurações
-- `monitor`: Serviço de monitoramento
-- `backup`: Serviço de backup
-- `log-collector`: Serviço de coleta de logs
-- `dev-tools`: Ferramentas de desenvolvimento
+## 🚀 Uso
 
-## Funcionalidades do Frontend
+### Acessar Aplicações
 
-O frontend foi desenvolvido com:
-- Vite como bundler
-- React 18 com hooks
-- TypeScript para tipagem
-- Ant Design para componentes UI
-- Framer Motion para animações
-- React Router DOM para navegação
+- **Frontend Principal**: https://automacao.cmm.am.gov.br/
+- **Grafana**: https://automacao.cmm.am.gov.br/grafana/
+- **Prometheus**: https://automacao.cmm.am.gov.br/prometheus/
+- **API**: https://automacao.cmm.am.gov.br/api/
 
-### Páginas disponíveis:
-- Dashboard com visão geral do ambiente
-- Página do Nginx com métricas em tempo real
-- Página do Prometheus com informações do monitoramento (acessada via /coreprometheus no frontend)
-- Página do Grafana (acessada via /coregrafana no frontend)
-- Página do PostgreSQL com dados reais do banco
-- Página do Docker com status dos containers
-- Páginas para N8N, Evolution API, Chatwoot, WhatsApp, Redis e RabbitMQ
+### Credenciais Padrão
 
-## API de Automação
+- **Grafana**: Admin / Ricardo@1964
+- **PostgreSQL**: Admin / Ricardo@1964
 
-A API de automação expõe endpoints para integração com os serviços:
-- `/api/`: Informações sobre a API
-- `/api/health`: Health check da API
-- `/api/postgres/info`: Informações gerais do PostgreSQL
-- `/api/postgres/databases`: Lista de bancos de dados
-- `/api/postgres/stats`: Estatísticas do PostgreSQL
+## 📊 Monitoramento
 
-## Comandos úteis
+### Métricas Coletadas
 
-### Linux/macOS:
-- Parar todos os serviços:
-  ```bash
-  docker-compose down
-  ```
+- **Nginx**: Status, requisições, erros
+- **PostgreSQL**: Conexões, performance, tamanho do banco
+- **API**: Health checks, tempo de resposta
+- **Prometheus**: Métricas do sistema
 
-- Ver logs de um serviço específico:
-  ```bash
-  docker-compose logs -f <nome-do-serviço>
-  ```
+### Dashboards Disponíveis
 
-- Reiniciar um serviço específico:
-  ```bash
-  docker-compose restart <nome-do-serviço>
-  ```
+- Dashboard principal com visão geral
+- Métricas em tempo real dos serviços
+- Gráficos de performance
+- Status de saúde dos containers
 
-- Reconstruir todos os serviços:
-  ```bash
-  docker-compose up -d --build
-  ```
+## 🔍 Troubleshooting
 
-### Windows:
-- Parar todos os serviços:
-  ```cmd
-  docker-compose down
-  ```
+### Verificar Status dos Serviços
 
-- Ver logs de um serviço específico:
-  ```cmd
-  docker-compose logs -f <nome-do-serviço>
-  ```
+```bash
+# Status geral
+docker-compose ps
 
-- Reiniciar um serviço específico:
-  ```cmd
-  docker-compose restart <nome-do-serviço>
-  ```
+# Logs de um serviço específico
+docker-compose logs nginx
+docker-compose logs prometheus
+docker-compose logs grafana
 
-- Reconstruir todos os serviços:
-  ```cmd
-  docker-compose up -d --build
-  ```
+# Health checks
+curl https://automacao.cmm.am.gov.br/health
+curl https://automacao.cmm.am.gov.br/api/health
+```
 
-## Configuração
+### Problemas Comuns
 
-Todos os arquivos de configuração estão incluídos no repositório:
-- `nginx.conf`: Configuração do Nginx
-- `prometheus.yml`: Configuração do Prometheus
-- `grafana/provisioning/`: Configuração do Grafana
-- `frontend/`: Código fonte do frontend
-- `api/`: Código fonte da API de automação
+1. **Certificados SSL**: Verificar se estão no caminho correto
+2. **Portas**: Confirmar que as portas 80, 443, 3001, 4000 estão livres
+3. **Volumes**: Verificar permissões dos diretórios de dados
 
-## Notas importantes
+## 📁 Estrutura do Projeto
 
-- Todos os dados são persistidos em volumes Docker
-- O frontend é construído automaticamente na inicialização
-- Os certificados SSL devem estar em `/opt/docker/certificados/`
-- O ambiente é acessível via `https://automacao.cmm.am.gov.br`
+```
+automacao/
+├── frontend/           # Aplicação React
+├── api/               # API Node.js
+├── nginx/             # Configuração do Nginx
+├── prometheus/        # Configuração do Prometheus
+├── grafana/           # Configuração do Grafana
+├── docker-compose.yml # Orquestração dos serviços
+└── README.md          # Este arquivo
+```
+
+## 🔄 Atualizações
+
+Para atualizar o sistema:
+
+```bash
+# Parar serviços
+docker-compose down
+
+# Reconstruir imagens
+docker-compose build --no-cache
+
+# Reiniciar serviços
+docker-compose up -d
+```
+
+## 📞 Suporte
+
+Para suporte técnico, entre em contato com a equipe de TI da CMM AM.
+
+---
+
+**Versão**: 2.0.0  
+**Última Atualização**: Dezembro 2024  
+**Desenvolvido por**: Equipe de Automação CMM AM

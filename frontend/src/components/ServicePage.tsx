@@ -1,16 +1,17 @@
 import React from 'react';
-import { Card, Divider, Row, Col, Statistic } from 'antd';
+import { Card, Divider, Row, Col, Statistic, Button } from 'antd';
 import { motion } from 'framer-motion';
-import { BarChartOutlined } from '@ant-design/icons';
+import { BarChartOutlined, LinkOutlined } from '@ant-design/icons';
 
 interface ServicePageProps {
   title: string;
   description: string;
   icon: React.ReactNode;
   metrics?: { name: string; value: string | number; unit?: string }[];
+  externalUrl?: string;
 }
 
-const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, metrics = [] }) => {
+const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, metrics = [], externalUrl }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -24,6 +25,16 @@ const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, met
           <h2 style={{ margin: 0, marginLeft: 12 }}>{title}</h2>
         </div>
         <p>{description}</p>
+        {externalUrl && (
+          <Button 
+            type="primary" 
+            icon={<LinkOutlined />}
+            onClick={() => window.open(externalUrl, '_blank')}
+            style={{ marginTop: 16 }}
+          >
+            Acessar {title}
+          </Button>
+        )}
       </Card>
 
       {metrics.length > 0 && (

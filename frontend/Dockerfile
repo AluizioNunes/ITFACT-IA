@@ -2,17 +2,23 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copiar todos os arquivos do projeto
-COPY . .
+# Copiar package.json e package-lock.json primeiro
+COPY package*.json ./
 
 # Instalar dependências
-RUN npm install
+RUN npm ci --only=production
+
+# Copiar todos os arquivos do projeto
+COPY . .
 
 # Construir a aplicação
 RUN npm run build
 
-# Expor porta
-EXPOSE 5173
+# Criar diretório de saída
+RUN mkdir -p /dist
 
-# Comando de inicialização
-CMD ["npm", "run", "preview"]
+# Copiar arquivos construídos para o diretório de saída
+RUN cp -r dist/* /dist/
+
+# Comando para manter o container rodando
+CMD ["sh", "-c", "echo 'Frontend build completed' && tail -f /dev/null"]

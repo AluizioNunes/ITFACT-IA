@@ -32,8 +32,8 @@ const Sidebar: React.FC = () => {
 
   const menuItems: MenuItem[] = [
     { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard', path: '/dashboard' },
-    { key: 'prometheus', icon: <BarChartOutlined />, label: 'Prometheus', path: '/coreprometheus' },
-    { key: 'grafana', icon: <LineChartOutlined />, label: 'Grafana', path: '/coregrafana' },
+    { key: 'prometheus', icon: <BarChartOutlined />, label: 'Prometheus', path: '/prometheus' },
+    { key: 'grafana', icon: <LineChartOutlined />, label: 'Grafana', path: '/grafana' },
     { key: 'nginx', icon: <CloudServerOutlined />, label: 'Nginx', path: '/nginx' },
     { key: 'postgres', icon: <DatabaseOutlined />, label: 'Postgres', path: '/postgres' },
     { key: 'docker', icon: <DockerOutlined />, label: 'Docker', path: '/docker' },
@@ -63,8 +63,8 @@ const Sidebar: React.FC = () => {
     if (path === '/' || path === '/dashboard') return 'dashboard';
     
     // Mapear as novas rotas para as chaves do menu
-    if (path === '/coreprometheus') return 'prometheus';
-    if (path === '/coregrafana') return 'grafana';
+    if (path === '/prometheus') return 'prometheus';
+    if (path === '/grafana') return 'grafana';
     
     return path.substring(1); // Remove a barra inicial
   };
