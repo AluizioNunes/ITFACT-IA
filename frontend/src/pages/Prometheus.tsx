@@ -12,7 +12,7 @@ const Prometheus: React.FC = () => {
   return (
     <ServicePage
       title="Prometheus"
-      description="Sistema de monitoramento e alerta de código aberto"
+      description="Sistema de monitoramento e alerta de código aberto. Acesse a aplicação real em /prometheus/"
       icon={<BarChartOutlined style={{ fontSize: '24px', color: '#e60000' }} />}
       metrics={metrics}
     />

@@ -12,7 +12,7 @@ const Grafana: React.FC = () => {
   return (
     <ServicePage
       title="Grafana"
-      description="Plataforma de análise e visualização de métricas"
+      description="Plataforma de análise e visualização de métricas. Acesse a aplicação real em /grafana/"
       icon={<LineChartOutlined style={{ fontSize: '24px', color: '#f60' }} />}
       metrics={metrics}
     />

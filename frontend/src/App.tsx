@@ -33,8 +33,8 @@ const App: React.FC = () => {
           <div style={{ padding: 24, background: colorBgContainer, borderRadius: 8, minHeight: 360 }}>
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/prometheus" element={<Prometheus />} />
-              <Route path="/grafana" element={<Grafana />} />
+              <Route path="/coreprometheus" element={<Prometheus />} />
+              <Route path="/coregrafana" element={<Grafana />} />
               <Route path="/nginx" element={<Nginx />} />
               <Route path="/postgres" element={<Postgres />} />
               <Route path="/docker" element={<Docker />} />

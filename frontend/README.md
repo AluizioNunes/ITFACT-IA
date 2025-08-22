@@ -1,69 +1,52 @@
-# React + TypeScript + Vite
+# Painel de Controle - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend do sistema de automação desenvolvido com React, TypeScript, Ant Design e Framer Motion.
 
-Currently, two official plugins are available:
+## Estrutura de Rotas
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- `/dashboard` - Página inicial com visão geral do sistema
+- `/coreprometheus` - Página do Prometheus (frontend)
+- `/coregrafana` - Página do Grafana (frontend)
+- `/nginx` - Página do Nginx
+- `/postgres` - Página do PostgreSQL
+- `/docker` - Página do Docker
+- `/n8n` - Página do N8N
+- `/evolutionapi` - Página da Evolution API
+- `/chatwoot` - Página do Chatwoot
+- `/whatsapp` - Página do WhatsApp
+- `/redis` - Página do Redis
+- `/rabbitmq` - Página do RabbitMQ
 
-## Expanding the ESLint configuration
+## Notas Importantes
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+As rotas `/grafana/` e `/prometheus/` estão reservadas para as aplicações reais desses serviços, acessíveis através do proxy reverso do Nginx.
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Tecnologias Utilizadas
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+- React 18 com Hooks
+- TypeScript
+- Ant Design para componentes UI
+- Framer Motion para animações
+- React Router DOM para navegação
+- Vite como bundler
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Scripts Disponíveis
+
+- `npm run dev` - Inicia o servidor de desenvolvimento
+- `npm run build` - Compila o projeto para produção
+- `npm run preview` - Visualiza a build de produção localmente
+- `npm run lint` - Executa o linter
+
+## Estrutura de Pastas
+
 ```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+src/
+  ├── components/     # Componentes reutilizáveis
+  ├── hooks/          # Hooks customizados
+  ├── pages/          # Páginas da aplicação
+  ├── assets/         # Arquivos estáticos
+  ├── types/          # Definições de tipos TypeScript
+  ├── App.tsx         # Componente principal
+  ├── main.tsx        # Ponto de entrada da aplicação
+  └── theme.ts        # Configuração de tema do Ant Design
 ```
