@@ -12,10 +12,10 @@ const Grafana: React.FC = () => {
   return (
     <ServicePage
       title="Grafana"
-      description="Plataforma de análise e visualização de métricas. Acesse a aplicação real em /grafana/"
+      description="Plataforma de análise e visualização de métricas. Acesse a aplicação real em grafana.cmm.am.gov.br"
       icon={<LineChartOutlined style={{ fontSize: '24px', color: '#f60' }} />}
       metrics={metrics}
-      externalUrl="/grafana/"
+      externalUrl="https://grafana.cmm.am.gov.br"
     />
   );
 };

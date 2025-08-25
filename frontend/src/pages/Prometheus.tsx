@@ -12,10 +12,10 @@ const Prometheus: React.FC = () => {
   return (
     <ServicePage
       title="Prometheus"
-      description="Sistema de monitoramento e alerta de código aberto. Acesse a aplicação real em /prometheus/"
+      description="Sistema de monitoramento e alerta de código aberto. Acesse a aplicação real em prometheus.cmm.am.gov.br"
       icon={<BarChartOutlined style={{ fontSize: '24px', color: '#e60000' }} />}
       metrics={metrics}
-      externalUrl="/prometheus/"
+      externalUrl="https://prometheus.cmm.am.gov.br"
     />
   );
 };

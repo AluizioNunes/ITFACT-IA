@@ -12,9 +12,10 @@ const WhatsApp: React.FC = () => {
   return (
     <ServicePage
       title="WhatsApp"
-      description="Integração com WhatsApp Business"
+      description="Integração com WhatsApp Business. Acesse a aplicação real em whatsapp.cmm.am.gov.br"
       icon={<WhatsAppOutlined style={{ fontSize: '24px', color: '#25D366' }} />}
       metrics={metrics}
+      externalUrl="https://whatsapp.cmm.am.gov.br"
     />
   );
 };

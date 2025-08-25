@@ -12,9 +12,10 @@ const EvolutionAPI: React.FC = () => {
   return (
     <ServicePage
       title="Evolution API"
-      description="API para integração com WhatsApp"
+      description="API para integração com WhatsApp. Acesse a aplicação real em whatsapp.cmm.am.gov.br"
       icon={<ApiOutlined style={{ fontSize: '24px', color: '#25D366' }} />}
       metrics={metrics}
+      externalUrl="https://whatsapp.cmm.am.gov.br"
     />
   );
 };

@@ -12,9 +12,10 @@ const RabbitMQ: React.FC = () => {
   return (
     <ServicePage
       title="RabbitMQ"
-      description="Broker de mensagens para comunicação assíncrona"
+      description="Broker de mensagens para comunicação assíncrona. Acesse a aplicação real em rabbitmq.cmm.am.gov.br"
       icon={<AppstoreOutlined style={{ fontSize: '24px', color: '#FF6600' }} />}
       metrics={metrics}
+      externalUrl="https://rabbitmq.cmm.am.gov.br"
     />
   );
 };

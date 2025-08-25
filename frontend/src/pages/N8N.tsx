@@ -12,9 +12,10 @@ const N8N: React.FC = () => {
   return (
     <ServicePage
       title="N8N"
-      description="Plataforma de automação de workflows"
+      description="Plataforma de automação de workflows. Acesse a aplicação real em n8n.cmm.am.gov.br"
       icon={<ApiOutlined style={{ fontSize: '24px', color: '#ff6d5a' }} />}
       metrics={metrics}
+      externalUrl="https://n8n.cmm.am.gov.br"
     />
   );
 };

@@ -12,9 +12,10 @@ const Redis: React.FC = () => {
   return (
     <ServicePage
       title="Redis"
-      description="Armazenamento de estrutura de dados em memória"
+      description="Armazenamento de estrutura de dados em memória. Acesse a aplicação real em redis.cmm.am.gov.br"
       icon={<ContainerOutlined style={{ fontSize: '24px', color: '#DC382D' }} />}
       metrics={metrics}
+      externalUrl="https://redis.cmm.am.gov.br"
     />
   );
 };
