@@ -1,0 +1,153 @@
+version: '3.9'
+
+networks:
+  cmm_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+
+  grafana_data:
+    driver: local
+  frontend_dist:
+    driver: local
+
+# Variáveis de ambiente globais
+x-common-variables: &common-variables
+  NODE_VERSION: latest
+
+services:
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8081:8081"  # Porta de debug
+    volumes:
+      - /opt/docker/certificados/cmm_am_gov_br_inter.crt:/etc/ssl/certs/server.crt:ro
+      - /opt/docker/certificados/cmm_am_gov_br.key:/etc/ssl/certs/server.key:ro
+      - frontend_dist:/usr/share/nginx/html:ro
+    networks:
+      - cmm_network
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_started
+      grafana:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    environment:
+      - TZ=America/Manaus
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      no_cache: true  # Força rebuild sempre
+    container_name: frontend
+    restart: unless-stopped
+    networks:
+      - cmm_network
+    ports:
+      - "3000:80"
+    volumes:
+      - frontend_dist:/usr/share/nginx/html
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    environment:
+      - NODE_ENV=production
+
+  backend:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    networks:
+      - cmm_network
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=Admin
+      - POSTGRES_PASSWORD=Ricardo@1964
+      - POSTGRES_DB=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+
+
+  grafana:
+    build:
+      context: ./grafana
+      dockerfile: Dockerfile
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - cmm_network
+
+    environment:
+      - GF_SECURITY_ADMIN_USER=Admin
+      - GF_SECURITY_ADMIN_PASSWORD=Ricardo@1964
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=automacao.cmm.am.gov.br
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/
+      - GF_SERVER_HTTP_PORT=4000
+      - GF_SECURITY_COOKIE_SECURE=false
+      - GF_SECURITY_COOKIE_SAMESITE=strict
+      - GF_SECURITY_STRICT_TRANSPORT_SECURITY=false
+      - TZ=America/Manaus
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  postgres:
+    image: postgres:17.6
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=Admin
+      - POSTGRES_PASSWORD=Ricardo@1964
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cmm_network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h localhost -U Admin -d postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
