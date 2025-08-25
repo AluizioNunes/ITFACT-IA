@@ -42,8 +42,6 @@ services:
         condition: service_started
       grafana:
         condition: service_started
-      prometheus:
-        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/health"]
       interval: 30s
