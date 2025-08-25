@@ -48,6 +48,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      no_cache: true  # Força rebuild sempre
     container_name: frontend
     restart: unless-stopped
     networks:

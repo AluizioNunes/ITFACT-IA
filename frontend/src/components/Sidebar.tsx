@@ -32,17 +32,17 @@ const Sidebar: React.FC = () => {
 
   const menuItems: MenuItem[] = [
     { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard', path: '/dashboard' },
-    { key: 'prometheus', icon: <BarChartOutlined />, label: 'Prometheus', path: '/prometheus' },
-    { key: 'grafana', icon: <LineChartOutlined />, label: 'Grafana', path: '/grafana' },
-    { key: 'nginx', icon: <CloudServerOutlined />, label: 'Nginx', path: '/nginx' },
-    { key: 'postgres', icon: <DatabaseOutlined />, label: 'Postgres', path: '/postgres' },
-    { key: 'docker', icon: <DockerOutlined />, label: 'Docker', path: '/docker' },
-    { key: 'n8n', icon: <ApiOutlined />, label: 'N8N', path: '/n8n' },
-    { key: 'evolutionapi', icon: <ApiOutlined />, label: 'Evolution API', path: '/evolutionapi' },
-    { key: 'chatwoot', icon: <WechatOutlined />, label: 'Chatwoot', path: '/chatwoot' },
-    { key: 'whatsapp', icon: <WhatsAppOutlined />, label: 'WhatsApp', path: '/whatsapp' },
-    { key: 'redis', icon: <ContainerOutlined />, label: 'Redis', path: '/redis' },
-    { key: 'rabbitmq', icon: <AppstoreOutlined />, label: 'RabbitMQ', path: '/rabbitmq' },
+    { key: 'prometheus', icon: <BarChartOutlined />, label: 'Prometheus', path: '/prometheuscore' },
+    { key: 'grafana', icon: <LineChartOutlined />, label: 'Grafana', path: '/grafanacore' },
+    { key: 'nginx', icon: <CloudServerOutlined />, label: 'Nginx', path: '/nginxcore' },
+    { key: 'postgres', icon: <DatabaseOutlined />, label: 'Postgres', path: '/postgrescore' },
+    { key: 'docker', icon: <DockerOutlined />, label: 'Docker', path: '/dockercore' },
+    { key: 'n8n', icon: <ApiOutlined />, label: 'N8N', path: '/n8ncore' },
+    { key: 'evolutionapi', icon: <ApiOutlined />, label: 'Evolution API', path: '/evolutionapicore' },
+    { key: 'chatwoot', icon: <WechatOutlined />, label: 'Chatwoot', path: '/chatwootcore' },
+    { key: 'whatsapp', icon: <WhatsAppOutlined />, label: 'WhatsApp', path: '/whatsappcore' },
+    { key: 'redis', icon: <ContainerOutlined />, label: 'Redis', path: '/rediscore' },
+    { key: 'rabbitmq', icon: <AppstoreOutlined />, label: 'RabbitMQ', path: '/rabbitmqcore' },
   ];
 
   const handleMenuClick = (key: string) => {
@@ -63,10 +63,19 @@ const Sidebar: React.FC = () => {
     if (path === '/' || path === '/dashboard') return 'dashboard';
     
     // Mapear as novas rotas para as chaves do menu
-    if (path === '/prometheus') return 'prometheus';
-    if (path === '/grafana') return 'grafana';
+    if (path === '/prometheuscore') return 'prometheus';
+    if (path === '/grafanacore') return 'grafana';
+    if (path === '/nginxcore') return 'nginx';
+    if (path === '/postgrescore') return 'postgres';
+    if (path === '/dockercore') return 'docker';
+    if (path === '/n8ncore') return 'n8n';
+    if (path === '/evolutionapicore') return 'evolutionapi';
+    if (path === '/chatwootcore') return 'chatwoot';
+    if (path === '/whatsappcore') return 'whatsapp';
+    if (path === '/rediscore') return 'redis';
+    if (path === '/rabbitmqcore') return 'rabbitmq';
     
-    return path.substring(1); // Remove a barra inicial
+    return 'dashboard'; // Fallback para dashboard
   };
 
   return (

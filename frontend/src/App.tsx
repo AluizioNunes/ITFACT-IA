@@ -33,17 +33,17 @@ const App: React.FC = () => {
           <div style={{ padding: 24, background: colorBgContainer, borderRadius: 8, minHeight: 360 }}>
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/prometheus" element={<Prometheus />} />
-              <Route path="/grafana" element={<Grafana />} />
-              <Route path="/nginx" element={<Nginx />} />
-              <Route path="/postgres" element={<Postgres />} />
-              <Route path="/docker" element={<Docker />} />
-              <Route path="/n8n" element={<N8N />} />
-              <Route path="/evolutionapi" element={<EvolutionAPI />} />
-              <Route path="/chatwoot" element={<Chatwoot />} />
-              <Route path="/whatsapp" element={<WhatsApp />} />
-              <Route path="/redis" element={<Redis />} />
-              <Route path="/rabbitmq" element={<RabbitMQ />} />
+              <Route path="/prometheuscore" element={<Prometheus />} />
+              <Route path="/grafanacore" element={<Grafana />} />
+              <Route path="/nginxcore" element={<Nginx />} />
+              <Route path="/postgrescore" element={<Postgres />} />
+              <Route path="/dockercore" element={<Docker />} />
+              <Route path="/n8ncore" element={<N8N />} />
+              <Route path="/evolutionapicore" element={<EvolutionAPI />} />
+              <Route path="/chatwootcore" element={<Chatwoot />} />
+              <Route path="/whatsappcore" element={<WhatsApp />} />
+              <Route path="/rediscore" element={<Redis />} />
+              <Route path="/rabbitmqcore" element={<RabbitMQ />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
