@@ -1,5 +1,5 @@
 # Estágio de build
-FROM node:18-alpine AS builder
+FROM node:19-alpine AS builder
 
 WORKDIR /app
 
@@ -23,11 +23,17 @@ RUN ls -la /app/dist
 # Estágio de produção
 FROM nginx:alpine
 
+# Instalar curl para health checks
+RUN apk add --no-cache curl
+
 # Criar diretório para os arquivos
 RUN mkdir -p /usr/share/nginx/html
 
 # Copiar os arquivos de build para o Nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copiar configuração nginx customizada
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Verificar se os arquivos foram copiados corretamente
 RUN ls -la /usr/share/nginx/html && echo "Arquivos copiados com sucesso"
