@@ -4,7 +4,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import AppHeader from './components/Header';
 import Dashboard from './pages/Dashboard';
-import Prometheus from './pages/Prometheus';
 import Grafana from './pages/Grafana';
 import Nginx from './pages/Nginx';
 import Postgres from './pages/Postgres';
@@ -33,7 +32,6 @@ const App: React.FC = () => {
           <div style={{ padding: 24, background: colorBgContainer, borderRadius: 8, minHeight: 360 }}>
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/prometheuscore" element={<Prometheus />} />
               <Route path="/grafanacore" element={<Grafana />} />
               <Route path="/nginxcore" element={<Nginx />} />
               <Route path="/postgrescore" element={<Postgres />} />

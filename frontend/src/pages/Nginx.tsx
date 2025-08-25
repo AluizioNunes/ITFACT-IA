@@ -5,15 +5,37 @@ import { CloudServerOutlined, BarChartOutlined, LineChartOutlined, DatabaseOutli
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import SimpleChart from '../components/SimpleChart';
-import { usePrometheusMetrics } from '../hooks/useRealData';
 
 const Nginx: React.FC = () => {
   const [metrics, setMetrics] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   
-  // Buscar métricas reais do Prometheus
-  const { data: requestData, loading: requestLoading, error: requestError } = usePrometheusMetrics('nginx_http_requests_total');
-  const { data: connectionData, loading: connectionLoading, error: connectionError } = usePrometheusMetrics('nginx_connections_active');
+  // Using simulated data since Prometheus has been removed
+  const [chartData] = useState([
+    { value: 1250, time: 'T-10' },
+    { value: 1180, time: 'T-9' },
+    { value: 1320, time: 'T-8' },
+    { value: 1290, time: 'T-7' },
+    { value: 1410, time: 'T-6' },
+    { value: 1380, time: 'T-5' },
+    { value: 1450, time: 'T-4' },
+    { value: 1420, time: 'T-3' },
+    { value: 1500, time: 'T-2' },
+    { value: 1480, time: 'T-1' }
+  ]);
+
+  const [connectionData] = useState([
+    { value: 320, time: 'T-10' },
+    { value: 310, time: 'T-9' },
+    { value: 340, time: 'T-8' },
+    { value: 350, time: 'T-7' },
+    { value: 345, time: 'T-6' },
+    { value: 360, time: 'T-5' },
+    { value: 355, time: 'T-4' },
+    { value: 370, time: 'T-3' },
+    { value: 365, time: 'T-2' },
+    { value: 342, time: 'T-1' }
+  ]);
 
   // Simular dados de métricas iniciais
   useEffect(() => {
@@ -28,7 +50,7 @@ const Nginx: React.FC = () => {
     // Dados simulados de aplicações
     const mockApplications = [
       { key: '1', name: 'Grafana', path: '/grafana', requests: 12400, status: 'Operacional' },
-      { key: '2', name: 'Prometheus', path: '/prometheus', requests: 8900, status: 'Operacional' },
+      { key: '2', name: 'Grafana', path: '/grafana', requests: 8900, status: 'Operacional' },
       { key: '3', name: 'N8N', path: '/n8n', requests: 5600, status: 'Operacional' },
       { key: '4', name: 'Chatwoot', path: '/chatwoot', requests: 3200, status: 'Operacional' },
       { key: '5', name: 'Evolution API', path: '/evolutionapi', requests: 2100, status: 'Operacional' },
@@ -67,8 +89,6 @@ const Nginx: React.FC = () => {
     },
   ];
 
-  // Verificar se há erros nas requisições
-  const hasErrors = requestError || connectionError;
 
   return (
     <motion.div
@@ -78,16 +98,7 @@ const Nginx: React.FC = () => {
     >
       <Divider orientation="left">Métricas do Nginx</Divider>
       
-      {hasErrors && (
-        <Alert 
-          message="Erro de Conexão" 
-          description="Não foi possível conectar ao Prometheus. Mostrando dados simulados."
-          type="warning" 
-          showIcon
-          style={{ marginBottom: 24 }}
-        />
-      )}
-      
+
       <Row gutter={[16, 16]}>
         {metrics.map((metric, index) => (
           <Col span={6} key={metric.id}>
@@ -123,35 +134,26 @@ const Nginx: React.FC = () => {
 
       <Divider orientation="left" style={{ marginTop: 32 }}>Gráficos de Métricas</Divider>
       
-      {(requestLoading || connectionLoading) ? (
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <Spin size="large" />
-          <p>Carregando métricas do Prometheus...</p>
-        </div>
-      ) : (
-        <Row gutter={[16, 16]}>
-          <Col span={12}>
-            <SimpleChart 
-              data={requestData.map((item, index) => ({
-                ...item,
-                time: `T-${requestData.length - index}`
-              }))} 
-              title="Requisições por Segundo" 
-              loading={requestLoading} 
-            />
-          </Col>
-          <Col span={12}>
-            <SimpleChart 
-              data={connectionData.map((item, index) => ({
-                ...item,
-                time: `T-${connectionData.length - index}`
-              }))} 
-              title="Conexões Ativas" 
-              loading={connectionLoading} 
-            />
-          </Col>
-        </Row>
-      )}
+
+
+      <Divider orientation="left" style={{ marginTop: 32 }}>Gráficos de Métricas</Divider>
+      
+      <Row gutter={[16, 16]}>
+        <Col span={12}>
+          <SimpleChart 
+            data={chartData} 
+            title="Requisições por Segundo" 
+            loading={false} 
+          />
+        </Col>
+        <Col span={12}>
+          <SimpleChart 
+            data={connectionData} 
+            title="Conexões Ativas" 
+            loading={false} 
+          />
+        </Col>
+      </Row>
 
       <Divider orientation="left" style={{ marginTop: 32 }}>Detalhes Técnicos</Divider>
       <Row gutter={[16, 16]}>

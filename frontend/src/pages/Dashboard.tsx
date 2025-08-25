@@ -26,7 +26,6 @@ const Dashboard: React.FC = () => {
   const totalContainers = containers.length;
   
   const services = [
-    { title: 'Prometheus', icon: <BarChartOutlined />, status: 'Operacional', value: '99.9%' },
     { title: 'Grafana', icon: <LineChartOutlined />, status: 'Operacional', value: '99.9%' },
     { title: 'Nginx', icon: <CloudServerOutlined />, status: 'Operacional', value: '99.9%' },
     { title: 'Postgres', icon: <DatabaseOutlined />, status: 'Operacional', value: '99.9%' },

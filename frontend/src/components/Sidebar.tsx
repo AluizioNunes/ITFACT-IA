@@ -32,7 +32,6 @@ const Sidebar: React.FC = () => {
 
   const menuItems: MenuItem[] = [
     { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard', path: '/dashboard' },
-    { key: 'prometheus', icon: <BarChartOutlined />, label: 'Prometheus', path: '/prometheuscore' },
     { key: 'grafana', icon: <LineChartOutlined />, label: 'Grafana', path: '/grafanacore' },
     { key: 'nginx', icon: <CloudServerOutlined />, label: 'Nginx', path: '/nginxcore' },
     { key: 'postgres', icon: <DatabaseOutlined />, label: 'Postgres', path: '/postgrescore' },
@@ -63,7 +62,6 @@ const Sidebar: React.FC = () => {
     if (path === '/' || path === '/dashboard') return 'dashboard';
     
     // Mapear as novas rotas para as chaves do menu
-    if (path === '/prometheuscore') return 'prometheus';
     if (path === '/grafanacore') return 'grafana';
     if (path === '/nginxcore') return 'nginx';
     if (path === '/postgrescore') return 'postgres';
