@@ -28,6 +28,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8081:8081"  # Porta de debug
     volumes:
       - /opt/docker/certificados/cmm_am_gov_br_inter.crt:/etc/ssl/certs/server.crt:ro
       - /opt/docker/certificados/cmm_am_gov_br.key:/etc/ssl/certs/server.key:ro
