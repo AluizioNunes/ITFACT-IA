@@ -1,6 +1,6 @@
 # ===========================================
 # NGINX DOCKERFILE - CMM AUTOMACAO PLATFORM
-# Version: 2.1
+# Version: 2.3
 # Base: nginx:1.28.0
 # ===========================================
 
@@ -10,7 +10,7 @@ FROM nginx:1.28.0
 # Labels para identificação
 LABEL maintainer="CMM-AM DevOps Team" \
       description="Nginx Reverse Proxy for CMM Automacao Platform" \
-      version="2.1" \
+      version="2.3" \
       org.opencontainers.image.title="CMM Nginx Proxy" \
       org.opencontainers.image.description="High-performance nginx reverse proxy" \
       org.opencontainers.image.vendor="Câmara Municipal de Manaus"
@@ -63,68 +63,8 @@ RUN mkdir -p \
 # Copiar configuração principal
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Script de inicialização SSL
-COPY <<'EOF' /docker-entrypoint.d/90-setup-ssl.sh
-#!/bin/sh
-set -e
-
-echo "[SSL Setup] Iniciando configuração SSL..."
-
-# Verificar se já foi executado para evitar loops
-if [ -f "/tmp/.ssl-setup-completed" ]; then
-    echo "[SSL Setup] Configuração SSL já foi executada anteriormente."
-    exit 0
-fi
-
-# Função para verificar certificados existentes
-check_existing_certs() {
-    if [ -f "/etc/ssl/certs/server.crt" ] && [ -f "/etc/ssl/certs/server.key" ]; then
-        echo "[SSL Setup] Certificados SSL encontrados. Verificando validade..."
-        
-        # Verificar se o certificado não expirou
-        if openssl x509 -checkend 86400 -noout -in /etc/ssl/certs/server.crt >/dev/null 2>&1; then
-            echo "[SSL Setup] Certificados SSL válidos e não expirados."
-            return 0
-        else
-            echo "[SSL Setup] Certificados SSL expirados ou inválidos."
-            return 1
-        fi
-    else
-        echo "[SSL Setup] Certificados SSL não encontrados."
-        return 1
-    fi
-}
-
-# Verificar certificados existentes (montados via volume)
-if check_existing_certs; then
-    echo "[SSL Setup] Usando certificados existentes."
-else
-    echo "[SSL Setup] Certificados não encontrados ou inválidos. Verificando volumes montados..."
-    
-    # Verificar se certificados estão montados via volume do docker-compose
-    if [ -f "/tmp/ssl/server.crt" ] && [ -f "/tmp/ssl/server.key" ]; then
-        echo "[SSL Setup] Encontrados certificados no volume temporário. Copiando..."
-        cp /tmp/ssl/server.crt /etc/ssl/certs/server.crt
-        cp /tmp/ssl/server.key /etc/ssl/certs/server.key
-        echo "[SSL Setup] Certificados copiados com sucesso."
-    else
-        echo "[SSL Setup] Nenhum certificado encontrado. Usando configuração sem SSL."
-    fi
-fi
-
-# Configurar permissões de segurança
-if [ -f "/etc/ssl/certs/server.crt" ] && [ -f "/etc/ssl/certs/server.key" ]; then
-    chmod 644 /etc/ssl/certs/server.crt
-    chmod 600 /etc/ssl/certs/server.key
-    chown root:root /etc/ssl/certs/server.crt /etc/ssl/certs/server.key
-    echo "[SSL Setup] Permissões configuradas."
-fi
-
-# Marcar como concluído para evitar loops
-touch /tmp/.ssl-setup-completed
-
-echo "[SSL Setup] Configuração SSL concluída com sucesso."
-EOF
+# Copiar configurações adicionais
+COPY conf.d/ /etc/nginx/conf.d/
 
 # Script de health check
 COPY <<'EOF' /usr/local/bin/nginx-healthcheck.sh
@@ -253,8 +193,7 @@ Status: Active
 EOF
 
 # Tornar scripts executáveis
-RUN chmod +x /docker-entrypoint.d/90-setup-ssl.sh \
-    && chmod +x /usr/local/bin/nginx-healthcheck.sh
+RUN chmod +x /usr/local/bin/nginx-healthcheck.sh
 
 # Expor portas
 EXPOSE 80 443 8080
