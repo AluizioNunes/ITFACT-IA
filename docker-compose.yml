@@ -39,6 +39,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      no_cache: true
     container_name: frontend
     restart: unless-stopped
     networks:
