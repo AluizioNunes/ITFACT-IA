@@ -15,7 +15,7 @@ services:
       dockerfile: Dockerfile
       args:
         NGINX_VERSION: 1.28.0
-    container_name: cmm-nginx-proxy
+    container_name: nginx
     restart: unless-stopped
     ports:
       - "80:80"
