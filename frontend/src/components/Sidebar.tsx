@@ -33,8 +33,8 @@ const Sidebar: React.FC = () => {
   const menuItems: MenuItem[] = [
     { key: 'dashboard', icon: <DashboardOutlined />, label: 'DASHBOARD', path: '/dashboard' },
     { key: 'nginx', icon: <CloudServerOutlined />, label: 'NGINX', path: '/nginxcore' },
+    { key: 'apis', icon: <ApiOutlined />, label: "API'S", path: '/apis' },
     { key: 'grafana', icon: <LineChartOutlined />, label: 'GRAFANA', path: '/grafanacore' },
-    { key: 'prometheus', icon: <BarChartOutlined />, label: 'PROMETHEUS', path: '/prometheuscore' },
     { key: 'postgres', icon: <DatabaseOutlined />, label: 'POSTGRESQL', path: '/postgrescore' },
     { key: 'docker', icon: <DockerOutlined />, label: 'DOCKER', path: '/dockercore' },
     { key: 'n8n', icon: <ApiOutlined />, label: 'N8N', path: '/n8ncore' },
@@ -43,8 +43,6 @@ const Sidebar: React.FC = () => {
     { key: 'whatsapp', icon: <WhatsAppOutlined />, label: 'WHATSAPP', path: '/whatsappcore' },
     { key: 'redis', icon: <ContainerOutlined />, label: 'REDIS', path: '/rediscore' },
     { key: 'rabbitmq', icon: <AppstoreOutlined />, label: 'RABBITMQ', path: '/rabbitmqcore' },
-    { key: 'swagger', icon: <ApiOutlined />, label: 'SWAGGER', path: '/api/docs' },
-    { key: 'apis', icon: <ApiOutlined />, label: "API'S", path: '/apis' },
   ];
 
   const handleMenuClick = (key: string) => {
@@ -66,8 +64,8 @@ const Sidebar: React.FC = () => {
     
     // Mapear as novas rotas para as chaves do menu
     if (path === '/nginxcore') return 'nginx';
+    if (path === '/apis') return 'apis';
     if (path === '/grafanacore') return 'grafana';
-    if (path === '/prometheuscore') return 'prometheus';
     if (path === '/postgrescore') return 'postgres';
     if (path === '/dockercore') return 'docker';
     if (path === '/n8ncore') return 'n8n';
@@ -76,8 +74,6 @@ const Sidebar: React.FC = () => {
     if (path === '/whatsappcore') return 'whatsapp';
     if (path === '/rediscore') return 'redis';
     if (path === '/rabbitmqcore') return 'rabbitmq';
-    if (path === '/api/docs') return 'swagger';
-    if (path === '/apis') return 'apis';
     
     return 'dashboard'; // Fallback para dashboard
   };
