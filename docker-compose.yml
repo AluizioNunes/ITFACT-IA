@@ -6,147 +6,42 @@ networks:
 
 volumes:
   postgres_data:
-    driver: local
-
   grafana_data:
-    driver: local
-  frontend_dist:
-    driver: local
-
-# Variáveis de ambiente globais
-x-common-variables: &common-variables
-  NODE_VERSION: latest
 
 services:
   nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-      no_cache: true
-      args:
-        NGINX_VERSION: 1.28.0
-        BUILD_DATE: "$(date)"
-    image: cmm-nginx:latest
+    image: nginx:1.28.0
     container_name: cmm-nginx-proxy
-    hostname: nginx-proxy
     restart: unless-stopped
-    
-    # Portas expostas
     ports:
-      - "80:80"       # HTTP Principal
-      - "443:443"     # HTTPS Principal  
-      - "8081:8081"   # Debug/Monitoring
-      - "8080:8080"   # Admin/Status
-    
-    # Volumes e bind mounts
+      - "80:80"
+      - "443:443"
     volumes:
-      # Certificados SSL - Caminho definido pelo usuário
       - /opt/docker/certificados/cmm_am_gov_br_inter.crt:/etc/ssl/certs/server.crt:ro
       - /opt/docker/certificados/cmm_am_gov_br.key:/etc/ssl/certs/server.key:ro
-      # Frontend estático
-      - frontend_dist:/usr/share/nginx/html:ro
-      # Logs persistentes
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./logs/nginx:/var/log/nginx
-      # Cache temporário
-      - /tmp/nginx-cache:/var/cache/nginx
-      # Configurações adicionais
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-    
-    # Rede
     networks:
-      cmm_network:
-        aliases:
-          - nginx-proxy
-          - cmm-proxy
-    
-    # Dependências com condições específicas
+      - cmm_network
     depends_on:
-      frontend:
-        condition: service_healthy
-      backend:
-        condition: service_healthy  
-      grafana:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-    
-    # Health check avançado
-    healthcheck:
-      test: [
-        "CMD-SHELL", 
-        "/usr/local/bin/nginx-healthcheck.sh && curl -f http://localhost:80/health && curl -f http://localhost:8081/status"
-      ]
-      interval: 20s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    
-    # Variáveis de ambiente
+      - frontend
+      - backend
+      - grafana
     environment:
-      # Timezone
       - TZ=America/Manaus
-      # Nginx config
-      - NGINX_HOST=automacao.cmm.am.gov.br
-      - NGINX_WORKER_PROCESSES=auto
-      - NGINX_WORKER_CONNECTIONS=2048
-      # SSL config
       - SSL_CERT_PATH=/etc/ssl/certs/server.crt
       - SSL_KEY_PATH=/etc/ssl/certs/server.key
-      # Backend services
-      - BACKEND_HOST=backend
-      - BACKEND_PORT=3001
-      - GRAFANA_HOST=grafana
-      - GRAFANA_PORT=4000
-      - FRONTEND_HOST=frontend
-      - FRONTEND_PORT=80
-      # Performance
-      - NGINX_GZIP=on
-      - NGINX_CACHE_ENABLED=true
-      - NGINX_RATE_LIMIT=true
-      # Monitoring
-      - NGINX_STATUS_ENABLED=true
-      - NGINX_METRICS_ENABLED=true
-    
-    # Logging avançado
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "5"
-        labels: "service=nginx,component=proxy"
-    
-    # Configurações do sistema
-    ulimits:
-      nofile:
-        soft: 65535
-        hard: 65535
-    
-    # Labels para organização
-    labels:
-      - "com.cmm.service=nginx"
-      - "com.cmm.component=proxy"
-      - "com.cmm.environment=production"
-      - "com.cmm.version=1.28.0"
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      no_cache: true  # Força rebuild sempre
     container_name: frontend
     restart: unless-stopped
     networks:
       - cmm_network
     ports:
       - "3000:80"
-    volumes:
-      - frontend_dist:/usr/share/nginx/html
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
     environment:
       - NODE_ENV=production
 
@@ -167,21 +62,10 @@ services:
       - POSTGRES_PASSWORD=Ricardo@1964
       - POSTGRES_DB=postgres
     depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-
-
+      - postgres
 
   grafana:
-    build:
-      context: ./grafana
-      dockerfile: Dockerfile
+    image: grafana/grafana:12.1.1
     container_name: grafana
     restart: unless-stopped
     ports:
@@ -190,26 +74,12 @@ services:
       - grafana_data:/var/lib/grafana
     networks:
       - cmm_network
-
     environment:
       - GF_SECURITY_ADMIN_USER=Admin
       - GF_SECURITY_ADMIN_PASSWORD=Ricardo@1964
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_DOMAIN=automacao.cmm.am.gov.br
-      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/
       - GF_SERVER_HTTP_PORT=4000
-      - GF_SECURITY_COOKIE_SECURE=false
-      - GF_SECURITY_COOKIE_SAMESITE=strict
-      - GF_SECURITY_STRICT_TRANSPORT_SECURITY=false
       - TZ=America/Manaus
-      - GF_ANALYTICS_REPORTING_ENABLED=false
-      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
 
   postgres:
     image: postgres:17.6
@@ -223,9 +93,3 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - cmm_network
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -h localhost -U Admin -d postgres']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
