@@ -70,8 +70,8 @@ RUN mkdir -p \
 # Copiar configuração principal
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copiar configurações adicionais (se existirem)
-COPY conf.d/* /etc/nginx/conf.d/ 2>/dev/null || true
+# Copiar configurações adicionais
+COPY conf.d/ /etc/nginx/conf.d/
 
 # Script de inicialização SSL melhorado
 COPY <<'EOF' /docker-entrypoint.d/90-setup-ssl.sh
