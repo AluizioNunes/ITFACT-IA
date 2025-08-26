@@ -1,0 +1,105 @@
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    # Log simples
+    access_log  /var/log/nginx/access.log;
+    error_log   /var/log/nginx/error.log;
+
+    sendfile        on;
+    keepalive_timeout  65;
+
+    # ========================================
+    # SERVIDOR HTTP SIMPLES - automacao.cmm.am.gov.br
+    # ========================================
+    
+    server {
+        listen 80;
+        server_name automacao.cmm.am.gov.br 172.18.1.32 _;
+        
+        root /usr/share/nginx/html;
+        index index.html;
+        
+        # Servir apenas o frontend React
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+        
+        # Health check simples
+        location /health {
+            return 200 'Nginx HTTP OK - Servidor funcionando';
+            add_header Content-Type text/plain;
+        }
+        
+        # Página de teste
+        location /teste {
+            return 200 'Teste HTTP OK - Dominio automacao.cmm.am.gov.br funcionando';
+            add_header Content-Type text/plain;
+        }
+    }
+
+    # ========================================
+    # SERVIDOR HTTPS SIMPLES - automacao.cmm.am.gov.br
+    # ========================================
+    
+    server {
+        listen 443 ssl;
+        server_name automacao.cmm.am.gov.br 172.18.1.32 _;
+        
+        # Certificados SSL (opcionais - usar auto-assinados se não existir)
+        ssl_certificate /etc/ssl/certs/server.crt;
+        ssl_certificate_key /etc/ssl/certs/server.key;
+        
+        # Configurações SSL básicas
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+        ssl_prefer_server_ciphers on;
+        
+        root /usr/share/nginx/html;
+        index index.html;
+        
+        # Servir apenas o frontend React
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+        
+        # Health check HTTPS
+        location /health {
+            return 200 'Nginx HTTPS OK - SSL funcionando';
+            add_header Content-Type text/plain;
+        }
+        
+        # Página de teste HTTPS
+        location /teste {
+            return 200 'Teste HTTPS OK - SSL automacao.cmm.am.gov.br funcionando';
+            add_header Content-Type text/plain;
+        }
+    }
+
+    # ========================================
+    # SERVIDOR DE DEBUG (PORTA 8081)
+    # ========================================
+    
+    server {
+        listen 8081;
+        server_name _;
+        
+        root /usr/share/nginx/html;
+        index index.html;
+        
+        # Frontend React para debug
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+        
+        # Status para debug
+        location /status {
+            return 200 'Debug server funcionando na porta 8081';
+            add_header Content-Type text/plain;
+        }
+    }
+}
