@@ -60,13 +60,15 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir -p \
     /etc/ssl/certs \
     /etc/ssl/private \
+    /tmp/ssl \
     /var/cache/nginx \
     /var/log/nginx \
     /etc/nginx/conf.d \
     /etc/nginx/snippets \
     /usr/local/bin \
     /var/www/html \
-    && chown -R nginx:nginx /var/cache/nginx /var/log/nginx
+    && chown -R nginx:nginx /var/cache/nginx /var/log/nginx /tmp/ssl \
+    && chmod 755 /etc/ssl/certs /etc/ssl/private
 
 # Copiar configuração principal
 COPY nginx.conf /etc/nginx/nginx.conf
@@ -81,12 +83,21 @@ set -e
 
 echo "[SSL Setup] Iniciando configuração SSL..."
 
+# Verificar se já foi executado para evitar loops
+if [ -f "/tmp/.ssl-setup-completed" ]; then
+    echo "[SSL Setup] Configuração SSL já foi executada anteriormente."
+    exit 0
+fi
+
 # Função para gerar certificados auto-assinados
 generate_self_signed() {
     echo "[SSL Setup] Gerando certificados auto-assinados..."
     
+    # Criar diretório temporário para certificados
+    mkdir -p /tmp/ssl
+    
     # Criar chave privada
-    openssl genrsa -out /etc/ssl/certs/server.key 4096
+    openssl genrsa -out /tmp/ssl/server.key 4096
     
     # Criar arquivo de configuração temporário
     cat > /tmp/ssl.conf << 'SSLEOF'
@@ -107,14 +118,27 @@ SSLEOF
     
     # Criar certificado auto-assinado
     openssl req -new -x509 \
-        -key /etc/ssl/certs/server.key \
-        -out /etc/ssl/certs/server.crt \
+        -key /tmp/ssl/server.key \
+        -out /tmp/ssl/server.crt \
         -days 3650 \
         -subj "/C=BR/ST=AM/L=Manaus/O=Camara Municipal de Manaus/OU=TI/CN=automacao.cmm.am.gov.br/emailAddress=ti@cmm.am.gov.br" \
         -extensions v3_ca \
         -config /tmp/ssl.conf
     
-    # Limpar arquivo temporário
+    # Tentar copiar para destino final
+    if cp /tmp/ssl/server.crt /etc/ssl/certs/server.crt 2>/dev/null; then
+        echo "[SSL Setup] Certificado copiado para /etc/ssl/certs/server.crt"
+    else
+        echo "[SSL Setup] Aviso: Não foi possível copiar certificado (usando volumes read-only)"
+    fi
+    
+    if cp /tmp/ssl/server.key /etc/ssl/certs/server.key 2>/dev/null; then
+        echo "[SSL Setup] Chave privada copiada para /etc/ssl/certs/server.key"
+    else
+        echo "[SSL Setup] Aviso: Não foi possível copiar chave privada (usando volumes read-only)"
+    fi
+    
+    # Limpar arquivos temporários de configuração
     rm -f /tmp/ssl.conf
     
     echo "[SSL Setup] Certificados auto-assinados criados com sucesso."
@@ -127,19 +151,40 @@ if [ -f "/etc/ssl/certs/server.crt" ] && [ -f "/etc/ssl/certs/server.key" ]; the
     # Verificar se o certificado não expirou
     if openssl x509 -checkend 86400 -noout -in /etc/ssl/certs/server.crt >/dev/null 2>&1; then
         echo "[SSL Setup] Certificados SSL válidos e não expirados."
+        # Marcar como concluído
+        touch /tmp/.ssl-setup-completed
+        echo "[SSL Setup] Configuração SSL concluída com sucesso."
+        exit 0
     else
-        echo "[SSL Setup] Certificado SSL expirado. Regenerando..."
-        generate_self_signed
+        echo "[SSL Setup] Certificado SSL expirado. Tentando regenerar..."
+        # Como pode ser read-only, só gerar se conseguir escrever
+        if ! touch /etc/ssl/certs/test-write 2>/dev/null; then
+            echo "[SSL Setup] Sistema de certificados é read-only. Mantendo certificados existentes."
+            touch /tmp/.ssl-setup-completed
+            exit 0
+        else
+            rm -f /etc/ssl/certs/test-write
+            generate_self_signed
+        fi
     fi
 else
-    echo "[SSL Setup] Certificados SSL não encontrados."
+    echo "[SSL Setup] Certificados SSL não encontrados. Gerando auto-assinados..."
     generate_self_signed
 fi
 
-# Configurar permissões de segurança
-chmod 644 /etc/ssl/certs/server.crt
-chmod 600 /etc/ssl/certs/server.key
-chown root:root /etc/ssl/certs/server.crt /etc/ssl/certs/server.key
+# Configurar permissões de segurança (só se conseguir escrever)
+if touch /etc/ssl/certs/test-write 2>/dev/null; then
+    rm -f /etc/ssl/certs/test-write
+    chmod 644 /etc/ssl/certs/server.crt 2>/dev/null || true
+    chmod 600 /etc/ssl/certs/server.key 2>/dev/null || true
+    chown root:root /etc/ssl/certs/server.crt /etc/ssl/certs/server.key 2>/dev/null || true
+    echo "[SSL Setup] Permissões configuradas."
+else
+    echo "[SSL Setup] Sistema read-only - permissões não alteradas."
+fi
+
+# Marcar como concluído para evitar loops
+touch /tmp/.ssl-setup-completed
 
 echo "[SSL Setup] Configuração SSL concluída com sucesso."
 EOF
