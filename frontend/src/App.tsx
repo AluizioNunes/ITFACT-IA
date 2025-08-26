@@ -5,9 +5,11 @@ import Sidebar from './components/Sidebar';
 import AppHeader from './components/Header';
 import Dashboard from './pages/Dashboard';
 import Grafana from './pages/Grafana';
+import Prometheus from './pages/Prometheus';
 import Nginx from './pages/Nginx';
 import Postgres from './pages/Postgres';
 import Docker from './pages/Docker';
+import APIs from './pages/APIs';
 import N8N from './pages/N8N';
 import EvolutionAPI from './pages/EvolutionAPI';
 import Chatwoot from './pages/Chatwoot';
@@ -32,8 +34,10 @@ const App: React.FC = () => {
           <div style={{ padding: 24, background: colorBgContainer, borderRadius: 8, minHeight: 360 }}>
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/grafanacore" element={<Grafana />} />
               <Route path="/nginxcore" element={<Nginx />} />
+              <Route path="/apis" element={<APIs />} />
+              <Route path="/grafanacore" element={<Grafana />} />
+              <Route path="/prometheuscore" element={<Prometheus />} />
               <Route path="/postgrescore" element={<Postgres />} />
               <Route path="/dockercore" element={<Docker />} />
               <Route path="/n8ncore" element={<N8N />} />

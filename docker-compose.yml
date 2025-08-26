@@ -7,7 +7,8 @@ networks:
 volumes:
   postgres_data:
     driver: local
-
+  prometheus_data:
+    driver: local
   grafana_data:
     driver: local
   frontend_dist:
@@ -40,6 +41,8 @@ services:
       backend:
         condition: service_started
       grafana:
+        condition: service_started
+      prometheus:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/health"]
@@ -98,7 +101,37 @@ services:
       retries: 3
       start_period: 60s
 
-
+  prometheus:
+    build:
+      context: ./prometheus
+      dockerfile: Dockerfile
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus/:/etc/prometheus/
+    networks:
+      - cmm_network
+    user: "1000:1000"  # Usar o mesmo usuário do host para evitar problemas de permissão
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    environment:
+      - TZ=America/Manaus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--web.listen-address=:9090'
 
   grafana:
     build:
@@ -112,7 +145,9 @@ services:
       - grafana_data:/var/lib/grafana
     networks:
       - cmm_network
-
+    depends_on:
+      prometheus:
+        condition: service_started
     environment:
       - GF_SECURITY_ADMIN_USER=Admin
       - GF_SECURITY_ADMIN_PASSWORD=Ricardo@1964
