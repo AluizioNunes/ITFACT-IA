@@ -88,6 +88,23 @@ generate_self_signed() {
     # Criar chave privada
     openssl genrsa -out /etc/ssl/certs/server.key 4096
     
+    # Criar arquivo de configuração temporário
+    cat > /tmp/ssl.conf << 'SSLEOF'
+[req]
+distinguished_name = req_distinguished_name
+[req_distinguished_name]
+[v3_ca]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = automacao.cmm.am.gov.br
+DNS.2 = grafana.cmm.am.gov.br
+DNS.3 = *.cmm.am.gov.br
+IP.1 = 172.18.1.32
+IP.2 = 127.0.0.1
+SSLEOF
+    
     # Criar certificado auto-assinado
     openssl req -new -x509 \
         -key /etc/ssl/certs/server.key \
@@ -95,21 +112,10 @@ generate_self_signed() {
         -days 3650 \
         -subj "/C=BR/ST=AM/L=Manaus/O=Camara Municipal de Manaus/OU=TI/CN=automacao.cmm.am.gov.br/emailAddress=ti@cmm.am.gov.br" \
         -extensions v3_ca \
-        -config <(
-            echo '[req]'
-            echo 'distinguished_name = req_distinguished_name'
-            echo '[req_distinguished_name]'
-            echo '[v3_ca]'
-            echo 'basicConstraints = CA:FALSE'
-            echo 'keyUsage = nonRepudiation, digitalSignature, keyEncipherment'
-            echo 'subjectAltName = @alt_names'
-            echo '[alt_names]'
-            echo 'DNS.1 = automacao.cmm.am.gov.br'
-            echo 'DNS.2 = grafana.cmm.am.gov.br'
-            echo 'DNS.3 = *.cmm.am.gov.br'
-            echo 'IP.1 = 172.18.1.32'
-            echo 'IP.2 = 127.0.0.1'
-        )
+        -config /tmp/ssl.conf
+    
+    # Limpar arquivo temporário
+    rm -f /tmp/ssl.conf
     
     echo "[SSL Setup] Certificados auto-assinados criados com sucesso."
 }
