@@ -1,7 +1,7 @@
 # ===========================================
 # NGINX DOCKERFILE - CMM AUTOMACAO PLATFORM
 # Version: 2.0
-# Base: nginx:1.28.0-alpine
+# Base: nginx:1.28.0
 # ===========================================
 
 # Build arguments
@@ -9,8 +9,8 @@ ARG NGINX_VERSION=1.28.0
 ARG BUILD_DATE
 ARG VCS_REF
 
-# Base image com Alpine para menor tamanho
-FROM nginx:${NGINX_VERSION}-alpine
+# Base image oficial nginx (não alpine)
+FROM nginx:${NGINX_VERSION}
 
 # Labels para identificação
 LABEL maintainer="CMM-AM DevOps Team" \
@@ -32,7 +32,7 @@ ENV NGINX_VERSION=${NGINX_VERSION} \
     LC_ALL=pt_BR.UTF-8
 
 # Instalar dependências essenciais
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     # Ferramentas básicas
     curl \
     wget \
@@ -45,15 +45,16 @@ RUN apk add --no-cache \
     # Logs e debug
     logrotate \
     # Utilitários de rede
-    bind-tools \
+    dnsutils \
     # Editor para debug
     nano \
     # Compressão
     gzip \
+    # Limpeza
+    && rm -rf /var/lib/apt/lists/* \
     # Timezone
-    && cp /usr/share/zoneinfo/America/Manaus /etc/localtime \
-    && echo "America/Manaus" > /etc/timezone \
-    && rm -rf /var/cache/apk/*
+    && ln -sf /usr/share/zoneinfo/America/Manaus /etc/localtime \
+    && echo "America/Manaus" > /etc/timezone
 
 # Criar estrutura de diretórios
 RUN mkdir -p \
@@ -149,7 +150,6 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 HEALTH_CHECK_URL="http://localhost:80/health"
-STATUS_CHECK_URL="http://localhost:8081/status"
 TIMEOUT=10
 
 echo "[Health Check] Iniciando verificação de saúde do nginx..."
@@ -161,7 +161,7 @@ if ! pgrep nginx > /dev/null 2>&1; then
 fi
 
 # Verificar portas principais
-for port in 80 443 8081; do
+for port in 80 443; do
     if ! netstat -tln | grep ":$port " > /dev/null 2>&1; then
         echo "${RED}[Health Check] ❌ Porta $port não está em uso${NC}"
         exit 1
@@ -174,13 +174,6 @@ if curl -f -s --max-time $TIMEOUT "$HEALTH_CHECK_URL" > /dev/null 2>&1; then
 else
     echo "${RED}[Health Check] ❌ Endpoint HTTP não respondendo${NC}"
     exit 1
-fi
-
-# Teste de status
-if curl -f -s --max-time $TIMEOUT "$STATUS_CHECK_URL" > /dev/null 2>&1; then
-    echo "${GREEN}[Health Check] ✅ Endpoint de status respondendo${NC}"
-else
-    echo "${YELLOW}[Health Check] ⚠️  Endpoint de status não respondendo (não crítico)${NC}"
 fi
 
 # Verificar configuração nginx
