@@ -211,7 +211,7 @@ echo "PID: $(cat /var/run/nginx.pid 2>/dev/null || echo 'N/A')"
 echo "Uptime: $(ps -o etime= -p $(cat /var/run/nginx.pid 2>/dev/null) 2>/dev/null || echo 'N/A')"
 echo ""
 echo "=== ACTIVE CONNECTIONS ==="
-netstat -tln | grep -E ':(80|443|8081|8080) ' || echo "No active connections"
+netstat -tln | grep -E ':(80|443|8080) ' || echo "No active connections"
 echo ""
 echo "=== NGINX PROCESSES ==="
 ps aux | grep nginx | grep -v grep || echo "No nginx processes"
@@ -334,7 +334,7 @@ COPY <<'EOF' /etc/logrotate.d/nginx
 EOF
 
 # Expor portas
-EXPOSE 80 443 8081 8080
+EXPOSE 80 443 8080
 
 # Definir diretório de trabalho
 WORKDIR /etc/nginx

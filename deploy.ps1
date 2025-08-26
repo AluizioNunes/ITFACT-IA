@@ -57,7 +57,6 @@ Write-Host "URLs para testar:" -ForegroundColor Cyan
 Write-Host "• HTTP: http://automacao.cmm.am.gov.br" -ForegroundColor White
 Write-Host "• HTTP IP: http://172.18.1.32" -ForegroundColor White
 Write-Host "• HTTPS: https://automacao.cmm.am.gov.br" -ForegroundColor White
-Write-Host "• Debug: http://172.18.1.32:8081" -ForegroundColor White
 Write-Host ""
 Write-Host "Subdomínios configurados:" -ForegroundColor Cyan
 Write-Host "• https://grafana.cmm.am.gov.br" -ForegroundColor White
