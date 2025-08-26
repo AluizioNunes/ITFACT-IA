@@ -10,7 +10,11 @@ volumes:
 
 services:
   nginx:
-    image: nginx:1.28.0
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+      args:
+        NGINX_VERSION: 1.28.0
     container_name: cmm-nginx-proxy
     restart: unless-stopped
     ports:
@@ -19,7 +23,6 @@ services:
     volumes:
       - /opt/docker/certificados/cmm_am_gov_br_inter.crt:/etc/ssl/certs/server.crt:ro
       - /opt/docker/certificados/cmm_am_gov_br.key:/etc/ssl/certs/server.key:ro
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./logs/nginx:/var/log/nginx
     networks:
       - cmm_network
@@ -65,7 +68,9 @@ services:
       - postgres
 
   grafana:
-    image: grafana/grafana:12.1.1
+    build:
+      context: ./grafana
+      dockerfile: Dockerfile
     container_name: grafana
     restart: unless-stopped
     ports:
