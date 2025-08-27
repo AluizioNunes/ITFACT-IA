@@ -1,92 +1,129 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Divider, Statistic, Table, Spin, Alert } from 'antd';
+import { Card, Row, Col, Divider, Statistic, Table, Spin, Alert, Button, Tag, Progress, Space } from 'antd';
 import { motion } from 'framer-motion';
-import { CloudServerOutlined, BarChartOutlined, LineChartOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { 
+  CloudServerOutlined, 
+  BarChartOutlined, 
+  LineChartOutlined, 
+  DatabaseOutlined,
+  ReloadOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  GlobalOutlined
+} from '@ant-design/icons';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import SimpleChart from '../components/SimpleChart';
+import { useNginxData } from '../hooks/useNginxData';
+import ApiChart from '../components/ApiChart';
 
 const Nginx: React.FC = () => {
-  const [metrics, setMetrics] = useState<any[]>([]);
-  const [applications, setApplications] = useState<any[]>([]);
+  const { metrics, upstreams, locations, performance, status, loading, error, refetch } = useNginxData();
   
-  // Using simulated data since Prometheus has been removed
-  const [chartData] = useState([
-    { value: 1250, time: 'T-10' },
-    { value: 1180, time: 'T-9' },
-    { value: 1320, time: 'T-8' },
-    { value: 1290, time: 'T-7' },
-    { value: 1410, time: 'T-6' },
-    { value: 1380, time: 'T-5' },
-    { value: 1450, time: 'T-4' },
-    { value: 1420, time: 'T-3' },
-    { value: 1500, time: 'T-2' },
-    { value: 1480, time: 'T-1' }
-  ]);
+  // State para dados históricos dos gráficos
+  const [requestsHistory, setRequestsHistory] = useState<Array<{ time: string; value: number }>>([]);
+  const [connectionsHistory, setConnectionsHistory] = useState<Array<{ time: string; value: number }>>([]);
+  const [latencyHistory, setLatencyHistory] = useState<Array<{ time: string; value: number }>>([]);
 
-  const [connectionData] = useState([
-    { value: 320, time: 'T-10' },
-    { value: 310, time: 'T-9' },
-    { value: 340, time: 'T-8' },
-    { value: 350, time: 'T-7' },
-    { value: 345, time: 'T-6' },
-    { value: 360, time: 'T-5' },
-    { value: 355, time: 'T-4' },
-    { value: 370, time: 'T-3' },
-    { value: 365, time: 'T-2' },
-    { value: 342, time: 'T-1' }
-  ]);
-
-  // Simular dados de métricas iniciais
+  // Atualizar histórico quando novos dados chegarem
   useEffect(() => {
-    // Dados simulados de métricas
-    const mockMetrics = [
-      { id: 1, name: 'Requisições por segundo', value: 1250, unit: 'req/s', trend: 'up' },
-      { id: 2, name: 'Conexões ativas', value: 342, unit: 'conexões', trend: 'stable' },
-      { id: 3, name: 'Taxa de erro 5xx', value: 0.2, unit: '%', trend: 'down' },
-      { id: 4, name: 'Latência média', value: 45, unit: 'ms', trend: 'stable' },
-    ];
+    if (performance && performance.length > 0) {
+      setRequestsHistory(performance.map(p => ({ time: p.time, value: p.requestsPerSecond })));
+      setConnectionsHistory(performance.map(p => ({ time: p.time, value: p.activeConnections })));
+      setLatencyHistory(performance.map(p => ({ time: p.time, value: p.responseTime })));
+    }
+  }, [performance]);
 
-    // Dados simulados de aplicações
-    const mockApplications = [
-      { key: '1', name: 'Grafana', path: '/grafana', requests: 12400, status: 'Operacional' },
-      { key: '2', name: 'Grafana', path: '/grafana', requests: 8900, status: 'Operacional' },
-      { key: '3', name: 'N8N', path: '/n8n', requests: 5600, status: 'Operacional' },
-      { key: '4', name: 'Chatwoot', path: '/chatwoot', requests: 3200, status: 'Operacional' },
-      { key: '5', name: 'Evolution API', path: '/evolutionapi', requests: 2100, status: 'Operacional' },
-    ];
+  // Buscar dados na montagem do componente
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
-    setMetrics(mockMetrics);
-    setApplications(mockApplications);
-  }, []);
-
-  const columns = [
+  // Colunas da tabela de upstreams
+  const upstreamColumns = [
     {
-      title: 'Aplicação',
+      title: 'Servidor',
       dataIndex: 'name',
       key: 'name',
-    },
-    {
-      title: 'Path',
-      dataIndex: 'path',
-      key: 'path',
-    },
-    {
-      title: 'Requisições',
-      dataIndex: 'requests',
-      key: 'requests',
-      sorter: (a: any, b: any) => a.requests - b.requests,
+      render: (name: string) => (
+        <Space>
+          <GlobalOutlined />
+          <strong>{name}</strong>
+        </Space>
+      )
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => (
-        <span style={{ color: status === 'Operacional' ? '#52c41a' : '#ff4d4f' }}>
-          {status}
-        </span>
-      ),
+        <Tag color={status === 'up' ? 'green' : 'red'} icon={status === 'up' ? <CheckCircleOutlined /> : <ExclamationCircleOutlined />}>
+          {status === 'up' ? 'Ativo' : 'Inativo'}
+        </Tag>
+      )
     },
+    {
+      title: 'Requisições',
+      dataIndex: 'requests',
+      key: 'requests',
+      sorter: (a: any, b: any) => a.requests - b.requests,
+      render: (requests: number) => requests.toLocaleString('pt-BR')
+    },
+    {
+      title: 'Latência (ms)',
+      dataIndex: 'responseTime',
+      key: 'responseTime',
+      render: (time: number) => (
+        <span style={{ color: time > 100 ? '#ff4d4f' : time > 50 ? '#faad14' : '#52c41a' }}>
+          {time}ms
+        </span>
+      )
+    }
+  ];
+
+  // Colunas da tabela de locations
+  const locationColumns = [
+    {
+      title: 'Localização',
+      dataIndex: 'path',
+      key: 'path',
+      render: (path: string) => <code style={{ backgroundColor: '#f0f0f0', padding: '2px 6px', borderRadius: '4px' }}>{path}</code>
+    },
+    {
+      title: 'Requisições',
+      dataIndex: 'requests',
+      key: 'requests',
+      sorter: (a: any, b: any) => a.requests - b.requests,
+      render: (requests: number) => requests.toLocaleString('pt-BR')
+    },
+    {
+      title: 'Erros',
+      dataIndex: 'errors',
+      key: 'errors',
+      render: (errors: number) => (
+        <Tag color={errors > 10 ? 'red' : errors > 0 ? 'orange' : 'green'}>
+          {errors}
+        </Tag>
+      )
+    },
+    {
+      title: 'Taxa de Erro',
+      dataIndex: 'errorRate',
+      key: 'errorRate',
+      render: (rate: string) => {
+        const numRate = parseFloat(rate);
+        return (
+          <span style={{ color: numRate > 1 ? '#ff4d4f' : numRate > 0.1 ? '#faad14' : '#52c41a' }}>
+            {rate}%
+          </span>
+        );
+      }
+    },
+    {
+      title: 'Tempo Resp. (ms)',
+      dataIndex: 'avgResponseTime',
+      key: 'avgResponseTime',
+      render: (time: number) => `${time}ms`
+    }
   ];
 
 
@@ -96,85 +133,219 @@ const Nginx: React.FC = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Divider orientation="left">Métricas do Nginx</Divider>
-      
+      <Divider orientation="left">
+        Nginx - Métricas em Tempo Real
+        <Button 
+          type="primary" 
+          icon={<ReloadOutlined />} 
+          onClick={refetch} 
+          loading={loading}
+          style={{ marginLeft: 16 }}
+        >
+          Atualizar
+        </Button>
+      </Divider>
 
-      <Row gutter={[16, 16]}>
-        {metrics.map((metric, index) => (
-          <Col span={6} key={metric.id}>
+      {error && (
+        <Alert 
+          message="Aviso" 
+          description={error} 
+          type="warning" 
+          showIcon 
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      <Spin spinning={loading}>
+        {/* Métricas Principais */}
+        <Row gutter={[16, 16]}>
+          <Col span={6}>
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
+              transition={{ duration: 0.3 }}
             >
               <Card>
                 <Statistic
-                  title={metric.name}
-                  value={metric.value}
-                  suffix={metric.unit}
-                  prefix={metric.trend === 'up' ? <BarChartOutlined style={{ color: '#52c41a' }} /> : 
-                         metric.trend === 'down' ? <BarChartOutlined style={{ color: '#ff4d4f' }} /> : 
-                         <LineChartOutlined />}
+                  title="Requisições/seg"
+                  value={metrics?.requestsPerSecond || 0}
+                  suffix="req/s"
+                  prefix={<BarChartOutlined style={{ color: '#52c41a' }} />}
+                  valueStyle={{ color: '#3f8600' }}
                 />
               </Card>
             </motion.div>
           </Col>
-        ))}
-      </Row>
+          <Col span={6}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <Card>
+                <Statistic
+                  title="Conexões Ativas"
+                  value={metrics?.activeConnections || 0}
+                  suffix="conexões"
+                  prefix={<GlobalOutlined style={{ color: '#1890ff' }} />}
+                  valueStyle={{ color: '#1890ff' }}
+                />
+              </Card>
+            </motion.div>
+          </Col>
+          <Col span={6}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
+              <Card>
+                <Statistic
+                  title="Taxa de Erro"
+                  value={metrics?.errorRate || 0}
+                  suffix="%"
+                  prefix={<ExclamationCircleOutlined style={{ color: metrics?.errorRate && metrics.errorRate > 1 ? '#ff4d4f' : '#faad14' }} />}
+                  valueStyle={{ color: metrics?.errorRate && metrics.errorRate > 1 ? '#cf1322' : '#d48806' }}
+                  precision={2}
+                />
+              </Card>
+            </motion.div>
+          </Col>
+          <Col span={6}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+            >
+              <Card>
+                <Statistic
+                  title="Latência Média"
+                  value={metrics?.averageLatency || 0}
+                  suffix="ms"
+                  prefix={<LineChartOutlined style={{ color: '#722ed1' }} />}
+                  valueStyle={{ color: '#722ed1' }}
+                />
+              </Card>
+            </motion.div>
+          </Col>
+        </Row>
 
-      <Divider orientation="left" style={{ marginTop: 32 }}>Aplicações Controladas</Divider>
-      <Card>
-        <Table 
-          dataSource={applications} 
-          columns={columns} 
-          pagination={false}
-          scroll={{ y: 400 }}
-        />
-      </Card>
+        {/* Gráficos de Performance */}
+        <Divider orientation="left" style={{ marginTop: 32 }}>Gráficos de Performance</Divider>
+        <Row gutter={[16, 16]}>
+          <Col span={8}>
+            <Card title="Requisições por Segundo" extra={<BarChartOutlined />}>
+              <ApiChart 
+                title="Req/s"
+                data={requestsHistory}
+                color="#52c41a"
+                unit=" req/s"
+                height={200}
+                type="line"
+              />
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card title="Conexões Ativas" extra={<GlobalOutlined />}>
+              <ApiChart 
+                title="Conexões"
+                data={connectionsHistory}
+                color="#1890ff"
+                unit=" conn"
+                height={200}
+                type="area"
+              />
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card title="Latência de Resposta" extra={<LineChartOutlined />}>
+              <ApiChart 
+                title="Latência"
+                data={latencyHistory}
+                color="#722ed1"
+                unit="ms"
+                height={200}
+                type="spline"
+              />
+            </Card>
+          </Col>
+        </Row>
 
-      <Divider orientation="left" style={{ marginTop: 32 }}>Gráficos de Métricas</Divider>
-      
-
-
-      <Divider orientation="left" style={{ marginTop: 32 }}>Gráficos de Métricas</Divider>
-      
-      <Row gutter={[16, 16]}>
-        <Col span={12}>
-          <SimpleChart 
-            data={chartData} 
-            title="Requisições por Segundo" 
-            loading={false} 
+        {/* Servidores Upstream */}
+        <Divider orientation="left" style={{ marginTop: 32 }}>Servidores Upstream</Divider>
+        <Card>
+          <Table 
+            dataSource={upstreams.map((upstream, index) => ({ ...upstream, key: index }))}
+            columns={upstreamColumns}
+            pagination={false}
+            size="small"
           />
-        </Col>
-        <Col span={12}>
-          <SimpleChart 
-            data={connectionData} 
-            title="Conexões Ativas" 
-            loading={false} 
-          />
-        </Col>
-      </Row>
+        </Card>
 
-      <Divider orientation="left" style={{ marginTop: 32 }}>Detalhes Técnicos</Divider>
-      <Row gutter={[16, 16]}>
-        <Col span={8}>
-          <Card title="Versão" extra={<DatabaseOutlined />}>
-            <p>Nginx 1.25.3</p>
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card title="Última Atualização" extra={<CloudServerOutlined />}>
-            <p>{format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}</p>
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card title="Configuração" extra={<LineChartOutlined />}>
-            <p>Proxy Reverso Ativo</p>
-            <p>SSL/TLS Configurado</p>
-            <p>Load Balancing Ativo</p>
-          </Card>
-        </Col>
-      </Row>
+        {/* Localizações/Rotas */}
+        <Divider orientation="left" style={{ marginTop: 32 }}>Estatísticas por Localização</Divider>
+        <Card>
+          <Table 
+            dataSource={locations.map((location, index) => ({ ...location, key: index }))}
+            columns={locationColumns}
+            pagination={false}
+            scroll={{ y: 300 }}
+            size="small"
+          />
+        </Card>
+
+        {/* Informações do Sistema */}
+        <Divider orientation="left" style={{ marginTop: 32 }}>Informações do Sistema</Divider>
+        <Row gutter={[16, 16]}>
+          <Col span={8}>
+            <Card title="Status do Serviço" extra={<CheckCircleOutlined style={{ color: '#52c41a' }} />}>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <div>
+                  <strong>Serviço:</strong> {status?.service || 'Nginx'}
+                </div>
+                <div>
+                  <strong>Status:</strong> 
+                  <Tag color="green" style={{ marginLeft: 8 }}>
+                    {status?.status || 'Active'}
+                  </Tag>
+                </div>
+                <div>
+                  <strong>SSL/TLS:</strong> {status?.ssl || 'Enabled'}
+                </div>
+              </Space>
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card title="Portas Ativas" extra={<DatabaseOutlined />}>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                {status?.ports?.map(port => (
+                  <Tag key={port} color="blue">
+                    Porta {port}
+                  </Tag>
+                )) || [
+                  <Tag key="80" color="blue">Porta 80</Tag>,
+                  <Tag key="443" color="blue">Porta 443</Tag>,
+                  <Tag key="8080" color="blue">Porta 8080</Tag>
+                ]}
+              </Space>
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card title="Última Atualização" extra={<CloudServerOutlined />}>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <div>
+                  <strong>Tempo de Atividade:</strong><br />
+                  {metrics?.uptime?.formatted || '0h 0m'}
+                </div>
+                <div>
+                  <strong>Última Verificação:</strong><br />
+                  {status?.lastCheck ? format(new Date(status.lastCheck), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'N/A'}
+                </div>
+              </Space>
+            </Card>
+          </Col>
+        </Row>
+      </Spin>
     </motion.div>
   );
 };

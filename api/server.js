@@ -19,6 +19,27 @@ let apiMetrics = {
   uptime: Date.now()
 };
 
+// Nginx metrics tracking
+let nginxMetrics = {
+  requestsPerSecond: 1200 + Math.floor(Math.random() * 300),
+  activeConnections: 320 + Math.floor(Math.random() * 100),
+  errorRate: 0.1 + Math.random() * 0.3,
+  averageLatency: 40 + Math.random() * 20,
+  totalRequests: 1250000 + Math.floor(Math.random() * 100000),
+  upstreamServers: [
+    { name: 'frontend', status: 'up', requests: 0, latency: 0 },
+    { name: 'backend', status: 'up', requests: 0, latency: 0 }
+  ],
+  locations: [
+    { path: '/', requests: 0, errors: 0, avgResponseTime: 0 },
+    { path: '/api/', requests: 0, errors: 0, avgResponseTime: 0 },
+    { path: '/grafana', requests: 0, errors: 0, avgResponseTime: 0 },
+    { path: '/n8n', requests: 0, errors: 0, avgResponseTime: 0 },
+    { path: '/chatwoot', requests: 0, errors: 0, avgResponseTime: 0 }
+  ],
+  lastUpdate: Date.now()
+};
+
 // Middleware para tracking de metricas
 app.use((req, res, next) => {
   const startTime = Date.now();
@@ -57,6 +78,30 @@ setInterval(() => {
   // Simplified RPM calculation
   apiMetrics.requestsPerMinute = Math.floor(Math.random() * 50) + (apiMetrics.totalRequests % 100);
 }, 60000);
+
+// Atualizar métricas do Nginx a cada 5 segundos
+setInterval(() => {
+  nginxMetrics.requestsPerSecond = 1200 + Math.floor(Math.random() * 300);
+  nginxMetrics.activeConnections = 320 + Math.floor(Math.random() * 100);
+  nginxMetrics.errorRate = parseFloat((0.1 + Math.random() * 0.3).toFixed(2));
+  nginxMetrics.averageLatency = Math.round(40 + Math.random() * 20);
+  nginxMetrics.totalRequests += Math.floor(Math.random() * 10) + 5;
+  
+  // Simular dados dos upstreams
+  nginxMetrics.upstreamServers[0].requests = Math.floor(Math.random() * 1000) + 8000;
+  nginxMetrics.upstreamServers[0].latency = Math.round(Math.random() * 50) + 20;
+  nginxMetrics.upstreamServers[1].requests = Math.floor(Math.random() * 500) + 3000;
+  nginxMetrics.upstreamServers[1].latency = Math.round(Math.random() * 30) + 15;
+  
+  // Simular dados das locations
+  nginxMetrics.locations.forEach(location => {
+    location.requests += Math.floor(Math.random() * 50) + 10;
+    location.errors += Math.random() > 0.95 ? 1 : 0;
+    location.avgResponseTime = Math.round(Math.random() * 100) + 30;
+  });
+  
+  nginxMetrics.lastUpdate = Date.now();
+}, 5000);
 
 // Swagger configuration
 const swaggerOptions = {
@@ -340,6 +385,123 @@ app.get('/api/services', (req, res) => {
     lastUpdate: new Date().toISOString()
   });
 });
+
+/**
+ * @swagger
+ * /api/nginx/metrics:
+ *   get:
+ *     summary: Get detailed Nginx metrics
+ *     tags: [Nginx]
+ *     responses:
+ *       200:
+ *         description: Nginx performance metrics
+ */
+app.get('/api/nginx/metrics', (req, res) => {
+  res.json({
+    requestsPerSecond: nginxMetrics.requestsPerSecond,
+    activeConnections: nginxMetrics.activeConnections,
+    errorRate: nginxMetrics.errorRate,
+    averageLatency: nginxMetrics.averageLatency,
+    totalRequests: nginxMetrics.totalRequests,
+    uptime: {
+      seconds: Math.floor((Date.now() - apiMetrics.uptime) / 1000),
+      formatted: formatUptime(Date.now() - apiMetrics.uptime)
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+/**
+ * @swagger
+ * /api/nginx/upstreams:
+ *   get:
+ *     summary: Get Nginx upstream servers status
+ *     tags: [Nginx]
+ *     responses:
+ *       200:
+ *         description: Upstream servers data
+ */
+app.get('/api/nginx/upstreams', (req, res) => {
+  res.json({
+    upstreams: nginxMetrics.upstreamServers.map(upstream => ({
+      ...upstream,
+      responseTime: upstream.latency,
+      lastCheck: new Date().toISOString()
+    })),
+    totalUpstreams: nginxMetrics.upstreamServers.length,
+    activeUpstreams: nginxMetrics.upstreamServers.filter(u => u.status === 'up').length,
+    timestamp: new Date().toISOString()
+  });
+});
+
+/**
+ * @swagger
+ * /api/nginx/locations:
+ *   get:
+ *     summary: Get Nginx locations statistics
+ *     tags: [Nginx]
+ *     responses:
+ *       200:
+ *         description: Location-based statistics
+ */
+app.get('/api/nginx/locations', (req, res) => {
+  res.json({
+    locations: nginxMetrics.locations.map(location => ({
+      ...location,
+      errorRate: location.requests > 0 ? ((location.errors / location.requests) * 100).toFixed(2) : 0,
+      requestsPerMinute: Math.floor(location.requests / 60)
+    })),
+    totalLocations: nginxMetrics.locations.length,
+    timestamp: new Date().toISOString()
+  });
+});
+
+/**
+ * @swagger
+ * /api/nginx/performance:
+ *   get:
+ *     summary: Get Nginx performance data for charts
+ *     tags: [Nginx]
+ *     responses:
+ *       200:
+ *         description: Time-series performance data
+ */
+app.get('/api/nginx/performance', (req, res) => {
+  const currentTime = new Date();
+  const performanceData = [];
+  
+  // Gerar dados históricos dos últimos 10 pontos
+  for (let i = 9; i >= 0; i--) {
+    const timestamp = new Date(currentTime.getTime() - (i * 30000)); // 30s intervals
+    performanceData.push({
+      timestamp: timestamp.toISOString(),
+      time: timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      requestsPerSecond: nginxMetrics.requestsPerSecond + Math.floor(Math.random() * 100) - 50,
+      activeConnections: nginxMetrics.activeConnections + Math.floor(Math.random() * 50) - 25,
+      responseTime: nginxMetrics.averageLatency + Math.floor(Math.random() * 20) - 10,
+      errorRate: Math.max(0, nginxMetrics.errorRate + (Math.random() * 0.2) - 0.1)
+    });
+  }
+  
+  res.json({
+    performanceHistory: performanceData,
+    currentMetrics: {
+      requestsPerSecond: nginxMetrics.requestsPerSecond,
+      activeConnections: nginxMetrics.activeConnections,
+      responseTime: nginxMetrics.averageLatency,
+      errorRate: nginxMetrics.errorRate
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Função auxiliar para formatar uptime
+function formatUptime(milliseconds) {
+  const seconds = Math.floor(milliseconds / 1000);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return `${hours}h ${minutes}m`;
+}
 
 // 404 handler
 app.use('*', (req, res) => {
