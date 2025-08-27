@@ -495,6 +495,61 @@ app.get('/api/nginx/performance', (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /api/dashboard:
+ *   get:
+ *     summary: Get consolidated dashboard data
+ *     tags: [Dashboard]
+ *     responses:
+ *       200:
+ *         description: Dashboard overview data
+ */
+app.get('/api/dashboard', (req, res) => {
+  const currentTime = new Date();
+  const uptimeSeconds = Math.floor((Date.now() - apiMetrics.uptime) / 1000);
+  
+  // Simular dados de containers
+  const containerData = {
+    running: 8 + Math.floor(Math.random() * 3),
+    total: 10 + Math.floor(Math.random() * 2)
+  };
+  
+  // Calcular alerts baseado em métricas
+  const alerts = [
+    apiMetrics.errorRate > 1 ? 1 : 0,
+    nginxMetrics.errorRate > 1 ? 1 : 0,
+    apiMetrics.averageResponseTime > 200 ? 1 : 0
+  ].reduce((sum, alert) => sum + alert, 0);
+  
+  res.json({
+    overview: {
+      totalRequests: apiMetrics.totalRequests,
+      requestsPerMinute: apiMetrics.requestsPerMinute,
+      averageResponseTime: Math.round(apiMetrics.averageResponseTime * 100) / 100,
+      errorRate: parseFloat((apiMetrics.totalRequests > 0 ? ((apiMetrics.errors / apiMetrics.totalRequests) * 100) : 0).toFixed(2)),
+      uptime: {
+        seconds: uptimeSeconds,
+        formatted: formatUptime(Date.now() - apiMetrics.uptime)
+      }
+    },
+    nginx: {
+      requestsPerSecond: nginxMetrics.requestsPerSecond,
+      activeConnections: nginxMetrics.activeConnections,
+      errorRate: nginxMetrics.errorRate,
+      averageLatency: nginxMetrics.averageLatency
+    },
+    containers: containerData,
+    alerts: alerts,
+    services: {
+      total: 10,
+      active: 10 - alerts,
+      warning: alerts
+    },
+    lastUpdate: currentTime.toISOString()
+  });
+});
+
 // Função auxiliar para formatar uptime
 function formatUptime(milliseconds) {
   const seconds = Math.floor(milliseconds / 1000);
