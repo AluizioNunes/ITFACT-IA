@@ -33,8 +33,8 @@ RUN mkdir -p /docker-entrypoint-initdb.d
 COPY init-database.sql /docker-entrypoint-initdb.d/
 
 # Configurações customizadas do PostgreSQL
-COPY postgresql.conf /etc/postgresql/postgresql.conf
-COPY pg_hba.conf /etc/postgresql/pg_hba.conf
+COPY postgresql.conf /tmp/postgresql.conf
+COPY pg_hba.conf /tmp/pg_hba.conf
 
 # Definir configurações de performance
 ENV POSTGRES_INITDB_ARGS="--encoding=UTF-8"
@@ -52,6 +52,6 @@ EXPOSE 5432
 # Volume para dados persistentes
 VOLUME ["/var/lib/postgresql/data"]
 
-# Usar entrypoint oficial do PostgreSQL
+# Usar entrypoint oficial do PostgreSQL com configurações customizadas
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+CMD ["postgres", "-c", "config_file=/tmp/postgresql.conf", "-c", "hba_file=/tmp/pg_hba.conf"]
