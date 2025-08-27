@@ -38,6 +38,12 @@ interface DashboardData {
     running: number;
     total: number;
   };
+  chartData: {
+    requestsHistory: Array<{ time: string; value: number }>;
+    responseTimeHistory: Array<{ time: string; value: number }>;
+    errorRateHistory: Array<{ time: string; value: number }>;
+    connectionsHistory: Array<{ time: string; value: number }>;
+  };
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -52,6 +58,12 @@ export const useDashboardData = (): DashboardData => {
     totalServices: 0,
     activeServices: 0,
     containers: { running: 0, total: 0 },
+    chartData: {
+      requestsHistory: [],
+      responseTimeHistory: [],
+      errorRateHistory: [],
+      connectionsHistory: []
+    },
     loading: false,
     error: null,
     refetch: async () => {}
@@ -142,6 +154,42 @@ export const useDashboardData = (): DashboardData => {
       }
     ];
 
+    // Gerar dados históricos para gráficos
+    const currentTime = new Date();
+    const requestsHistory = [];
+    const responseTimeHistory = [];
+    const errorRateHistory = [];
+    const connectionsHistory = [];
+
+    // Gerar 15 pontos de dados históricos (últimos 15 minutos)
+    for (let i = 14; i >= 0; i--) {
+      const timestamp = new Date(currentTime.getTime() - (i * 60000)); // 1 minuto de intervalo
+      const timeLabel = timestamp.toLocaleTimeString('pt-BR', { 
+        hour: '2-digit', 
+        minute: '2-digit'
+      });
+
+      requestsHistory.push({
+        time: timeLabel,
+        value: 40 + Math.floor(Math.random() * 30) // 40-70 req/min
+      });
+
+      responseTimeHistory.push({
+        time: timeLabel,
+        value: 35 + Math.floor(Math.random() * 25) // 35-60ms
+      });
+
+      errorRateHistory.push({
+        time: timeLabel,
+        value: Math.round((0.1 + Math.random() * 0.4) * 100) / 100 // 0.1-0.5%
+      });
+
+      connectionsHistory.push({
+        time: timeLabel,
+        value: 300 + Math.floor(Math.random() * 100) // 300-400 conexões
+      });
+    }
+
     return {
       systemMetrics: {
         totalRequests: 1285000 + Math.floor(Math.random() * 10000),
@@ -166,6 +214,12 @@ export const useDashboardData = (): DashboardData => {
       containers: {
         running: 8 + Math.floor(Math.random() * 3),
         total: 10 + Math.floor(Math.random() * 2)
+      },
+      chartData: {
+        requestsHistory,
+        responseTimeHistory,
+        errorRateHistory,
+        connectionsHistory
       }
     };
   };
@@ -252,10 +306,10 @@ export const useDashboardData = (): DashboardData => {
             status: service.status === 'Active' ? 'Active' : 'Inactive',
             uptime: systemMetrics?.uptime?.formatted || '0h 0m',
             responseTime: service.name === 'Backend API' ? 
-              (systemMetrics?.averageResponseTime || 45) : 
+              (typeof systemMetrics?.averageResponseTime === 'number' ? systemMetrics.averageResponseTime : 45) : 
               30 + Math.random() * 50,
             errorRate: service.name === 'Backend API' ? 
-              (systemMetrics?.errorRate || 0.2) : 
+              (typeof systemMetrics?.errorRate === 'number' ? systemMetrics.errorRate : 0.2) : 
               Math.random() * 0.5,
             lastCheck: new Date().toISOString()
           });
@@ -271,7 +325,10 @@ export const useDashboardData = (): DashboardData => {
       });
 
       // Calcular alertas baseado na taxa de erro
-      const alerts = servicesList.filter(s => s.errorRate > 1 || s.responseTime > 200).length;
+      const alerts = servicesList.filter(s => 
+        (typeof s.errorRate === 'number' ? s.errorRate : 0) > 1 || 
+        (typeof s.responseTime === 'number' ? s.responseTime : 0) > 200
+      ).length;
 
       setData(prev => ({
         ...prev,
@@ -282,6 +339,7 @@ export const useDashboardData = (): DashboardData => {
         totalServices: servicesList.length,
         activeServices: servicesList.filter(s => s.status === 'Active').length,
         containers: mockData.containers, // Usar mock para containers por enquanto
+        chartData: mockData.chartData, // Usar dados mock para gráficos por enquanto
         loading: false,
         error: null
       }));

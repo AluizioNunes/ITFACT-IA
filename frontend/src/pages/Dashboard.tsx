@@ -20,6 +20,7 @@ import {
   ThunderboltOutlined
 } from '@ant-design/icons';
 import { useDashboardData } from '../hooks/useDashboardData';
+import ApiChart from '../components/ApiChart';
 
 const Dashboard: React.FC = () => {
   const { 
@@ -30,6 +31,7 @@ const Dashboard: React.FC = () => {
     totalServices, 
     activeServices, 
     containers,
+    chartData,
     loading, 
     error, 
     refetch 
@@ -218,6 +220,62 @@ const Dashboard: React.FC = () => {
           </Col>
         </Row>
 
+        {/* Gráficos de Monitoramento */}
+        <Divider orientation="left" style={{ marginTop: 32 }}>Gráficos de Monitoramento</Divider>
+        <Row gutter={[16, 16]}>
+          <Col span={12}>
+            <Card title="Requisições por Minuto" extra={<ThunderboltOutlined />}>
+              <ApiChart 
+                title="Req/min"
+                data={chartData.requestsHistory}
+                color="#722ed1"
+                unit=" req/min"
+                height={250}
+                type="line"
+              />
+            </Card>
+          </Col>
+          <Col span={12}>
+            <Card title="Tempo de Resposta" extra={<ClockCircleOutlined />}>
+              <ApiChart 
+                title="Latência"
+                data={chartData.responseTimeHistory}
+                color="#fa8c16"
+                unit="ms"
+                height={250}
+                type="spline"
+              />
+            </Card>
+          </Col>
+        </Row>
+        
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col span={12}>
+            <Card title="Taxa de Erro" extra={<ExclamationCircleOutlined />}>
+              <ApiChart 
+                title="Taxa de Erro"
+                data={chartData.errorRateHistory}
+                color="#ff4d4f"
+                unit="%"
+                height={250}
+                type="area"
+              />
+            </Card>
+          </Col>
+          <Col span={12}>
+            <Card title="Conexões Nginx" extra={<CloudServerOutlined />}>
+              <ApiChart 
+                title="Conexões"
+                data={chartData.connectionsHistory}
+                color="#1890ff"
+                unit=" conn"
+                height={250}
+                type="area"
+              />
+            </Card>
+          </Col>
+        </Row>
+
         {/* Status Detalhado dos Serviços */}
         <Divider orientation="left" style={{ marginTop: 32 }}>Status dos Serviços</Divider>
         <Row gutter={[16, 16]}>
@@ -255,10 +313,10 @@ const Dashboard: React.FC = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>Taxa de Erro:</span>
                       <span style={{ 
-                        color: service.errorRate > 1 ? '#ff4d4f' : 
-                               service.errorRate > 0.5 ? '#faad14' : '#52c41a' 
+                        color: (service.errorRate || 0) > 1 ? '#ff4d4f' : 
+                               (service.errorRate || 0) > 0.5 ? '#faad14' : '#52c41a' 
                       }}>
-                        {service.errorRate.toFixed(2)}%
+                        {typeof service.errorRate === 'number' ? service.errorRate.toFixed(2) : '0.00'}%
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -272,7 +330,7 @@ const Dashboard: React.FC = () => {
                     <div style={{ marginTop: 8 }}>
                       <div style={{ fontSize: '12px', marginBottom: 4 }}>Saúde Geral:</div>
                       <Progress 
-                        percent={Math.round(100 - (service.errorRate * 10) - (service.responseTime > 100 ? 20 : 0))} 
+                        percent={Math.round(100 - ((service.errorRate || 0) * 10) - (service.responseTime > 100 ? 20 : 0))} 
                         size="small" 
                         status={service.status === 'Active' ? 'success' : 'exception'}
                         showInfo={false}

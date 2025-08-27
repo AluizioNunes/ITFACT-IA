@@ -1,7 +1,8 @@
 import React from 'react';
 import { Card, Divider, Row, Col, Statistic, Button } from 'antd';
 import { motion } from 'framer-motion';
-import { BarChartOutlined, LinkOutlined } from '@ant-design/icons';
+import { BarChartOutlined, LinkOutlined, LineChartOutlined, DashboardOutlined } from '@ant-design/icons';
+import ApiChart from './ApiChart';
 
 interface ServicePageProps {
   title: string;
@@ -9,9 +10,37 @@ interface ServicePageProps {
   icon: React.ReactNode;
   metrics?: { name: string; value: string | number; unit?: string }[];
   externalUrl?: string;
+  chartData?: {
+    utilization: Array<{ time: string; value: number }>;
+    performance: Array<{ time: string; value: number }>;
+  };
 }
 
-const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, metrics = [], externalUrl }) => {
+const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, metrics = [], externalUrl, chartData }) => {
+  // Gerar dados mock se não fornecidos
+  const generateMockData = () => {
+    const currentTime = new Date();
+    const data = [];
+    
+    // Gerar 12 pontos de dados (últimas 12 horas)
+    for (let i = 11; i >= 0; i--) {
+      const timestamp = new Date(currentTime.getTime() - (i * 3600000)); // 1 hora
+      data.push({
+        time: timestamp.toLocaleTimeString('pt-BR', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }),
+        value: 60 + Math.floor(Math.random() * 40) // 60-100%
+      });
+    }
+    return data;
+  };
+
+  const utilizationData = chartData?.utilization || generateMockData();
+  const performanceData = chartData?.performance || generateMockData().map(item => ({
+    ...item,
+    value: 20 + Math.floor(Math.random() * 60) // 20-80ms para performance
+  }));
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -62,20 +91,30 @@ const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, met
         </>
       )}
 
-      <Divider orientation="left" style={{ marginTop: 32 }}>Gráficos</Divider>
+      <Divider orientation="left" style={{ marginTop: 32 }}>Gráficos de Monitoramento</Divider>
       <Row gutter={[16, 16]}>
         <Col span={12}>
-          <Card title="Utilização" extra={<BarChartOutlined />}>
-            <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f2f5' }}>
-              <span>Gráfico de Utilização</span>
-            </div>
+          <Card title="Utilização do Serviço" extra={<DashboardOutlined />}>
+            <ApiChart 
+              title="Utilização"
+              data={utilizationData}
+              color="#1890ff"
+              unit="%"
+              height={280}
+              type="area"
+            />
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="Performance" extra={<BarChartOutlined />}>
-            <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f2f5' }}>
-              <span>Gráfico de Performance</span>
-            </div>
+          <Card title="Performance" extra={<LineChartOutlined />}>
+            <ApiChart 
+              title="Tempo de Resposta"
+              data={performanceData}
+              color="#52c41a"
+              unit="ms"
+              height={280}
+              type="spline"
+            />
           </Card>
         </Col>
       </Row>
