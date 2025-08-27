@@ -236,17 +236,21 @@ export const useDashboardData = (): DashboardData => {
         nginxMetricsRes,
         servicesRes,
         nginxStatusRes,
-        healthRes
+        healthRes,
+        postgresStatusRes,
+        postgresMetricsRes
       ] = await Promise.all([
         fetch(`${baseUrl}/api/metrics`),
         fetch(`${baseUrl}/api/nginx/metrics`),
         fetch(`${baseUrl}/api/services`),
         fetch(`${baseUrl}/api/nginx/status`),
-        fetch(`${baseUrl}/api/health`)
+        fetch(`${baseUrl}/api/health`),
+        fetch(`${baseUrl}/api/postgresql/status`),
+        fetch(`${baseUrl}/api/postgresql/metrics`)
       ]);
 
       // Verificar se pelo menos algumas APIs estão funcionando
-      const responses = [systemMetricsRes, nginxMetricsRes, servicesRes, nginxStatusRes, healthRes];
+      const responses = [systemMetricsRes, nginxMetricsRes, servicesRes, nginxStatusRes, healthRes, postgresStatusRes, postgresMetricsRes];
       const validResponses = responses.filter(res => 
         res.ok && res.headers.get('content-type')?.includes('application/json')
       );
@@ -267,6 +271,8 @@ export const useDashboardData = (): DashboardData => {
       let systemMetrics = null;
       let nginxMetrics = null;
       let servicesData = null;
+      let postgresStatus = null;
+      let postgresMetrics = null;
 
       try {
         if (systemMetricsRes.ok) {
@@ -292,6 +298,22 @@ export const useDashboardData = (): DashboardData => {
         console.warn('Erro ao processar dados dos serviços');
       }
 
+      try {
+        if (postgresStatusRes.ok) {
+          postgresStatus = await postgresStatusRes.json();
+        }
+      } catch (e) {
+        console.warn('Erro ao processar status do PostgreSQL');
+      }
+
+      try {
+        if (postgresMetricsRes.ok) {
+          postgresMetrics = await postgresMetricsRes.json();
+        }
+      } catch (e) {
+        console.warn('Erro ao processar métricas do PostgreSQL');
+      }
+
       // Combinar dados reais com mock quando necessário
       const mockData = getMockData();
       
@@ -301,16 +323,28 @@ export const useDashboardData = (): DashboardData => {
       // Adicionar serviços base da API
       if (servicesData?.services) {
         servicesData.services.forEach((service: any) => {
+          let responseTime = 30 + Math.random() * 50;
+          let errorRate = Math.random() * 0.5;
+          let uptime = systemMetrics?.uptime?.formatted || '0h 0m';
+          
+          // Usar dados reais para serviços específicos
+          if (service.name === 'Backend API') {
+            responseTime = typeof systemMetrics?.averageResponseTime === 'number' ? 
+              systemMetrics.averageResponseTime : 45;
+            errorRate = typeof systemMetrics?.errorRate === 'number' ? 
+              systemMetrics.errorRate : 0.2;
+          } else if (service.name === 'PostgreSQL' && postgresMetrics) {
+            responseTime = postgresMetrics.performance?.avgQueryTime || 15;
+            errorRate = postgresMetrics.connectionUsage > 80 ? 0.1 : 0.0;
+            uptime = postgresStatus?.uptime?.formatted || uptime;
+          }
+          
           servicesList.push({
             name: service.name,
             status: service.status === 'Active' ? 'Active' : 'Inactive',
-            uptime: systemMetrics?.uptime?.formatted || '0h 0m',
-            responseTime: service.name === 'Backend API' ? 
-              (typeof systemMetrics?.averageResponseTime === 'number' ? systemMetrics.averageResponseTime : 45) : 
-              30 + Math.random() * 50,
-            errorRate: service.name === 'Backend API' ? 
-              (typeof systemMetrics?.errorRate === 'number' ? systemMetrics.errorRate : 0.2) : 
-              Math.random() * 0.5,
+            uptime,
+            responseTime,
+            errorRate,
             lastCheck: new Date().toISOString()
           });
         });

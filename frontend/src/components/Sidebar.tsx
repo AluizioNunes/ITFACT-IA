@@ -35,7 +35,7 @@ const Sidebar: React.FC = () => {
     { key: 'nginx', icon: <CloudServerOutlined />, label: 'NGINX', path: '/nginxcore' },
     { key: 'apis', icon: <ApiOutlined />, label: "API'S SWAGGER", path: '/apis' },
     { key: 'grafana', icon: <LineChartOutlined />, label: 'GRAFANA', path: '/grafanacore' },
-    { key: 'postgres', icon: <DatabaseOutlined />, label: 'POSTGRESQL', path: '/postgrescore' },
+    { key: 'postgresql', icon: <DatabaseOutlined />, label: 'POSTGRESQL', path: '/postgresqlcore' },
     { key: 'docker', icon: <DockerOutlined />, label: 'DOCKER', path: '/dockercore' },
     { key: 'n8n', icon: <ApiOutlined />, label: 'N8N', path: '/n8ncore' },
     { key: 'evolutionapi', icon: <ApiOutlined />, label: 'EVOLUTION API', path: '/evolutionapicore' },
@@ -66,7 +66,7 @@ const Sidebar: React.FC = () => {
     if (path === '/nginxcore') return 'nginx';
     if (path === '/apis') return 'apis';
     if (path === '/grafanacore') return 'grafana';
-    if (path === '/postgrescore') return 'postgres';
+    if (path === '/postgresqlcore') return 'postgresql';
     if (path === '/dockercore') return 'docker';
     if (path === '/n8ncore') return 'n8n';
     if (path === '/evolutionapicore') return 'evolutionapi';

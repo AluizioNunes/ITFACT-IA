@@ -70,7 +70,7 @@ export const usePostgresInfo = () => {
         setLoading(true);
         
         // Buscar informações reais do PostgreSQL através da nossa API
-        const response = await fetch('/api/postgres/info');
+        const response = await fetch('/api/postgresql/info');
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -109,7 +109,7 @@ export const usePostgresDatabases = () => {
         setLoading(true);
         
         // Buscar lista de bancos de dados do PostgreSQL através da nossa API
-        const response = await fetch('/api/postgres/databases');
+        const response = await fetch('/api/postgresql/databases');
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

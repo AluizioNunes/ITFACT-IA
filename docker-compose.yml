@@ -26,6 +26,7 @@ services:
     depends_on:
       - frontend
       - backend
+      - postgresql
     environment:
       - TZ=America/Manaus
 
@@ -44,6 +45,11 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - TZ=America/Manaus
+      - DB_HOST=postgresql
+      - DB_PORT=5432
+      - DB_NAME=automacao_db
+      - DB_USER=admin
+      - DB_PASSWORD=admin
 
   frontend:
     build:
@@ -58,3 +64,33 @@ services:
       - "3000:80"
     environment:
       - NODE_ENV=production
+
+  postgresql:
+    build:
+      context: ./postgresql
+      dockerfile: Dockerfile
+      no_cache: true
+    container_name: postgresql
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    networks:
+      - cmm_network
+    environment:
+      - POSTGRES_DB=automacao_db
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - TZ=America/Manaus
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./logs/postgresql:/var/log/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d automacao_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local

@@ -40,6 +40,31 @@ let nginxMetrics = {
   lastUpdate: Date.now()
 };
 
+// PostgreSQL metrics tracking
+let postgresMetrics = {
+  status: 'running',
+  version: '17.6',
+  activeConnections: 15 + Math.floor(Math.random() * 35), // 15-50
+  maxConnections: 100,
+  databases: [
+    { name: 'automacao_db', size: '125MB', tables: 8, connections: 5 },
+    { name: 'postgres', size: '8MB', tables: 0, connections: 1 },
+    { name: 'template1', size: '8MB', tables: 0, connections: 0 }
+  ],
+  performance: {
+    cpuUsage: 5 + Math.random() * 15, // 5-20%
+    memoryUsage: 85 + Math.random() * 50, // 85-135MB
+    diskUsage: 180 + Math.random() * 20, // 180-200MB
+    cacheHitRatio: 95 + Math.random() * 4, // 95-99%
+    avgQueryTime: 5 + Math.random() * 15 // 5-20ms
+  },
+  replication: {
+    enabled: false,
+    status: 'N/A'
+  },
+  lastUpdate: Date.now()
+};
+
 // Middleware para tracking de metricas
 app.use((req, res, next) => {
   const startTime = Date.now();
@@ -102,6 +127,22 @@ setInterval(() => {
   
   nginxMetrics.lastUpdate = Date.now();
 }, 5000);
+
+// Atualizar métricas do PostgreSQL a cada 10 segundos
+setInterval(() => {
+  postgresMetrics.activeConnections = 15 + Math.floor(Math.random() * 35);
+  postgresMetrics.performance.cpuUsage = parseFloat((5 + Math.random() * 15).toFixed(1));
+  postgresMetrics.performance.memoryUsage = Math.round(85 + Math.random() * 50);
+  postgresMetrics.performance.diskUsage = Math.round(180 + Math.random() * 20);
+  postgresMetrics.performance.cacheHitRatio = parseFloat((95 + Math.random() * 4).toFixed(2));
+  postgresMetrics.performance.avgQueryTime = parseFloat((5 + Math.random() * 15).toFixed(1));
+  
+  // Simular mudanças nos bancos de dados
+  postgresMetrics.databases[0].connections = Math.floor(Math.random() * 8) + 3; // 3-10
+  postgresMetrics.databases[0].size = Math.round(125 + Math.random() * 10) + 'MB';
+  
+  postgresMetrics.lastUpdate = Date.now();
+}, 10000);
 
 // Swagger configuration
 const swaggerOptions = {
@@ -378,10 +419,17 @@ app.get('/api/services', (req, res) => {
         status: 'Active',
         type: 'Node.js API',
         port: '3001'
+      },
+      {
+        name: 'PostgreSQL',
+        status: 'Active',
+        type: 'Database Server',
+        port: '5432',
+        version: '17.6'
       }
     ],
-    totalServices: 3,
-    activeServices: 3,
+    totalServices: 4,
+    activeServices: 4,
     lastUpdate: new Date().toISOString()
   });
 });
@@ -490,6 +538,113 @@ app.get('/api/nginx/performance', (req, res) => {
       activeConnections: nginxMetrics.activeConnections,
       responseTime: nginxMetrics.averageLatency,
       errorRate: nginxMetrics.errorRate
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+/**
+ * @swagger
+ * /api/postgresql/status:
+ *   get:
+ *     summary: Get PostgreSQL status information
+ *     tags: [PostgreSQL]
+ *     responses:
+ *       200:
+ *         description: PostgreSQL status
+ */
+app.get('/api/postgresql/status', (req, res) => {
+  res.json({
+    service: 'PostgreSQL',
+    version: postgresMetrics.version,
+    status: postgresMetrics.status,
+    lastCheck: new Date().toISOString(),
+    uptime: {
+      seconds: Math.floor((Date.now() - apiMetrics.uptime) / 1000),
+      formatted: formatUptime(Date.now() - apiMetrics.uptime)
+    }
+  });
+});
+
+/**
+ * @swagger
+ * /api/postgresql/metrics:
+ *   get:
+ *     summary: Get detailed PostgreSQL metrics
+ *     tags: [PostgreSQL]
+ *     responses:
+ *       200:
+ *         description: PostgreSQL performance metrics
+ */
+app.get('/api/postgresql/metrics', (req, res) => {
+  res.json({
+    activeConnections: postgresMetrics.activeConnections,
+    maxConnections: postgresMetrics.maxConnections,
+    connectionUsage: Math.round((postgresMetrics.activeConnections / postgresMetrics.maxConnections) * 100),
+    performance: postgresMetrics.performance,
+    replication: postgresMetrics.replication,
+    timestamp: new Date().toISOString()
+  });
+});
+
+/**
+ * @swagger
+ * /api/postgresql/databases:
+ *   get:
+ *     summary: Get PostgreSQL databases information
+ *     tags: [PostgreSQL]
+ *     responses:
+ *       200:
+ *         description: Database statistics
+ */
+app.get('/api/postgresql/databases', (req, res) => {
+  res.json({
+    databases: postgresMetrics.databases,
+    totalDatabases: postgresMetrics.databases.length,
+    totalSize: postgresMetrics.databases.reduce((sum, db) => {
+      const size = parseInt(db.size.replace('MB', ''));
+      return sum + size;
+    }, 0) + 'MB',
+    timestamp: new Date().toISOString()
+  });
+});
+
+/**
+ * @swagger
+ * /api/postgresql/performance:
+ *   get:
+ *     summary: Get PostgreSQL performance data for charts
+ *     tags: [PostgreSQL]
+ *     responses:
+ *       200:
+ *         description: Time-series performance data
+ */
+app.get('/api/postgresql/performance', (req, res) => {
+  const currentTime = new Date();
+  const performanceData = [];
+  
+  // Gerar dados históricos dos últimos 12 pontos
+  for (let i = 11; i >= 0; i--) {
+    const timestamp = new Date(currentTime.getTime() - (i * 60000)); // 1 min intervals
+    performanceData.push({
+      timestamp: timestamp.toISOString(),
+      time: timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      connections: postgresMetrics.activeConnections + Math.floor(Math.random() * 10) - 5,
+      cpuUsage: postgresMetrics.performance.cpuUsage + Math.random() * 5 - 2.5,
+      memoryUsage: postgresMetrics.performance.memoryUsage + Math.random() * 10 - 5,
+      cacheHitRatio: Math.max(90, postgresMetrics.performance.cacheHitRatio + Math.random() * 2 - 1),
+      queryTime: Math.max(1, postgresMetrics.performance.avgQueryTime + Math.random() * 5 - 2.5)
+    });
+  }
+  
+  res.json({
+    performanceHistory: performanceData,
+    currentMetrics: {
+      connections: postgresMetrics.activeConnections,
+      cpuUsage: postgresMetrics.performance.cpuUsage,
+      memoryUsage: postgresMetrics.performance.memoryUsage,
+      cacheHitRatio: postgresMetrics.performance.cacheHitRatio,
+      queryTime: postgresMetrics.performance.avgQueryTime
     },
     timestamp: new Date().toISOString()
   });

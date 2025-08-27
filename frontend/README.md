@@ -8,7 +8,7 @@ Frontend do sistema de automação desenvolvido com React, TypeScript, Ant Desig
 - `/coreprometheus` - Página do Prometheus (frontend)
 - `/coregrafana` - Página do Grafana (frontend)
 - `/nginx` - Página do Nginx
-- `/postgres` - Página do PostgreSQL
+- `/postgresqlcore` - Página do PostgreSQL
 - `/docker` - Página do Docker
 - `/n8n` - Página do N8N
 - `/evolutionapi` - Página da Evolution API

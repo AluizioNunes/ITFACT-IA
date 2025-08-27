@@ -6,7 +6,7 @@ import AppHeader from './components/Header';
 import Dashboard from './pages/Dashboard';
 import Grafana from './pages/Grafana';
 import Nginx from './pages/Nginx';
-import Postgres from './pages/Postgres';
+import PostgreSQL from './pages/PostgreSQL';
 import Docker from './pages/Docker';
 import APIs from './pages/APIs';
 import N8N from './pages/N8N';
@@ -36,7 +36,7 @@ const App: React.FC = () => {
               <Route path="/nginxcore" element={<Nginx />} />
               <Route path="/apis" element={<APIs />} />
               <Route path="/grafanacore" element={<Grafana />} />
-              <Route path="/postgrescore" element={<Postgres />} />
+              <Route path="/postgresqlcore" element={<PostgreSQL />} />
               <Route path="/dockercore" element={<Docker />} />
               <Route path="/n8ncore" element={<N8N />} />
               <Route path="/evolutionapicore" element={<EvolutionAPI />} />
