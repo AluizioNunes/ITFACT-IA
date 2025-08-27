@@ -22,7 +22,9 @@ RUN apt-get update && apt-get install -y \
     && echo "America/Manaus" > /etc/timezone \
     && ln -snf /usr/share/zoneinfo/America/Manaus /etc/localtime \
     && dpkg-reconfigure -f noninteractive tzdata \
-    && locale-gen pt_BR.UTF-8
+    && sed -i '/^#.* pt_BR.UTF-8 /s/^#//' /etc/locale.gen \
+    && locale-gen pt_BR.UTF-8 \
+    && update-locale LANG=pt_BR.UTF-8
 
 # Criar diretório de scripts de inicialização
 RUN mkdir -p /docker-entrypoint-initdb.d
@@ -35,7 +37,7 @@ COPY postgresql.conf /etc/postgresql/postgresql.conf
 COPY pg_hba.conf /etc/postgresql/pg_hba.conf
 
 # Definir configurações de performance
-ENV POSTGRES_INITDB_ARGS="--encoding=UTF-8 --locale=pt_BR.UTF-8"
+ENV POSTGRES_INITDB_ARGS="--encoding=UTF-8"
 
 # Configurar usuário e permissões
 RUN chmod 755 /docker-entrypoint-initdb.d/init-database.sql
