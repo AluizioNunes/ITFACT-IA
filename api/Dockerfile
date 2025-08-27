@@ -1,5 +1,5 @@
 # Backend API Dockerfile
-FROM node:19-alpine
+FROM node:24-alpine
 
 # Instalar curl para health checks
 RUN apk add --no-cache curl
@@ -11,7 +11,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar dependências
-RUN npm ci --only=production
+RUN npm install --only=production && npm cache clean --force
 
 # Copiar código fonte
 COPY . .
