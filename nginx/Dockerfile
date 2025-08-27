@@ -21,6 +21,12 @@ RUN cat > /docker-entrypoint.d/90-ssl-setup.sh << 'EOF'
 #!/bin/sh
 set -e
 
+# Verificar se já foi executado para evitar loops
+if [ -f "/tmp/.ssl-setup-completed" ]; then
+    echo "[SSL Setup] Já executado anteriormente."
+    exit 0
+fi
+
 echo "[SSL Setup] Verificando certificados SSL..."
 
 # Verificar se certificados existem
@@ -38,9 +44,12 @@ else
     echo "[SSL Setup] Certificados SSL encontrados."
 fi
 
-# Definir permissões
-chmod 644 /etc/ssl/certs/server.crt
-chmod 600 /etc/ssl/certs/server.key
+# Tentar definir permissões (ignorar se read-only)
+chmod 644 /etc/ssl/certs/server.crt 2>/dev/null || echo "[SSL Setup] Aviso: Não foi possível alterar permissões (read-only filesystem)"
+chmod 600 /etc/ssl/certs/server.key 2>/dev/null || echo "[SSL Setup] Aviso: Não foi possível alterar permissões (read-only filesystem)"
+
+# Marcar como concluído para evitar loops
+touch /tmp/.ssl-setup-completed
 
 echo "[SSL Setup] Configuração SSL concluída."
 EOF
