@@ -31,6 +31,7 @@ RUN mkdir -p /docker-entrypoint-initdb.d
 
 # Script de inicialização customizado
 COPY init-database.sql /docker-entrypoint-initdb.d/
+COPY add-missing-databases.sql /docker-entrypoint-initdb.d/
 
 # Configurações customizadas do PostgreSQL
 COPY postgresql.conf /tmp/postgresql.conf
