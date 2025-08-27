@@ -25,7 +25,24 @@ services:
       - cmm_network
     depends_on:
       - frontend
+      - backend
     environment:
+      - TZ=America/Manaus
+
+  backend:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      no_cache: true
+    container_name: backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    networks:
+      - cmm_network
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
       - TZ=America/Manaus
 
   frontend:
