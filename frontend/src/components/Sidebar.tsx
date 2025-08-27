@@ -33,7 +33,7 @@ const Sidebar: React.FC = () => {
   const menuItems: MenuItem[] = [
     { key: 'dashboard', icon: <DashboardOutlined />, label: 'DASHBOARD', path: '/dashboard' },
     { key: 'nginx', icon: <CloudServerOutlined />, label: 'NGINX', path: '/nginxcore' },
-    { key: 'apis', icon: <ApiOutlined />, label: "API'S", path: '/apis' },
+    { key: 'apis', icon: <ApiOutlined />, label: "API'S SWAGGER", path: '/apis' },
     { key: 'grafana', icon: <LineChartOutlined />, label: 'GRAFANA', path: '/grafanacore' },
     { key: 'postgres', icon: <DatabaseOutlined />, label: 'POSTGRESQL', path: '/postgrescore' },
     { key: 'docker', icon: <DockerOutlined />, label: 'DOCKER', path: '/dockercore' },
@@ -54,7 +54,7 @@ const Sidebar: React.FC = () => {
 
   const handleLogout = () => {
     // Implementar lógica de logout aqui
-    console.log('Logout');
+    // console.log('Logout'); // Removed to clean console
   };
 
   // Determinar a chave selecionada com base na URL atual
@@ -83,10 +83,10 @@ const Sidebar: React.FC = () => {
       breakpoint="lg"
       collapsedWidth="0"
       onBreakpoint={(broken) => {
-        console.log(broken);
+        // Handle breakpoint changes if needed
       }}
       onCollapse={(collapsed, type) => {
-        console.log(collapsed, type);
+        // Handle collapse changes if needed
       }}
       style={{
         overflow: 'auto',
