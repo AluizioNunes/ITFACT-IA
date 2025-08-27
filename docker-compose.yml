@@ -18,6 +18,9 @@ services:
       - "8080:8080"
     volumes:
       - ./logs/nginx:/var/log/nginx
+      # SSL certificates (optional - fallback to auto-generated if not found)
+      - /opt/docker/certificados/cmm_am_gov_br_inter.crt:/etc/ssl/certs/server.crt:ro
+      - /opt/docker/certificados/cmm_am_gov_br.key:/etc/ssl/certs/server.key:ro
     networks:
       - cmm_network
     depends_on:
