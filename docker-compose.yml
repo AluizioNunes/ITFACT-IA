@@ -4,17 +4,9 @@ networks:
   cmm_network:
     driver: bridge
 
-volumes:
-  postgres_data:
-  grafana_data:
-
 services:
   nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-      args:
-        NGINX_VERSION: 1.28.0
+    image: nginx:1.28.0
     container_name: nginx
     restart: unless-stopped
     ports:
@@ -22,20 +14,16 @@ services:
       - "443:443"
       - "8080:8080"
     volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./logs/nginx:/var/log/nginx
-      # SSL certificates (optional - will auto-generate if not found)
       - /opt/docker/certificados/cmm_am_gov_br_inter.crt:/etc/ssl/certs/server.crt:ro
       - /opt/docker/certificados/cmm_am_gov_br.key:/etc/ssl/certs/server.key:ro
     networks:
       - cmm_network
     depends_on:
       - frontend
-      - backend
-      - grafana
     environment:
       - TZ=America/Manaus
-      - SSL_CERT_PATH=/etc/ssl/certs/server.crt
-      - SSL_KEY_PATH=/etc/ssl/certs/server.key
 
   frontend:
     build:
@@ -50,54 +38,3 @@ services:
       - "3000:80"
     environment:
       - NODE_ENV=production
-
-  backend:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    container_name: backend
-    restart: unless-stopped
-    ports:
-      - "3001:3001"
-    networks:
-      - cmm_network
-    environment:
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=Admin
-      - POSTGRES_PASSWORD=Ricardo@1964
-      - POSTGRES_DB=postgres
-    depends_on:
-      - postgres
-
-  grafana:
-    build:
-      context: ./grafana
-      dockerfile: Dockerfile
-    container_name: grafana
-    restart: unless-stopped
-    ports:
-      - "4000:4000"
-    volumes:
-      - grafana_data:/var/lib/grafana
-    networks:
-      - cmm_network
-    environment:
-      - GF_SECURITY_ADMIN_USER=Admin
-      - GF_SECURITY_ADMIN_PASSWORD=Ricardo@1964
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_HTTP_PORT=4000
-      - TZ=America/Manaus
-
-  postgres:
-    image: postgres:17.6
-    container_name: postgres
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=Admin
-      - POSTGRES_PASSWORD=Ricardo@1964
-      - POSTGRES_DB=postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - cmm_network
