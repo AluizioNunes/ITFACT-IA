@@ -4,10 +4,43 @@ const helmet = require('helmet');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const { Pool } = require('pg');
+const { exec } = require('child_process');
+const util = require('util');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Promisify exec for async/await usage
+const execAsync = util.promisify(exec);
+
+// Docker utility functions
+const getDockerContainers = async () => {
+  try {
+    const { stdout } = await execAsync('docker ps -a --format "{{.Names}}|{{.Status}}|{{.Image}}|{{.Ports}}|{{.CreatedAt}}"');
+    const containers = stdout.trim().split('\n').filter(line => line).map(line => {
+      const [name, status, image, ports, created] = line.split('|');
+      return {
+        name: name.trim(),
+        status: status.trim(),
+        image: image.trim(),
+        ports: ports.trim(),
+        created: created.trim(),
+        isRunning: status.includes('Up')
+      };
+    });
+    
+    return {
+      containers,
+      total: containers.length,
+      running: containers.filter(c => c.isRunning).length,
+      stopped: containers.filter(c => !c.isRunning).length
+    };
+  } catch (error) {
+    console.error('Error getting Docker containers:', error.message);
+    throw new Error(`Failed to fetch Docker containers: ${error.message}`);
+  }
+};
 
 // PostgreSQL connection pool
 const pgPool = new Pool({
@@ -266,6 +299,186 @@ app.get('/api/info', (req, res) => {
     memory: process.memoryUsage(),
     environment: process.env.NODE_ENV || 'development'
   });
+});
+
+/**
+ * @swagger
+ * /api/docker/containers:
+ *   get:
+ *     summary: Get Docker containers information (REAL DATA)
+ *     tags: [Docker]
+ *     responses:
+ *       200:
+ *         description: Real Docker containers data
+ *       500:
+ *         description: Docker service unavailable
+ */
+app.get('/api/docker/containers', async (req, res) => {
+  try {
+    const dockerData = await getDockerContainers();
+    
+    res.json({
+      service: 'Docker',
+      status: 'running',
+      containers: dockerData.containers,
+      summary: {
+        total: dockerData.total,
+        running: dockerData.running,
+        stopped: dockerData.stopped
+      },
+      lastCheck: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching Docker containers:', error.message);
+    res.status(500).json({
+      error: 'Docker Service Error',
+      message: 'Failed to connect to Docker daemon. Service may be unavailable.',
+      details: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/docker/status:
+ *   get:
+ *     summary: Get Docker service status (REAL DATA)
+ *     tags: [Docker]
+ *     responses:
+ *       200:
+ *         description: Real Docker service status
+ *       500:
+ *         description: Docker service unavailable
+ */
+app.get('/api/docker/status', async (req, res) => {
+  try {
+    // Check Docker version and system info
+    const versionResult = await execAsync('docker version --format "{{.Server.Version}}"');
+    const dockerData = await getDockerContainers();
+    
+    res.json({
+      service: 'Docker',
+      version: versionResult.stdout.trim(),
+      status: 'running',
+      containers: {
+        total: dockerData.total,
+        running: dockerData.running,
+        stopped: dockerData.stopped
+      },
+      lastCheck: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching Docker status:', error.message);
+    res.status(500).json({
+      error: 'Docker Service Error',
+      message: 'Failed to connect to Docker daemon. Service may be unavailable.',
+      details: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/postgresql/databases:
+ *   get:
+ *     summary: Get PostgreSQL databases and tables count (REAL DATA)
+ *     tags: [PostgreSQL]
+ *     responses:
+ *       200:
+ *         description: Real PostgreSQL databases information
+ *       500:
+ *         description: Database connection error
+ */
+app.get('/api/postgresql/databases', async (req, res) => {
+  try {
+    // Get all databases
+    const databasesQuery = `
+      SELECT 
+        datname as name,
+        pg_size_pretty(pg_database_size(datname)) as size,
+        pg_database_size(datname) as size_bytes
+      FROM pg_database 
+      WHERE datistemplate = false
+      ORDER BY pg_database_size(datname) DESC;
+    `;
+    
+    const result = await pgPool.query(databasesQuery);
+    const databases = result.rows;
+    
+    // Get total tables across all databases
+    let totalTables = 0;
+    const databaseDetails = [];
+    
+    for (const database of databases) {
+      try {
+        // Connect to each database to get more detailed info
+        const dbPool = new Pool({
+          host: process.env.DB_HOST || 'postgresql',
+          port: parseInt(process.env.DB_PORT || '5432'),
+          user: process.env.DB_USER || 'admin',
+          password: process.env.DB_PASSWORD || 'admin',
+          database: database.name,
+          max: 1,
+          connectionTimeoutMillis: 1000,
+        });
+        
+        const tablesQuery = `
+          SELECT count(*) as table_count
+          FROM information_schema.tables 
+          WHERE table_schema NOT IN ('information_schema', 'pg_catalog')
+          AND table_type = 'BASE TABLE';
+        `;
+        
+        const tableResult = await dbPool.query(tablesQuery);
+        const dbTableCount = parseInt(tableResult.rows[0].table_count) || 0;
+        
+        totalTables += dbTableCount;
+        
+        databaseDetails.push({
+          name: database.name,
+          size: database.size,
+          sizeBytes: database.size_bytes,
+          tables: dbTableCount,
+          status: 'active'
+        });
+        
+        await dbPool.end();
+        
+      } catch (error) {
+        console.error(`Error querying database ${database.name}:`, error.message);
+        databaseDetails.push({
+          name: database.name,
+          size: database.size,
+          sizeBytes: database.size_bytes,
+          tables: 0,
+          status: 'error',
+          error: error.message
+        });
+      }
+    }
+    
+    res.json({
+      service: 'PostgreSQL',
+      databases: databaseDetails,
+      summary: {
+        totalDatabases: databases.length,
+        totalTables: totalTables,
+        totalSize: databases.reduce((sum, db) => sum + parseInt(db.size_bytes), 0)
+      },
+      lastCheck: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Error fetching PostgreSQL databases:', error.message);
+    res.status(500).json({
+      error: 'Database Connection Error',
+      message: 'Failed to connect to PostgreSQL. Service may be unavailable.',
+      details: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 /**

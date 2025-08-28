@@ -37,6 +37,14 @@ interface DashboardData {
   containers: {
     running: number;
     total: number;
+    details?: any[];
+    error?: string;
+  };
+  postgresData: {
+    databases: number;
+    tables: number;
+    details?: any[];
+    error?: string;
   };
   chartData: {
     requestsHistory: Array<{ time: string; value: number }>;
@@ -58,6 +66,7 @@ export const useDashboardData = (): DashboardData => {
     totalServices: 0,
     activeServices: 0,
     containers: { running: 0, total: 0 },
+    postgresData: { databases: 0, tables: 0 },
     chartData: {
       requestsHistory: [],
       responseTimeHistory: [],
@@ -215,6 +224,10 @@ export const useDashboardData = (): DashboardData => {
         running: 8 + Math.floor(Math.random() * 3),
         total: 10 + Math.floor(Math.random() * 2)
       },
+      postgresData: {
+        databases: 4,
+        tables: 25 + Math.floor(Math.random() * 10)
+      },
       chartData: {
         requestsHistory,
         responseTimeHistory,
@@ -238,7 +251,10 @@ export const useDashboardData = (): DashboardData => {
         nginxStatusRes,
         healthRes,
         postgresStatusRes,
-        postgresMetricsRes
+        postgresMetricsRes,
+        dockerContainersRes,
+        dockerStatusRes,
+        postgresDatabasesRes
       ] = await Promise.all([
         fetch(`${baseUrl}/api/metrics`),
         fetch(`${baseUrl}/api/nginx/metrics`),
@@ -246,11 +262,14 @@ export const useDashboardData = (): DashboardData => {
         fetch(`${baseUrl}/api/nginx/status`),
         fetch(`${baseUrl}/api/health`),
         fetch(`${baseUrl}/api/postgresql/status`),
-        fetch(`${baseUrl}/api/postgresql/metrics`)
+        fetch(`${baseUrl}/api/postgresql/metrics`),
+        fetch(`${baseUrl}/api/docker/containers`),
+        fetch(`${baseUrl}/api/docker/status`),
+        fetch(`${baseUrl}/api/postgresql/databases`)
       ]);
 
       // Verificar se pelo menos algumas APIs estão funcionando
-      const responses = [systemMetricsRes, nginxMetricsRes, servicesRes, nginxStatusRes, healthRes, postgresStatusRes, postgresMetricsRes];
+      const responses = [systemMetricsRes, nginxMetricsRes, servicesRes, nginxStatusRes, healthRes, postgresStatusRes, postgresMetricsRes, dockerContainersRes, dockerStatusRes, postgresDatabasesRes];
       const validResponses = responses.filter(res => 
         res.ok && res.headers.get('content-type')?.includes('application/json')
       );
@@ -273,6 +292,9 @@ export const useDashboardData = (): DashboardData => {
       let servicesData = null;
       let postgresStatus = null;
       let postgresMetrics = null;
+      let dockerContainers = null;
+      let dockerStatus = null;
+      let postgresDatabases = null;
 
       try {
         if (systemMetricsRes.ok) {
