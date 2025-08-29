@@ -336,6 +336,30 @@ export const useDashboardData = (): DashboardData => {
         console.warn('Erro ao processar métricas do PostgreSQL');
       }
 
+      try {
+        if (dockerContainersRes.ok) {
+          dockerContainers = await dockerContainersRes.json();
+        }
+      } catch (e) {
+        console.warn('Erro ao processar containers do Docker');
+      }
+
+      try {
+        if (dockerStatusRes.ok) {
+          dockerStatus = await dockerStatusRes.json();
+        }
+      } catch (e) {
+        console.warn('Erro ao processar status do Docker');
+      }
+
+      try {
+        if (postgresDatabasesRes.ok) {
+          postgresDatabases = await postgresDatabasesRes.json();
+        }
+      } catch (e) {
+        console.warn('Erro ao processar bancos de dados do PostgreSQL');
+      }
+
       // Combinar dados reais com mock quando necessário
       const mockData = getMockData();
       
@@ -386,6 +410,27 @@ export const useDashboardData = (): DashboardData => {
         (typeof s.responseTime === 'number' ? s.responseTime : 0) > 200
       ).length;
 
+      // Processar dados do Docker
+      let containerData = mockData.containers;
+      if (dockerContainers && dockerContainers.containers) {
+        containerData = {
+          running: dockerContainers.summary?.running || dockerContainers.containers.filter((c: any) => c.isRunning).length,
+          total: dockerContainers.summary?.total || dockerContainers.containers.length,
+          details: dockerContainers.containers
+        };
+      }
+
+      // Processar dados do PostgreSQL
+      let postgresData = mockData.postgresData;
+      if (postgresDatabases && postgresDatabases.databases) {
+        const totalTables = postgresDatabases.databases.reduce((sum: number, db: any) => sum + (db.tables || 0), 0);
+        postgresData = {
+          databases: postgresDatabases.databases.length,
+          tables: totalTables,
+          details: postgresDatabases.databases
+        };
+      }
+
       setData(prev => ({
         ...prev,
         systemMetrics: systemMetrics || mockData.systemMetrics,
@@ -394,7 +439,8 @@ export const useDashboardData = (): DashboardData => {
         alerts,
         totalServices: servicesList.length,
         activeServices: servicesList.filter(s => s.status === 'Active').length,
-        containers: mockData.containers, // Usar mock para containers por enquanto
+        containers: containerData,
+        postgresData: postgresData,
         chartData: mockData.chartData, // Usar dados mock para gráficos por enquanto
         loading: false,
         error: null

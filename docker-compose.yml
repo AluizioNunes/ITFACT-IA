@@ -9,7 +9,6 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile
-      no_cache: true
     container_name: nginx
     restart: unless-stopped
     ports:
@@ -34,7 +33,6 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile
-      no_cache: true
     container_name: backend
     restart: unless-stopped
     ports:
@@ -55,7 +53,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      no_cache: true
     container_name: frontend
     restart: unless-stopped
     networks:
@@ -69,7 +66,6 @@ services:
     build:
       context: ./postgresql
       dockerfile: Dockerfile
-      no_cache: true
     container_name: postgresql
     restart: unless-stopped
     ports:
@@ -88,7 +84,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
 volumes:
   postgres_data:

@@ -32,6 +32,7 @@ RUN mkdir -p /docker-entrypoint-initdb.d
 # Script de inicialização customizado
 COPY init-database.sql /docker-entrypoint-initdb.d/
 COPY add-missing-databases.sql /docker-entrypoint-initdb.d/
+COPY verify-databases.sh /usr/local/bin/
 
 # Configurações customizadas do PostgreSQL
 COPY postgresql.conf /tmp/postgresql.conf
@@ -42,10 +43,11 @@ ENV POSTGRES_INITDB_ARGS="--encoding=UTF-8"
 
 # Configurar usuário e permissões
 RUN chmod 755 /docker-entrypoint-initdb.d/init-database.sql
+RUN chmod +x /usr/local/bin/verify-databases.sh
 
 # Health check customizado
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-automacao_db} || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD pg_isready -U admin -d postgres || exit 1
 
 # Expor porta padrão
 EXPOSE 5432

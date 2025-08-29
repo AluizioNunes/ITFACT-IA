@@ -31,6 +31,7 @@ const Dashboard: React.FC = () => {
     totalServices, 
     activeServices, 
     containers,
+    postgresData,
     chartData,
     loading, 
     error, 
@@ -116,6 +117,20 @@ const Dashboard: React.FC = () => {
                   prefix={<DockerOutlined style={{ color: '#1890ff' }} />}
                   valueStyle={{ color: containers.running === containers.total ? '#3f8600' : '#faad14' }}
                 />
+                {containers.details && (
+                  <div style={{ marginTop: 8, fontSize: '12px', color: '#888' }}>
+                    {containers.details.length > 0 ? (
+                      <div>
+                        <div>{containers.details[0].name}: {containers.details[0].status}</div>
+                        {containers.details.length > 1 && (
+                          <div>+{containers.details.length - 1} outros containers</div>
+                        )}
+                      </div>
+                    ) : (
+                      <div>Sem containers em execução</div>
+                    )}
+                  </div>
+                )}
               </Card>
             </motion.div>
           </Col>
@@ -127,11 +142,26 @@ const Dashboard: React.FC = () => {
             >
               <Card>
                 <Statistic 
-                  title="Requisições/min" 
-                  value={systemMetrics?.requestsPerMinute || 0} 
-                  prefix={<ThunderboltOutlined style={{ color: '#722ed1' }} />}
-                  valueStyle={{ color: '#722ed1' }}
+                  title="Bancos PostgreSQL" 
+                  value={postgresData.databases} 
+                  suffix={`/ ${postgresData.tables} tabelas`}
+                  prefix={<DatabaseOutlined style={{ color: '#1890ff' }} />}
+                  valueStyle={{ color: '#1890ff' }}
                 />
+                {postgresData.details && (
+                  <div style={{ marginTop: 8, fontSize: '12px', color: '#888' }}>
+                    {postgresData.details.length > 0 ? (
+                      <div>
+                        <div>{postgresData.details[0].name}: {postgresData.details[0].tables} tabelas</div>
+                        {postgresData.details.length > 1 && (
+                          <div>+{postgresData.details.length - 1} outros bancos</div>
+                        )}
+                      </div>
+                    ) : (
+                      <div>Sem bancos de dados</div>
+                    )}
+                  </div>
+                )}
               </Card>
             </motion.div>
           </Col>

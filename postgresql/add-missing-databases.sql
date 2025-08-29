@@ -10,6 +10,16 @@ EXCEPTION WHEN duplicate_object THEN
    ALTER USER admin CREATEDB;
 END$$;
 
+-- Criar banco Evolution API se não existir
+DO
+$$
+BEGIN
+   IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'evolutionapi') THEN
+      CREATE DATABASE evolutionapi OWNER admin;
+   END IF;
+END
+$$;
+
 -- Criar banco N8N se não existir
 DO
 $$
@@ -31,8 +41,50 @@ END
 $$;
 
 -- Garantir permissões
+GRANT ALL PRIVILEGES ON DATABASE evolutionapi TO admin;
 GRANT ALL PRIVILEGES ON DATABASE n8n TO admin;
 GRANT ALL PRIVILEGES ON DATABASE chatwoot TO admin;
+
+-- Configurar Evolution API
+\c evolutionapi;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Schema Evolution API
+CREATE SCHEMA IF NOT EXISTS evolutionapi;
+GRANT ALL ON SCHEMA evolutionapi TO admin;
+GRANT USAGE ON SCHEMA evolutionapi TO admin;
+
+-- Tabelas básicas para Evolution API
+CREATE TABLE IF NOT EXISTS evolutionapi.instances (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL UNIQUE,
+    token VARCHAR(255) NOT NULL,
+    webhook_url TEXT,
+    status VARCHAR(20) DEFAULT 'DISCONNECTED',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS evolutionapi.messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    instance_id UUID REFERENCES evolutionapi.instances(id),
+    message_id VARCHAR(255) NOT NULL,
+    from_number VARCHAR(50) NOT NULL,
+    to_number VARCHAR(50) NOT NULL,
+    message_type VARCHAR(20) NOT NULL,
+    content TEXT,
+    timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+GRANT ALL ON ALL TABLES IN SCHEMA evolutionapi TO admin;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA evolutionapi TO admin;
+
+-- Inserir dados iniciais no Evolution API
+INSERT INTO evolutionapi.instances (name, token, status) 
+VALUES 
+    ('default-instance', 'evo-' || generate_random_uuid(), 'DISCONNECTED')
+ON CONFLICT DO NOTHING;
 
 -- Configurar N8N
 \c n8n;
