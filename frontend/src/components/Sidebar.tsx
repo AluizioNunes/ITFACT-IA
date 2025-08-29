@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout, Menu, Button } from 'antd';
 import {
   DashboardOutlined,
@@ -12,10 +12,13 @@ import {
   ContainerOutlined,
   LogoutOutlined,
   DockerOutlined,
-  AppstoreOutlined
+  AppstoreOutlined,
+  MenuUnfoldOutlined,
+  MenuFoldOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import './Sidebar.css';
 
 const { Sider } = Layout;
 
@@ -26,7 +29,12 @@ interface MenuItem {
   path?: string;
 }
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  collapsed: boolean;
+  setCollapsed: (collapsed: boolean) => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -52,9 +60,13 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  const handleToggleCollapse = () => {
+    setCollapsed(!collapsed);
+  };
+
   const handleLogout = () => {
     // Implementar lógica de logout aqui
-    // console.log('Logout'); // Removed to clean console
+    console.log('Logout');
   };
 
   // Determinar a chave selecionada com base na URL atual
@@ -80,14 +92,12 @@ const Sidebar: React.FC = () => {
 
   return (
     <Sider
+      className="custom-sidebar"
+      collapsed={collapsed}
+      onCollapse={setCollapsed}
       breakpoint="lg"
-      collapsedWidth="0"
-      onBreakpoint={(broken) => {
-        // Handle breakpoint changes if needed
-      }}
-      onCollapse={(collapsed, type) => {
-        // Handle collapse changes if needed
-      }}
+      collapsedWidth="80"
+      width="250"
       style={{
         overflow: 'auto',
         height: '100vh',
@@ -95,6 +105,8 @@ const Sidebar: React.FC = () => {
         left: 0,
         top: 0,
         bottom: 0,
+        backgroundColor: '#006400',
+        boxShadow: '2px 0 8px rgba(0,0,0,0.15)'
       }}
     >
       <motion.div
@@ -105,33 +117,73 @@ const Sidebar: React.FC = () => {
           padding: '16px',
           color: 'white',
           textAlign: 'center',
-          fontSize: '18px',
+          fontSize: collapsed ? '14px' : '18px',
           fontWeight: 'bold',
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: collapsed ? 'center' : 'space-between',
+          minHeight: '64px'
         }}
       >
-        CMM AM
+        {!collapsed && (
+          <span style={{ marginRight: '8px' }}>AUTOMAÇÃO</span>
+        )}
+        <Button
+          type="text"
+          icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          onClick={handleToggleCollapse}
+          className="toggle-button"
+          style={{
+            fontSize: '16px',
+            padding: '4px 8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        />
       </motion.div>
       <Menu
-        theme="dark"
         mode="inline"
         selectedKeys={[getSelectedKey()]}
         onClick={({ key }) => handleMenuClick(key)}
+        style={{
+          backgroundColor: '#006400',
+          border: 'none'
+        }}
+        theme="dark"
         items={menuItems.map((item) => ({
           key: item.key,
           icon: item.icon,
           label: item.label,
+          style: {
+            backgroundColor: 'transparent',
+            color: 'white',
+            fontSize: '14px',
+            fontWeight: '500'
+          }
         }))}
       />
-      <div style={{ padding: '16px', position: 'absolute', bottom: 0, width: '100%' }}>
+      <div style={{ 
+        padding: collapsed ? '8px' : '16px', 
+        position: 'absolute', 
+        bottom: 0, 
+        width: '100%',
+        backgroundColor: '#006400'
+      }}>
         <Button
           type="primary"
           icon={<LogoutOutlined />}
           onClick={handleLogout}
           block
           danger
+          style={{
+            backgroundColor: '#8B0000',
+            borderColor: '#8B0000',
+            fontSize: collapsed ? '12px' : '14px'
+          }}
         >
-          Sair
+          {!collapsed && 'Sair'}
         </Button>
       </div>
     </Sider>

@@ -19,16 +19,20 @@ import RabbitMQ from './pages/RabbitMQ';
 const { Content } = Layout;
 
 const App: React.FC = () => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true); // Colapsado por padrão
   const {
     token: { colorBgContainer },
   } = theme.useToken();
 
   return (
     <Layout hasSider>
-      <Sidebar />
-      <Layout style={{ marginLeft: collapsed ? 80 : 200, minHeight: '100vh' }}>
-        <AppHeader collapsed={collapsed} setCollapsed={setCollapsed} />
+      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+      <Layout style={{ 
+        marginLeft: collapsed ? 80 : 250, 
+        minHeight: '100vh',
+        transition: 'margin-left 0.2s'
+      }}>
+        <AppHeader />
         <Content style={{ margin: '80px 16px 0', overflow: 'initial' }}>
           <div style={{ padding: 24, background: colorBgContainer, borderRadius: 8, minHeight: 360 }}>
             <Routes>

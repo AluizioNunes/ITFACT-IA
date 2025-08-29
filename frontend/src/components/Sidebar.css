@@ -1,0 +1,62 @@
+/* Estilos personalizados para o Sidebar */
+.custom-sidebar .ant-menu-dark .ant-menu-item-selected {
+  background-color: #D2691E !important; /* Cor laranja quando selecionado */
+  border-radius: 6px;
+  margin: 4px 8px;
+  color: white !important;
+}
+
+.custom-sidebar .ant-menu-dark .ant-menu-item-selected .ant-menu-title-content {
+  color: white !important;
+  font-weight: bold;
+}
+
+.custom-sidebar .ant-menu-dark .ant-menu-item-selected .anticon {
+  color: white !important;
+}
+
+.custom-sidebar .ant-menu-dark .ant-menu-item:hover:not(.ant-menu-item-selected) {
+  background-color: rgba(210, 105, 30, 0.3) !important; /* Hover com transparência */
+  border-radius: 6px;
+  margin: 4px 8px;
+  color: white !important;
+}
+
+.custom-sidebar .ant-menu-dark .ant-menu-item {
+  margin: 2px 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  color: white !important;
+}
+
+.custom-sidebar .ant-menu-dark {
+  background-color: #006400 !important;
+}
+
+.custom-sidebar .ant-layout-sider {
+  background-color: #006400 !important;
+}
+
+.custom-sidebar .ant-layout-sider-children {
+  background-color: #006400 !important;
+}
+
+/* Botão de toggle personalizado */
+.toggle-button {
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.3s ease;
+}
+
+.toggle-button:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.toggle-button:focus {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
