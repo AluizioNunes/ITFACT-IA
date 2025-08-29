@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Divider, Statistic, Spin, Alert, Progress, Table } from 'antd';
+import { Card, Row, Col, Divider, Statistic, Spin, Alert, Progress, Table, Button } from 'antd';
 import { motion } from 'framer-motion';
-import { DatabaseOutlined, ApiOutlined, BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { DatabaseOutlined, ApiOutlined, BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import ApiChart from '../components/ApiChart';
 
 interface PostgresStatus {
@@ -52,16 +52,19 @@ const PostgreSQL: React.FC = () => {
   const [tablesLoading, setTablesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connectionError, setConnectionError] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchPostgresData = async () => {
     try {
       setLoading(true);
       setConnectionError(false);
       
+      const baseUrl = 'http://172.18.1.32:3001'; // Usar IP do servidor remoto
+      
       const [statusRes, metricsRes, databasesRes] = await Promise.all([
-        fetch('/api/postgresql/status'),
-        fetch('/api/postgresql/metrics'),
-        fetch('/api/postgresql/databases')
+        fetch(`${baseUrl}/api/postgresql/status`),
+        fetch(`${baseUrl}/api/postgresql/metrics`),
+        fetch(`${baseUrl}/api/postgresql/databases`)
       ]);
       
       let hasError = false;
@@ -86,11 +89,24 @@ const PostgreSQL: React.FC = () => {
       
       if (databasesRes.ok) {
         const databasesData = await databasesRes.json();
+        console.log('Dados de bancos recebidos:', databasesData);
+        
+        if (databasesData.error || databasesData.isFallback) {
+          console.warn('Usando dados de fallback para bancos de dados');
+          setError('Usando dados simulados como fallback - o servidor PostgreSQL pode estar indisponível');
+        } else {
+          setError(null);
+        }
+        
         setDatabases(databasesData.databases || []);
       } else {
         hasError = true;
-        const errorData = await databasesRes.json();
-        console.error('Databases error:', errorData);
+        try {
+          const errorData = await databasesRes.json();
+          console.error('Databases error:', errorData);
+        } catch (parseError) {
+          console.error('Falha ao analisar resposta de erro:', parseError);
+        }
       }
       
       if (hasError) {
@@ -117,10 +133,12 @@ const PostgreSQL: React.FC = () => {
   const fetchTablesData = async () => {
     try {
       setTablesLoading(true);
-      const tablesRes = await fetch('/api/postgresql/tables');
+      const baseUrl = 'http://172.18.1.32:3001'; // Usar IP do servidor remoto
+      const tablesRes = await fetch(`${baseUrl}/api/postgresql/tables`);
       
       if (tablesRes.ok) {
         const tablesData = await tablesRes.json();
+        console.log('Dados de tabelas recebidos:', tablesData);
         setTables(tablesData.tables || []);
       } else {
         const errorData = await tablesRes.json();
@@ -135,17 +153,29 @@ const PostgreSQL: React.FC = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        fetchPostgresData(),
+        fetchTablesData()
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
     fetchPostgresData();
     fetchTablesData();
     
-    // Atualizar a cada 30 segundos
-    const interval = setInterval(() => {
-      fetchPostgresData();
-      fetchTablesData();
-    }, 30000);
+    // Remover atualização automática para evitar oscilações na interface
+    // const interval = setInterval(() => {
+    //   fetchPostgresData();
+    //   fetchTablesData();
+    // }, 30000);
     
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, []);
 
   // Gerar dados para gráficos - apenas se houver conexão
@@ -257,6 +287,15 @@ const PostgreSQL: React.FC = () => {
       <Divider orientation="left">
         <DatabaseOutlined style={{ marginRight: 8 }} />
         PostgreSQL 17.6 - Monitoramento em Tempo Real
+        <Button 
+          type="primary" 
+          icon={<ReloadOutlined />} 
+          onClick={handleRefresh} 
+          loading={refreshing}
+          style={{ marginLeft: 16 }}
+        >
+          Atualizar Dados
+        </Button>
       </Divider>
       
       {error && (
@@ -485,13 +524,50 @@ const PostgreSQL: React.FC = () => {
                 showIcon
               />
             ) : (
-              <Table 
-                columns={databaseColumns}
-                dataSource={databases.map((db, index) => ({ ...db, key: index }))}
-                pagination={false}
-                size="middle"
-                loading={loading}
-              />
+              <>
+                {loading ? (
+                  <Spin tip="Carregando bancos de dados...">
+                    <div style={{ minHeight: 100 }}></div>
+                  </Spin>
+                ) : (
+                  <>
+                    {databases && databases.length > 0 ? (
+                      <>
+                        <Table 
+                          columns={databaseColumns}
+                          dataSource={databases.map((db, index) => ({ 
+                            ...db, 
+                            key: `${db.name}-${index}`,
+                            // Garantir que tables seja um número
+                            tables: typeof db.tables === 'number' ? db.tables : 0,
+                            // Garantir que connections seja um número
+                            connections: typeof db.connections === 'number' ? db.connections : 0
+                          }))}
+                          pagination={false}
+                          size="middle"
+                          rowKey={record => `${record.name}-${record.key}`}
+                        />
+                        {error && (
+                          <Alert 
+                            message="Aviso" 
+                            description={error}
+                            type="warning" 
+                            showIcon
+                            style={{ marginTop: 16 }}
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <Alert 
+                        message="Sem bancos de dados" 
+                        description="Não foram encontrados bancos de dados no servidor PostgreSQL."
+                        type="info" 
+                        showIcon
+                      />
+                    )}
+                  </>
+                )}
+              </>
             )}
           </Card>
           
