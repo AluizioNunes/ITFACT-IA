@@ -17,8 +17,27 @@ const execAsync = util.promisify(exec);
 // Docker utility functions
 const getDockerContainers = async () => {
   try {
-    // Em vez de tentar acessar o Docker daemon diretamente (que não funciona dentro do container),
-    // vamos retornar dados mockados para evitar problemas de deploy
+    // Tentar buscar dados reais do Docker primeiro
+    const { stdout } = await execAsync('docker ps -a --format "{{.Names}}|{{.Status}}|{{.Image}}"');
+    const containers = stdout.trim().split('\n').filter(line => line).map(line => {
+      const [name, status, image] = line.split('|');
+      return {
+        name: name.trim(),
+        status: status.trim(),
+        image: image.trim(),
+        isRunning: status.includes('Up')
+      };
+    });
+    
+    return {
+      containers,
+      total: containers.length,
+      running: containers.filter(c => c.isRunning).length,
+      stopped: containers.filter(c => !c.isRunning).length
+    };
+  } catch (error) {
+    console.warn('Docker daemon not accessible, using mock data:', error.message);
+    // Fallback para dados mockados se não for possível acessar o Docker
     const mockContainers = [
       { name: 'nginx', status: 'running', image: 'nginx:alpine', isRunning: true },
       { name: 'postgresql', status: 'running', image: 'postgres:17.6', isRunning: true },
@@ -32,9 +51,6 @@ const getDockerContainers = async () => {
       running: mockContainers.filter(c => c.isRunning).length,
       stopped: mockContainers.filter(c => !c.isRunning).length
     };
-  } catch (error) {
-    console.error('Error getting Docker containers:', error.message);
-    throw new Error(`Failed to fetch Docker containers: ${error.message}`);
   }
 };
 

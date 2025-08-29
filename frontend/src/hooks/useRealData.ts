@@ -136,52 +136,69 @@ export const useDockerContainers = () => {
   const [containers, setContainers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dockerInfo, setDockerInfo] = useState<any>({});
 
   useEffect(() => {
-    const fetchContainers = async () => {
+    const fetchDockerData = async () => {
       try {
         setLoading(true);
         
-        // Simular dados de containers (em uma implementação futura, buscaríamos do Docker API)
-        const mockContainers = [
-          { 
-            id: 'nginx-container', 
-            name: 'nginx', 
-            status: 'running', 
-            image: 'nginx:alpine',
-            ports: '80/tcp, 443/tcp'
-          },
-          { 
-            id: 'prometheus-container', 
-            name: 'prometheus', 
-            status: 'running', 
-            image: 'prom/prometheus:latest',
-            ports: '9090/tcp'
-          },
-          { 
-            id: 'grafana-container', 
-            name: 'grafana', 
-            status: 'running', 
-            image: 'grafana/grafana:latest',
-            ports: '3000/tcp'
-          },
-          { 
-            id: 'postgres-container', 
-            name: 'postgres', 
-            status: 'running', 
-            image: 'postgres:17.6',
-            ports: '5432/tcp'
-          },
-          { 
-            id: 'automation-api-container', 
-            name: 'automation-api', 
-            status: 'running', 
-            image: 'node:18-alpine',
-            ports: '3001/tcp'
-          }
-        ];
+        // Buscar dados reais do Docker através da nossa API
+        const [containersResponse, statusResponse] = await Promise.all([
+          fetch('/api/docker/containers'),
+          fetch('/api/docker/status')
+        ]);
         
-        setContainers(mockContainers);
+        if (containersResponse.ok) {
+          const containersData = await containersResponse.json();
+          setContainers(containersData.containers || []);
+        } else {
+          // Fallback para dados simulados se a API falhar
+          const mockContainers = [
+            { 
+              id: 'nginx-container', 
+              name: 'nginx', 
+              status: 'running', 
+              image: 'nginx:alpine',
+              ports: '80/tcp, 443/tcp'
+            },
+            { 
+              id: 'prometheus-container', 
+              name: 'prometheus', 
+              status: 'running', 
+              image: 'prom/prometheus:latest',
+              ports: '9090/tcp'
+            },
+            { 
+              id: 'grafana-container', 
+              name: 'grafana', 
+              status: 'running', 
+              image: 'grafana/grafana:latest',
+              ports: '3000/tcp'
+            },
+            { 
+              id: 'postgres-container', 
+              name: 'postgres', 
+              status: 'running', 
+              image: 'postgres:17.6',
+              ports: '5432/tcp'
+            },
+            { 
+              id: 'automation-api-container', 
+              name: 'automation-api', 
+              status: 'running', 
+              image: 'node:18-alpine',
+              ports: '3001/tcp'
+            }
+          ];
+          setContainers(mockContainers);
+        }
+        
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+          setDockerInfo(statusData);
+        }
+        
         setLoading(false);
       } catch (err) {
         console.error('Erro ao buscar containers do Docker:', err);
@@ -190,8 +207,8 @@ export const useDockerContainers = () => {
       }
     };
 
-    fetchContainers();
+    fetchDockerData();
   }, []);
 
-  return { containers, loading, error };
+  return { containers, loading, error, dockerInfo };
 };
