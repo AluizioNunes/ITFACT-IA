@@ -16,7 +16,8 @@ import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
   MonitorOutlined,
-  BugOutlined
+  BugOutlined,
+  ToolOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -55,6 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
     { key: 'whatsapp', icon: <WhatsAppOutlined />, label: 'WHATSAPP', path: '/whatsappcore' },
     { key: 'redis', icon: <ContainerOutlined />, label: 'REDIS', path: '/rediscore' },
     { key: 'rabbitmq', icon: <AppstoreOutlined />, label: 'RABBITMQ', path: '/rabbitmqcore' },
+    { key: 'integrations', icon: <ToolOutlined />, label: 'INTEGRAÇÕES', path: '/integrationscore' },
   ];
 
   const handleMenuClick = (key: string) => {
@@ -92,6 +94,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
     if (path === '/whatsappcore') return 'whatsapp';
     if (path === '/rediscore') return 'redis';
     if (path === '/rabbitmqcore') return 'rabbitmq';
+    if (path === '/integrationscore') return 'integrations';
     
     return 'dashboard'; // Fallback para dashboard
   };
