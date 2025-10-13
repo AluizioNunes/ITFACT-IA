@@ -14,7 +14,9 @@ import {
   DockerOutlined,
   AppstoreOutlined,
   MenuUnfoldOutlined,
-  MenuFoldOutlined
+  MenuFoldOutlined,
+  MonitorOutlined,
+  BugOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -42,7 +44,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
     { key: 'dashboard', icon: <DashboardOutlined />, label: 'DASHBOARD', path: '/dashboard' },
     { key: 'nginx', icon: <CloudServerOutlined />, label: 'NGINX', path: '/nginxcore' },
     { key: 'apis', icon: <ApiOutlined />, label: "API'S SWAGGER", path: '/apis' },
+    { key: 'prometheus', icon: <MonitorOutlined />, label: 'PROMETHEUS', path: '/prometheuscore' },
     { key: 'grafana', icon: <LineChartOutlined />, label: 'GRAFANA', path: '/grafanacore' },
+    { key: 'loki', icon: <BugOutlined />, label: 'LOKI', path: '/lokicore' },
     { key: 'postgresql', icon: <DatabaseOutlined />, label: 'POSTGRESQL', path: '/postgresqlcore' },
     { key: 'docker', icon: <DockerOutlined />, label: 'DOCKER', path: '/dockercore' },
     { key: 'n8n', icon: <ApiOutlined />, label: 'N8N', path: '/n8ncore' },
@@ -77,7 +81,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
     // Mapear as novas rotas para as chaves do menu
     if (path === '/nginxcore') return 'nginx';
     if (path === '/apis') return 'apis';
+    if (path === '/prometheuscore') return 'prometheus';
     if (path === '/grafanacore') return 'grafana';
+    if (path === '/lokicore') return 'loki';
     if (path === '/postgresqlcore') return 'postgresql';
     if (path === '/dockercore') return 'docker';
     if (path === '/n8ncore') return 'n8n';

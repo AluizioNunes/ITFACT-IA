@@ -15,6 +15,8 @@ import Chatwoot from './pages/Chatwoot';
 import WhatsApp from './pages/WhatsApp';
 import Redis from './pages/Redis';
 import RabbitMQ from './pages/RabbitMQ';
+import Prometheus from './pages/Prometheus';
+import Loki from './pages/Loki';
 
 const { Content } = Layout;
 
@@ -39,7 +41,9 @@ const App: React.FC = () => {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/nginxcore" element={<Nginx />} />
               <Route path="/apis" element={<APIs />} />
+              <Route path="/prometheuscore" element={<Prometheus />} />
               <Route path="/grafanacore" element={<Grafana />} />
+              <Route path="/lokicore" element={<Loki />} />
               <Route path="/postgresqlcore" element={<PostgreSQL />} />
               <Route path="/dockercore" element={<Docker />} />
               <Route path="/n8ncore" element={<N8N />} />
