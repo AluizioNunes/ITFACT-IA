@@ -189,68 +189,91 @@ const Integrations: React.FC = () => {
     }
   ];
 
-  // Dados simulados para Servidores Descobertos
+  // Dados simulados para Servidores Descobertos - USANDO IP REAL
+  // NOTA: Estes são dados fictícios para demonstração.
+  // Em uma implementação real, seria feita uma consulta SNMP, ping, ou outra forma de descoberta.
   const discoveredServersData = [
     {
       key: '1',
-      hostname: 'srv-web-01.cmm.am.gov.br',
-      ip: '192.168.1.100',
+      hostname: 'automacao.cmm.am.gov.br',
+      ip: '172.18.1.32',
       status: 'Online',
-      services: ['nginx', 'apache2'],
+      services: ['nginx', 'docker', 'nodejs', 'postgresql'],
       os: 'Ubuntu 22.04 LTS',
       lastSeen: '2024-01-15 14:35:00',
-      location: 'Sala de Servidores - Prédio Principal'
+      location: 'Servidor de Produção - CMM-AM'
     },
     {
       key: '2',
-      hostname: 'srv-db-01.cmm.am.gov.br',
-      ip: '192.168.1.101',
+      hostname: 'srv-web-01.local',
+      ip: '192.168.1.100',
       status: 'Online',
-      services: ['postgresql', 'redis'],
+      services: ['apache2', 'nginx'],
       os: 'CentOS 8',
       lastSeen: '2024-01-15 14:34:00',
-      location: 'Data Center - Andar 2'
+      location: 'Servidor Web Local'
     },
     {
       key: '3',
-      hostname: 'srv-app-01.cmm.am.gov.br',
-      ip: '192.168.1.102',
+      hostname: 'srv-db-01.local',
+      ip: '192.168.1.101',
       status: 'Online',
-      services: ['nodejs', 'python', 'docker'],
-      os: 'Debian 11',
-      lastSeen: '2024-01-15 14:33:00',
-      location: 'Sala de Desenvolvimento'
-    },
-    {
-      key: '4',
-      hostname: 'srv-monitor-01.cmm.am.gov.br',
-      ip: '192.168.1.103',
-      status: 'Online',
-      services: ['prometheus', 'grafana', 'loki'],
-      os: 'Ubuntu 22.04 LTS',
-      lastSeen: '2024-01-15 14:32:00',
-      location: 'Sala de Monitoramento'
-    },
-    {
-      key: '5',
-      hostname: 'srv-backup-01.cmm.am.gov.br',
-      ip: '192.168.1.104',
-      status: 'Offline',
-      services: ['rsync', 'backup-scripts'],
+      services: ['postgresql', 'mysql', 'redis'],
       os: 'Ubuntu 20.04 LTS',
-      lastSeen: '2024-01-15 14:20:00',
-      location: 'Sala de Backup'
+      lastSeen: '2024-01-15 14:33:00',
+      location: 'Servidor de Banco de Dados'
     }
   ];
 
-  const handleStartDiscovery = () => {
+  const handleStartDiscovery = async () => {
     setIsDiscovering(true);
 
-    // Simular processo de descoberta
-    setTimeout(() => {
-      setDiscoveredServers(discoveredServersData);
+    try {
+      // Em uma implementação real, você faria uma chamada para a API backend
+      // que executaria comandos como: nmap, ping, snmpwalk, etc.
+
+      // Exemplo de como seria uma chamada real para o backend:
+      /*
+      const response = await fetch('/api/discovery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          method: discoveryMethod,
+          target: discoveryMethod === 'iprange' ? '172.18.1.32' : 'cmm.am.gov.br'
+        })
+      });
+      const realServers = await response.json();
+      */
+
+      // Por enquanto, simulamos a descoberta baseada no método selecionado
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      let results = [...discoveredServersData];
+
+      // Se estiver fazendo IP range scan e incluir 172.18.1.32
+      if (discoveryMethod === 'iprange') {
+        // Priorizar o servidor real 172.18.1.32
+        results = [
+          {
+            key: '1',
+            hostname: 'automacao.cmm.am.gov.br',
+            ip: '172.18.1.32',
+            status: 'Online',
+            services: ['nginx', 'docker', 'nodejs', 'postgresql', 'react'],
+            os: 'Ubuntu 22.04 LTS',
+            lastSeen: new Date().toISOString(),
+            location: 'Servidor de Produção - CMM-AM (IP Real)'
+          },
+          ...discoveredServersData.slice(1) // Manter outros servidores fictícios para demonstração
+        ];
+      }
+
+      setDiscoveredServers(results);
+    } catch (error) {
+      console.error('Erro na descoberta:', error);
+    } finally {
       setIsDiscovering(false);
-    }, 3000);
+    }
   };
 
   const discoveredColumns = [
@@ -300,11 +323,18 @@ const Integrations: React.FC = () => {
       key: 'lastSeen'
     },
     {
-      title: 'Localização',
+      title: 'Tipo',
       dataIndex: 'location',
-      key: 'location',
-      ellipsis: true
-    }
+      key: 'type',
+      render: (location: string) => {
+        const isReal = location.includes('(IP Real)');
+        return (
+          <Tag color={isReal ? 'green' : 'orange'}>
+            {isReal ? 'Servidor Real' : 'Dados Fictícios'}
+          </Tag>
+        );
+      }
+    },
   ];
 
   const inventoryColumns = [
