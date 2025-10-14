@@ -1,153 +1,52 @@
-# Sistema de Automação CMM AM
+# Painel de Controle - Frontend
 
-Sistema completo de monitoramento e automação para a CMM AM, incluindo frontend React, API Node.js, Prometheus, Grafana, PostgreSQL e Nginx.
+Frontend do sistema de automação desenvolvido com React, TypeScript, Ant Design e Framer Motion.
 
-## 🚀 Funcionalidades
+## Estrutura de Rotas
 
-- **Dashboard Centralizado**: Interface única para monitorar todos os serviços
-- **Monitoramento**: Prometheus para coleta de métricas
-- **Visualização**: Grafana para dashboards e alertas
-- **Banco de Dados**: PostgreSQL para armazenamento de dados
-- **Proxy Reverso**: Nginx para roteamento e SSL
-- **API REST**: Backend Node.js para integração
+- `/dashboard` - Página inicial com visão geral do sistema
+- `/coreprometheus` - Página do Prometheus (frontend)
+- `/coregrafana` - Página do Grafana (frontend)
+- `/nginx` - Página do Nginx
+- `/postgresqlcore` - Página do PostgreSQL
+- `/docker` - Página do Docker
+- `/n8n` - Página do N8N
+- `/evolutionapi` - Página da Evolution API
+- `/chatwoot` - Página do Chatwoot
+- `/whatsapp` - Página do WhatsApp
+- `/redis` - Página do Redis
+- `/rabbitmq` - Página do RabbitMQ
 
-## 🏗️ Arquitetura
+## Notas Importantes
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Nginx         │    │   Prometheus    │
-│   (React)       │◄──►│   (Proxy)       │◄──►│   (Métricas)    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │                       ▼                       │
-         │              ┌─────────────────┐              │
-         │              │   Grafana       │              │
-         │              │   (Dashboards)  │              │
-         │              └─────────────────┘              │
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   API Node.js   │    │   PostgreSQL    │    │   Volumes       │
-│   (Backend)     │    │   (Database)    │    │   (Dados)       │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
+As rotas `/grafana/` e `/prometheus/` estão reservadas para as aplicações reais desses serviços, acessíveis através do proxy reverso do Nginx.
 
-## 📋 Pré-requisitos
+## Tecnologias Utilizadas
 
-- Docker e Docker Compose instalados
-- Certificados SSL válidos para o domínio `automacao.cmm.am.gov.br`
-- Acesso ao servidor Linux remoto (IP: 172.18.1.32)
+- React 18 com Hooks
+- TypeScript
+- Ant Design para componentes UI
+- Framer Motion para animações
+- React Router DOM para navegação
+- Vite como bundler
 
-## 🔧 Configuração
+## Scripts Disponíveis
 
-### 1. Preparar Certificados SSL
+- `npm run dev` - Inicia o servidor de desenvolvimento
+- `npm run build` - Compila o projeto para produção
+- `npm run preview` - Visualiza a build de produção localmente
+- `npm run lint` - Executa o linter
 
-Coloque os certificados SSL no diretório `/opt/docker/certificados/`:
-- `cmm_am_gov_br_inter.crt` - Certificado público
-- `cmm_am_gov_br.key` - Chave privada
-
-### 2. Deploy no Servidor Remoto
-
-```bash
-# Conectar ao servidor remoto
-ssh usuario@172.18.1.32
-
-# Clonar ou copiar o projeto
-git clone <repositorio> /caminho/para/automacao
-cd /caminho/para/automacao
-
-# Executar o sistema
-docker-compose up -d
-```
-
-## 🚀 Uso
-
-### Acessar Aplicações
-
-- **Frontend Principal**: https://automacao.cmm.am.gov.br/
-- **Grafana**: https://automacao.cmm.am.gov.br/grafana/
-- **Prometheus**: https://automacao.cmm.am.gov.br/prometheus/
-- **API**: https://automacao.cmm.am.gov.br/api/
-
-### Credenciais Padrão
-
-- **Grafana**: Admin / Ricardo@1964
-- **PostgreSQL**: Admin / Ricardo@1964
-
-## 📊 Monitoramento
-
-### Métricas Coletadas
-
-- **Nginx**: Status, requisições, erros
-- **PostgreSQL**: Conexões, performance, tamanho do banco
-- **API**: Health checks, tempo de resposta
-- **Prometheus**: Métricas do sistema
-
-### Dashboards Disponíveis
-
-- Dashboard principal com visão geral
-- Métricas em tempo real dos serviços
-- Gráficos de performance
-- Status de saúde dos containers
-
-## 🔍 Troubleshooting
-
-### Verificar Status dos Serviços
-
-```bash
-# Status geral
-docker-compose ps
-
-# Logs de um serviço específico
-docker-compose logs nginx
-docker-compose logs prometheus
-docker-compose logs grafana
-
-# Health checks
-curl https://automacao.cmm.am.gov.br/health
-curl https://automacao.cmm.am.gov.br/api/health
-```
-
-### Problemas Comuns
-
-1. **Certificados SSL**: Verificar se estão no caminho correto
-2. **Portas**: Confirmar que as portas 80, 443, 3001, 4000 estão livres
-3. **Volumes**: Verificar permissões dos diretórios de dados
-
-## 📁 Estrutura do Projeto
+## Estrutura de Pastas
 
 ```
-automacao/
-├── frontend/           # Aplicação React
-├── api/               # API Node.js
-├── nginx/             # Configuração do Nginx
-├── prometheus/        # Configuração do Prometheus
-├── grafana/           # Configuração do Grafana
-├── docker-compose.yml # Orquestração dos serviços
-└── README.md          # Este arquivo
+src/
+  ├── components/     # Componentes reutilizáveis
+  ├── hooks/          # Hooks customizados
+  ├── pages/          # Páginas da aplicação
+  ├── assets/         # Arquivos estáticos
+  ├── types/          # Definições de tipos TypeScript
+  ├── App.tsx         # Componente principal
+  ├── main.tsx        # Ponto de entrada da aplicação
+  └── theme.ts        # Configuração de tema do Ant Design
 ```
-
-## 🔄 Atualizações
-
-Para atualizar o sistema:
-
-```bash
-# Parar serviços
-docker-compose down
-
-# Reconstruir imagens
-docker-compose build --no-cache
-
-# Reiniciar serviços
-docker-compose up -d
-```
-
-## 📞 Suporte
-
-Para suporte técnico, entre em contato com a equipe de TI da CMM AM.
-
----
-
-**Versão**: 2.0.0  
-**Última Atualização**: Dezembro 2024  
-**Desenvolvido por**: Equipe de Automação CMM AM

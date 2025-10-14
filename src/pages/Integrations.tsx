@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Typography, Row, Col, Tabs, Table, Tag, Space, Button, Statistic, Progress, Input, Select, Form, Alert, Divider } from 'antd';
+import { Card, Typography, Row, Col, Tabs, Table, Tag, Space, Button, Statistic, Progress, Input, Select, Form, Alert, Divider, message } from 'antd';
 import {
   DatabaseOutlined,
   SettingOutlined,
@@ -30,6 +30,12 @@ const Integrations: React.FC = () => {
   const [discoveryMethod, setDiscoveryMethod] = useState('snmp');
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [discoveredServers, setDiscoveredServers] = useState<any[]>([]);
+  const [snmpTarget, setSnmpTarget] = useState('');
+  const [snmpCommunity, setSnmpCommunity] = useState('public');
+  const [domainTarget, setDomainTarget] = useState('');
+  const [ipRangeStart, setIpRangeStart] = useState('');
+  const [ipRangeEnd, setIpRangeEnd] = useState('');
+
   // Dados simulados para Inventário
   const inventoryData = [
     {
@@ -39,7 +45,8 @@ const Integrations: React.FC = () => {
       version: '1.24.0',
       status: 'Ativo',
       location: 'Container Docker',
-      lastCheck: '2024-01-15 14:30:00'
+      lastCheck: '2024-01-15 14:30:00',
+      source: 'Local'
     },
     {
       key: '2',
@@ -48,7 +55,8 @@ const Integrations: React.FC = () => {
       version: '17.6',
       status: 'Ativo',
       location: 'Container Docker',
-      lastCheck: '2024-01-15 14:29:00'
+      lastCheck: '2024-01-15 14:29:00',
+      source: 'Local'
     },
     {
       key: '3',
@@ -57,7 +65,8 @@ const Integrations: React.FC = () => {
       version: '18.19.0',
       status: 'Ativo',
       location: 'Container Docker',
-      lastCheck: '2024-01-15 14:28:00'
+      lastCheck: '2024-01-15 14:28:00',
+      source: 'Local'
     },
     {
       key: '4',
@@ -66,7 +75,8 @@ const Integrations: React.FC = () => {
       version: '19.1.1',
       status: 'Ativo',
       location: 'Container Docker',
-      lastCheck: '2024-01-15 14:27:00'
+      lastCheck: '2024-01-15 14:27:00',
+      source: 'Local'
     },
     {
       key: '5',
@@ -75,7 +85,8 @@ const Integrations: React.FC = () => {
       version: '2.48.0',
       status: 'Ativo',
       location: 'Container Docker',
-      lastCheck: '2024-01-15 14:26:00'
+      lastCheck: '2024-01-15 14:26:00',
+      source: 'Local'
     },
     {
       key: '6',
@@ -84,7 +95,8 @@ const Integrations: React.FC = () => {
       version: '10.4.0',
       status: 'Ativo',
       location: 'Container Docker',
-      lastCheck: '2024-01-15 14:25:00'
+      lastCheck: '2024-01-15 14:25:00',
+      source: 'Local'
     },
     {
       key: '7',
@@ -108,90 +120,7 @@ const Integrations: React.FC = () => {
     }
   ];
 
-  // Dados simulados para Serviços (serviços locais + descobertos)
-  const servicesData = [
-    {
-      key: '1',
-      name: 'API de Monitoramento',
-      type: 'REST API',
-      status: 'Operacional',
-      uptime: '99.9%',
-      responseTime: '45ms',
-      requests: '2,450/min',
-      health: 100,
-      source: 'Local'
-    },
-    {
-      key: '2',
-      name: 'Base de Dados',
-      type: 'PostgreSQL',
-      status: 'Operacional',
-      uptime: '99.8%',
-      responseTime: '12ms',
-      requests: '890/min',
-      health: 98,
-      source: 'Local'
-    },
-    {
-      key: '3',
-      name: 'Servidor Web Nginx',
-      type: 'Web Server',
-      status: 'Operacional',
-      uptime: '99.95%',
-      responseTime: '8ms',
-      requests: '1,200/min',
-      health: 100,
-      source: 'Descoberto'
-    },
-    {
-      key: '4',
-      name: 'Servidor de Arquivos Samba',
-      type: 'File Server',
-      status: 'Operacional',
-      uptime: '99.7%',
-      responseTime: '25ms',
-      requests: '450/min',
-      health: 95,
-      source: 'Descoberto'
-    },
-    {
-      key: '5',
-      name: 'Cache Redis',
-      type: 'In-Memory',
-      status: 'Operacional',
-      uptime: '99.7%',
-      responseTime: '2ms',
-      requests: '5,600/min',
-      health: 95,
-      source: 'Local'
-    },
-    {
-      key: '6',
-      name: 'Mensageria',
-      type: 'RabbitMQ',
-      status: 'Operacional',
-      uptime: '99.6%',
-      responseTime: '15ms',
-      requests: '340/min',
-      health: 92,
-      source: 'Local'
-    },
-    {
-      key: '7',
-      name: 'Automação N8N',
-      type: 'Workflow',
-      status: 'Operacional',
-      uptime: '99.4%',
-      responseTime: '120ms',
-      requests: '45/min',
-      health: 88,
-      source: 'Local'
-    }
-  ];
-
   // Dados simulados para Servidores Descobertos - USANDO IP REAL
-  // NOTA: Estes são dados fictícios para demonstração.
-  // Em uma implementação real, seria feita uma consulta SNMP, ping, ou outra forma de descoberta.
   const discoveredServersData = [
     {
       key: '1',
@@ -223,54 +152,143 @@ const Integrations: React.FC = () => {
       lastSeen: '2024-01-15 14:33:00',
       location: 'Servidor de Banco de Dados'
     }
-  ];
+  ].map(server => ({ ...server, real: false }));
+
+  const handleMethodChange = (newMethod: string) => {
+    setDiscoveryMethod(newMethod);
+    setSnmpTarget('');
+    setSnmpCommunity('public');
+    setDomainTarget('');
+    setIpRangeStart('');
+    setIpRangeEnd('');
+  };
+
+  const isValidIP = (ip: string): boolean => {
+    const ipPattern = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    return ipPattern.test(ip);
+  };
+
+  const isValidHostname = (hostname: string): boolean => {
+    const hostnamePattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const shortHostnamePattern = /^[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]*$/;
+    return hostnamePattern.test(hostname) || shortHostnamePattern.test(hostname);
+  };
+
+  const isValidDomain = (domain: string): boolean => {
+    const domainPattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return domainPattern.test(domain);
+  };
 
   const handleStartDiscovery = async () => {
+    if (discoveryMethod === 'snmp' && !snmpTarget.trim()) {
+      message.error('Por favor, digite o IP ou hostname para o SNMP Scan');
+      return;
+    }
+
+    if (discoveryMethod === 'snmp' && !snmpCommunity.trim()) {
+      message.error('Por favor, digite a comunidade SNMP');
+      return;
+    }
+
+    if (discoveryMethod === 'domain' && !domainTarget.trim()) {
+      message.error('Por favor, digite o domínio para descoberta');
+      return;
+    }
+
+    if (discoveryMethod === 'iprange' && (!ipRangeStart.trim() || !ipRangeEnd.trim())) {
+      message.error('Por favor, digite o range de IP completo (inicial e final)');
+      return;
+    }
+
     setIsDiscovering(true);
 
     try {
-      // Em uma implementação real, você faria uma chamada para a API backend
-      // que executaria comandos como: nmap, ping, snmpwalk, etc.
+      let results: any[] = [];
 
-      // Exemplo de como seria uma chamada real para o backend:
-      /*
-      const response = await fetch('/api/discovery', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          method: discoveryMethod,
-          target: discoveryMethod === 'iprange' ? '172.18.1.32' : 'cmm.am.gov.br'
-        })
-      });
-      const realServers = await response.json();
-      */
+      if (discoveryMethod === 'snmp') {
+        try {
+          const snmpResponse = await fetch('/api/discovery/snmp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              target: snmpTarget.trim(),
+              community: snmpCommunity.trim()
+            })
+          });
 
-      // Por enquanto, simulamos a descoberta baseada no método selecionado
-      await new Promise(resolve => setTimeout(resolve, 3000));
+          if (snmpResponse.ok) {
+            const snmpData = await snmpResponse.json();
+            results = [{
+              key: '1',
+              hostname: snmpData.systemInfo.hostname || snmpTarget.trim(),
+              ip: snmpData.target,
+              status: 'Online',
+              services: snmpData.services.map((s: any) => s.service),
+              os: snmpData.systemInfo.description || 'Unknown',
+              lastSeen: snmpData.timestamp,
+              location: 'Servidor de Produção - CMM-AM (Dados SNMP)',
+              real: true
+            }];
+          }
+        } catch (error) {
+          console.warn('SNMP failed, using cross-platform discovery');
+        }
+      } else if (discoveryMethod === 'iprange') {
+        const networkResponse = await fetch('/api/discovery/network', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            target: `${ipRangeStart.trim()}-${ipRangeEnd.trim()}`,
+            method: 'nmap'
+          })
+        });
 
-      let results = [...discoveredServersData];
+        if (networkResponse.ok) {
+          const networkData = await networkResponse.json();
+          results = networkData.discoveredDevices.map((device: any, index: number) => ({
+            key: `net-${index}`,
+            hostname: device.hostname,
+            ip: device.ip,
+            status: device.status,
+            services: device.services?.map((s: any) => s.service) || [],
+            os: device.os,
+            lastSeen: device.timestamp,
+            location: `Range ${ipRangeStart.trim()}-${ipRangeEnd.trim()}`,
+            real: true
+          }));
+        }
+      } else if (discoveryMethod === 'domain') {
+        const domainResponse = await fetch('/api/discovery/cross-platform', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targets: [domainTarget.trim()],
+            checkPorts: true
+          })
+        });
 
-      // Se estiver fazendo IP range scan e incluir 172.18.1.32
-      if (discoveryMethod === 'iprange') {
-        // Priorizar o servidor real 172.18.1.32
-        results = [
-          {
-            key: '1',
-            hostname: 'automacao.cmm.am.gov.br',
-            ip: '172.18.1.32',
-            status: 'Online',
-            services: ['nginx', 'docker', 'nodejs', 'postgresql', 'react'],
-            os: 'Ubuntu 22.04 LTS',
-            lastSeen: new Date().toISOString(),
-            location: 'Servidor de Produção - CMM-AM (IP Real)'
-          },
-          ...discoveredServersData.slice(1) // Manter outros servidores fictícios para demonstração
-        ];
+        if (domainResponse.ok) {
+          const domainData = await domainResponse.json();
+          results = domainData.discoveredDevices.map((device: any, index: number) => ({
+            key: `domain-${index}`,
+            hostname: device.hostname,
+            ip: device.ip,
+            status: device.status,
+            services: device.services?.map((s: any) => s.service) || [],
+            os: device.os,
+            lastSeen: device.timestamp,
+            location: `Domínio ${domainTarget.trim()}`,
+            real: true
+          }));
+        }
+      } else {
+        results = [];
       }
 
       setDiscoveredServers(results);
     } catch (error) {
       console.error('Erro na descoberta:', error);
+      setDiscoveredServers([]);
     } finally {
       setIsDiscovering(false);
     }
@@ -326,11 +344,11 @@ const Integrations: React.FC = () => {
       title: 'Tipo',
       dataIndex: 'location',
       key: 'type',
-      render: (location: string) => {
-        const isReal = location.includes('(IP Real)');
+      render: (location: string, record: any) => {
+        const isReal = record.real || location.includes('Dados SNMP') || location.includes('Rede Local');
         return (
           <Tag color={isReal ? 'green' : 'orange'}>
-            {isReal ? 'Servidor Real' : 'Dados Fictícios'}
+            {isReal ? 'Dados Reais' : 'Dados Fictícios'}
           </Tag>
         );
       }
@@ -480,133 +498,7 @@ const Integrations: React.FC = () => {
       </div>
 
       <Card>
-        <Tabs defaultActiveKey="inventory" type="card" size="large">
-          <TabPane
-            tab={
-              <span>
-                <DatabaseOutlined />
-                Inventário
-              </span>
-            }
-            key="inventory"
-          >
-            <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Total de Sistemas"
-                    value={inventoryData.length + discoveredServers.length}
-                    prefix={<DatabaseOutlined />}
-                    valueStyle={{ color: '#3f8600' }}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Sistemas Ativos"
-                    value={inventoryData.filter(item => item.status === 'Ativo').length + discoveredServers.filter(item => item.status === 'Online').length}
-                    suffix={`/ ${inventoryData.length + discoveredServers.length}`}
-                    valueStyle={{ color: '#3f8600' }}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Servidores Descobertos"
-                    value={discoveredServers.length}
-                    suffix="na rede"
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Última Verificação"
-                    value="14:35"
-                    suffix="hoje"
-                  />
-                </Card>
-              </Col>
-            </Row>
-
-            <Table
-              columns={inventoryColumns}
-              dataSource={[...inventoryData, ...discoveredServers.map(server => ({
-                key: `discovered-${server.key}`,
-                name: server.hostname,
-                type: 'Servidor Descoberto',
-                version: server.os,
-                status: server.status === 'Online' ? 'Ativo' : 'Inativo',
-                location: server.location,
-                lastCheck: server.lastSeen,
-                source: 'Descoberto'
-              }))]}
-              pagination={{ pageSize: 10 }}
-              scroll={{ x: 800 }}
-            />
-          </TabPane>
-
-          <TabPane
-            tab={
-              <span>
-                <SettingOutlined />
-                Serviços
-              </span>
-            }
-            key="services"
-          >
-            <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Serviços Monitorados"
-                    value={servicesData.length}
-                    prefix={<SettingOutlined />}
-                    valueStyle={{ color: '#3f8600' }}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Operacionais"
-                    value={servicesData.filter(item => item.status === 'Operacional').length}
-                    suffix={`/ ${servicesData.length}`}
-                    valueStyle={{ color: '#3f8600' }}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Uptime Médio"
-                    value={99.7}
-                    suffix="%"
-                    precision={1}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
-                    title="Alertas Ativos"
-                    value={servicesData.filter(item => item.health < 95).length}
-                    valueStyle={{ color: servicesData.filter(item => item.health < 95).length > 0 ? '#cf1322' : '#3f8600' }}
-                  />
-                </Card>
-              </Col>
-            </Row>
-
-            <Table
-              columns={servicesColumns}
-              dataSource={servicesData}
-              pagination={{ pageSize: 10 }}
-              scroll={{ x: 900}}
-            />
-          </TabPane>
-
+        <Tabs defaultActiveKey="discovery" type="card" size="large">
           <TabPane
             tab={
               <span>
@@ -630,7 +522,7 @@ const Integrations: React.FC = () => {
                     <Form.Item label="Método de Descoberta">
                       <Select
                         value={discoveryMethod}
-                        onChange={setDiscoveryMethod}
+                        onChange={handleMethodChange}
                         style={{ width: '100%' }}
                       >
                         <Option value="snmp">SNMP Scan</Option>
@@ -642,18 +534,89 @@ const Integrations: React.FC = () => {
 
                     {discoveryMethod === 'iprange' && (
                       <>
-                        <Form.Item label="IP Inicial">
-                          <Input placeholder="192.168.1.1" />
+                        <Form.Item
+                          label="IP Inicial"
+                          rules={[{ required: true, message: 'IP inicial é obrigatório' }]}
+                        >
+                          <Input
+                            placeholder="192.168.1.1"
+                            value={ipRangeStart}
+                            onChange={(e) => setIpRangeStart(e.target.value)}
+                          />
                         </Form.Item>
-                        <Form.Item label="IP Final">
-                          <Input placeholder="192.168.1.254" />
+                        <Form.Item
+                          label="IP Final"
+                          rules={[{ required: true, message: 'IP final é obrigatório' }]}
+                        >
+                          <Input
+                            placeholder="192.168.1.254"
+                            value={ipRangeEnd}
+                            onChange={(e) => setIpRangeEnd(e.target.value)}
+                          />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {discoveryMethod === 'snmp' && (
+                      <>
+                        <Form.Item
+                          label="IP ou Hostname"
+                          rules={[
+                            { required: true, message: 'IP ou hostname é obrigatório' },
+                            {
+                              validator: (_, value) => {
+                                if (!value) return Promise.reject();
+                                if (isValidIP(value) || isValidHostname(value)) {
+                                  return Promise.resolve();
+                                }
+                                return Promise.reject(new Error('Digite um IP válido (ex: 192.168.1.1) ou hostname (ex: servidor.local ou servidor.local.dominio.com)'));
+                              }
+                            }
+                          ]}
+                          help="Digite um endereço IP (192.168.1.1) ou hostname (servidor.local ou servidor.dominio.com)"
+                        >
+                          <Input
+                            placeholder="192.168.1.32 ou automacao.cmm.am.gov.br"
+                            value={snmpTarget}
+                            onChange={(e) => setSnmpTarget(e.target.value)}
+                          />
+                        </Form.Item>
+                        <Form.Item
+                          label="Comunidade SNMP"
+                          rules={[{ required: true, message: 'Comunidade SNMP é obrigatória' }]}
+                          help="Comunidade SNMP padrão (geralmente 'public')"
+                        >
+                          <Input
+                            placeholder="public"
+                            value={snmpCommunity}
+                            onChange={(e) => setSnmpCommunity(e.target.value)}
+                          />
                         </Form.Item>
                       </>
                     )}
 
                     {discoveryMethod === 'domain' && (
-                      <Form.Item label="Domínio">
-                        <Input placeholder="cmm.am.gov.br" />
+                      <Form.Item
+                        label="Domínio"
+                        rules={[
+                          { required: true, message: 'Domínio é obrigatório' },
+                          {
+                            validator: (_, value) => {
+                              if (!value) return Promise.reject();
+                              if (isValidDomain(value)) {
+                                return Promise.resolve();
+                              }
+                              return Promise.reject(new Error('Digite um domínio válido (ex: cmm.am.gov.br)'));
+                            }
+                          }
+                        ]}
+                        help="Nome do domínio para descoberta (ex: cmm.am.gov.br)"
+                      >
+                        <Input
+                          placeholder="cmm.am.gov.br"
+                          value={domainTarget}
+                          onChange={(e) => setDomainTarget(e.target.value)}
+                        />
                       </Form.Item>
                     )}
 
