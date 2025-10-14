@@ -42,28 +42,193 @@ pgPool.connect((err, client, release) => {
   }
 });
 
-// Função auxiliar para detectar Sistema Operacional baseado nos serviços
-function detectOS(services) {
-  if (!services || services.length === 0) return 'Unknown';
+// Mapeamento de serviços com ícones e descrições
+const serviceIcons = {
+  'Docker': { icon: '🐳', name: 'Docker', category: 'Container' },
+  'nginx': { icon: '🌐', name: 'Nginx', category: 'Web Server' },
+  'apache': { icon: '🌐', name: 'Apache', category: 'Web Server' },
+  'nodejs': { icon: '🟢', name: 'Node.js', category: 'Runtime' },
+  'postgresql': { icon: '🐘', name: 'PostgreSQL', category: 'Database' },
+  'mysql': { icon: '🐬', name: 'MySQL', category: 'Database' },
+  'mongodb': { icon: '🍃', name: 'MongoDB', category: 'Database' },
+  'redis': { icon: '🔴', name: 'Redis', category: 'Cache' },
+  'elasticsearch': { icon: '🔍', name: 'Elasticsearch', category: 'Search' },
+  'prometheus': { icon: '📊', name: 'Prometheus', category: 'Monitoring' },
+  'grafana': { icon: '📈', name: 'Grafana', category: 'Dashboard' },
+  'kibana': { icon: '📋', name: 'Kibana', category: 'Dashboard' },
+  'rabbitmq': { icon: '🐰', name: 'RabbitMQ', category: 'Message Queue' },
+  'kafka': { icon: '📨', name: 'Kafka', category: 'Message Queue' },
+  'jenkins': { icon: '🔧', name: 'Jenkins', category: 'CI/CD' },
+  'gitlab': { icon: '🔧', name: 'GitLab', category: 'CI/CD' },
+  'traefik': { icon: '🚪', name: 'Traefik', category: 'Load Balancer' },
+  'haproxy': { icon: '🚪', name: 'HAProxy', category: 'Load Balancer' },
+  'consul': { icon: '🔍', name: 'Consul', category: 'Service Discovery' },
+  'vault': { icon: '🔐', name: 'Vault', category: 'Security' },
+  'cert-manager': { icon: '🔒', name: 'Cert Manager', category: 'Security' },
+  'kubernetes': { icon: '☸️', name: 'Kubernetes', category: 'Orchestration' },
+  'docker-swarm': { icon: '🐳', name: 'Docker Swarm', category: 'Orchestration' },
+  'portainer': { icon: '🐳', name: 'Portainer', category: 'Management' },
+  'n8n': { icon: '🔗', name: 'N8N', category: 'Automation' },
+  'chatwoot': { icon: '💬', name: 'Chatwoot', category: 'Communication' },
+  'evolutionapi': { icon: '📱', name: 'Evolution API', category: 'Communication' },
+  'SSH': { icon: '🔑', name: 'SSH', category: 'Remote Access' },
+  'HTTP': { icon: '🌐', name: 'HTTP', category: 'Web Server' },
+  'HTTPS': { icon: '🔒', name: 'HTTPS', category: 'Web Server' },
+  'DNS': { icon: '📡', name: 'DNS', category: 'Network' },
+  'SMTP': { icon: '📧', name: 'SMTP', category: 'Email' },
+  'IMAP': { icon: '📬', name: 'IMAP', category: 'Email' },
+  'POP3': { icon: '📫', name: 'POP3', category: 'Email' },
+  'FTP': { icon: '📁', name: 'FTP', category: 'File Transfer' },
+  'SFTP': { icon: '📂', name: 'SFTP', category: 'File Transfer' },
+  'RDP': { icon: '🖥️', name: 'RDP', category: 'Remote Desktop' },
+  'VNC': { icon: '🖥️', name: 'VNC', category: 'Remote Desktop' },
+  'Telnet': { icon: '💻', name: 'Telnet', category: 'Remote Access' }
+};
 
-  const serviceNames = services.map(s => s.service.toLowerCase());
+// Função para detectar serviços detalhados
+async function detectDetailedServices(target) {
+  const services = [];
 
-  // Windows indicators
-  if (serviceNames.some(s => s.includes('sql server') || s.includes('iis'))) {
-    return 'Windows Server';
+  // Lista completa de portas e serviços para detectar
+  const serviceMap = {
+    22: 'SSH',
+    23: 'Telnet',
+    25: 'SMTP',
+    53: 'DNS',
+    80: 'HTTP',
+    110: 'POP3',
+    143: 'IMAP',
+    443: 'HTTPS',
+    993: 'IMAPS',
+    995: 'POP3S',
+    1433: 'SQL Server',
+    3306: 'MySQL',
+    5432: 'PostgreSQL',
+    27017: 'MongoDB',
+    6379: 'Redis',
+    9200: 'Elasticsearch',
+    9090: 'Prometheus',
+    3000: 'Grafana',
+    5601: 'Kibana',
+    5672: 'RabbitMQ',
+    9092: 'Kafka',
+    8080: 'HTTP-Alt',
+    8443: 'HTTPS-Alt',
+    2376: 'Docker',
+    9000: 'Portainer',
+    5000: 'Flask/Django',
+    8000: 'Django',
+    1880: 'Node-RED',
+    15672: 'RabbitMQ Management',
+    8086: 'InfluxDB',
+    8087: 'InfluxDB Admin',
+    9001: 'Traefik',
+    8500: 'Consul',
+    8200: 'Vault',
+    10250: 'Kubernetes API',
+    6443: 'Kubernetes API',
+    10259: 'Kubernetes etcd',
+    10257: 'Kubernetes controller',
+    10255: 'Kubernetes scheduler'
+  };
+
+  // Detectar serviços comuns
+  for (const [port, serviceName] of Object.entries(serviceMap)) {
+    try {
+      const isOpen = await new Promise((resolve) => {
+        const net = require('net');
+        const client = new net.Socket();
+        client.setTimeout(1000);
+
+        client.on('connect', () => {
+          client.destroy();
+          resolve(true);
+        });
+
+        client.on('timeout', () => {
+          client.destroy();
+          resolve(false);
+        });
+
+        client.on('error', () => {
+          client.destroy();
+          resolve(false);
+        });
+
+        client.connect(parseInt(port), target);
+      });
+
+      if (isOpen) {
+        const serviceInfo = serviceIcons[serviceName] || { icon: '⚙️', name: serviceName, category: 'Service' };
+        services.push({
+          port: parseInt(port),
+          service: serviceName,
+          status: 'Open',
+          icon: serviceInfo.icon,
+          category: serviceInfo.category,
+          name: serviceInfo.name
+        });
+      }
+    } catch (error) {
+      // Porta fechada ou erro, continuar
+    }
   }
 
-  // Linux indicators
-  if (serviceNames.some(s => s.includes('apache') || s.includes('nginx') || s.includes('mysql') || s.includes('postgresql'))) {
-    return 'Linux Server';
+  return services;
+}
+
+// Função para detectar containers Docker
+async function detectDockerContainers(target) {
+  const containers = [];
+
+  try {
+    // Tentar conectar na API do Docker
+    const dockerApiResponse = await new Promise((resolve) => {
+      const http = require('http');
+      const req = http.request({
+        hostname: target,
+        port: 2376,
+        path: '/containers/json?all=true',
+        method: 'GET',
+        timeout: 3000
+      }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(data));
+          } catch (e) {
+            resolve([]);
+          }
+        });
+      });
+
+      req.on('error', () => resolve([]));
+      req.on('timeout', () => {
+        req.destroy();
+        resolve([]);
+      });
+
+      req.end();
+    });
+
+    if (Array.isArray(dockerApiResponse)) {
+      for (const container of dockerApiResponse) {
+        containers.push({
+          id: container.Id?.substring(0, 12) || 'unknown',
+          name: container.Names?.[0]?.replace('/', '') || 'unknown',
+          image: container.Image || 'unknown',
+          status: container.Status || 'unknown',
+          state: container.State || 'unknown',
+          ports: container.Ports || []
+        });
+      }
+    }
+  } catch (error) {
+    console.warn(`Could not detect Docker containers on ${target}:`, error.message);
   }
 
-  // Docker indicators
-  if (serviceNames.some(s => s.includes('docker'))) {
-    return 'Docker Host';
-  }
-
-  return 'Generic Server';
+  return containers;
 }
 
 // Health check endpoint
@@ -132,18 +297,99 @@ app.post('/api/discovery/cross-platform', async (req, res) => {
           client.connect(80, target);
         });
 
+app.post('/api/discovery/cross-platform', async (req, res) => {
+  try {
+    const { targets = [], checkPorts = true } = req.body;
+
+    if (!targets.length) {
+      return res.status(400).json({
+        error: 'Targets array is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const results = {
+      timestamp: new Date().toISOString(),
+      discoveredDevices: [],
+      platform: process.platform,
+      method: 'Node.js built-in with detailed service detection',
+      note: 'Enhanced discovery with Docker container detection and service icons'
+    };
+
+    for (const target of targets) {
+      const device = {
+        ip: target,
+        hostname: target,
+        status: 'Unknown',
+        services: [],
+        containers: [],
+        os: 'Unknown',
+        timestamp: new Date().toISOString(),
+        platform: process.platform
+      };
+
+      try {
+        // 1. DNS Lookup para obter hostname
+        try {
+          const hostname = await new Promise((resolve) => {
+            require('dns').lookup(target, (err, address, family) => {
+              resolve(err ? target : address);
+            });
+          });
+          device.hostname = hostname;
+        } catch (error) {
+          device.hostname = target;
+        }
+
+        // 2. Teste básico de conectividade
+        const isReachable = await new Promise((resolve) => {
+          const http = require('http');
+          const req = http.request({
+            hostname: target,
+            port: 80,
+            path: '/',
+            method: 'HEAD',
+            timeout: 5000
+          }, (res) => {
+            resolve(true);
+          });
+
+          req.on('error', () => resolve(false));
+          req.on('timeout', () => {
+            req.destroy();
+            resolve(false);
+          });
+
+          req.end();
+        });
+
         device.status = isReachable ? 'Online' : 'Offline';
 
-        // Se estiver online, adicionar alguns serviços comuns
-        if (isReachable) {
-          device.services = [
-            { port: 80, service: 'HTTP', status: 'Open' },
-            { port: 443, service: 'HTTPS', status: 'Open' }
-          ];
-          device.os = 'Generic Server';
+        // 3. Detecção detalhada de serviços
+        if (checkPorts && isReachable) {
+          device.services = await detectDetailedServices(target);
+
+          // 4. Se encontrou Docker, listar containers
+          const dockerService = device.services.find(s => s.service === 'Docker');
+          if (dockerService) {
+            device.containers = await detectDockerContainers(target);
+          }
+
+          // 5. Detectar Sistema Operacional baseado nos serviços encontrados
+          const serviceNames = device.services.map(s => s.service.toLowerCase());
+          if (serviceNames.some(s => s.includes('sql server') || s.includes('iis'))) {
+            device.os = 'Windows Server';
+          } else if (serviceNames.some(s => ['apache', 'nginx', 'mysql', 'postgresql', 'docker'].some(svc => s.includes(svc)))) {
+            device.os = 'Linux Server';
+          } else if (device.containers.length > 0) {
+            device.os = 'Docker Host';
+          } else {
+            device.os = 'Generic Server';
+          }
         }
 
       } catch (error) {
+        console.warn(`Failed to discover ${target}:`, error.message);
         device.status = 'Error';
         device.error = error.message;
       }
@@ -154,11 +400,125 @@ app.post('/api/discovery/cross-platform', async (req, res) => {
     res.json(results);
 
   } catch (error) {
-    console.error('Discovery error:', error.message);
+    console.error('Cross-platform discovery error:', error.message);
     res.status(500).json({
-      error: 'Discovery failed',
+      error: 'Cross-platform discovery failed',
       message: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      platform: process.platform
+    });
+  }
+});
+
+app.post('/api/discovery/cross-platform', async (req, res) => {
+  try {
+    const { targets = [], checkPorts = true } = req.body;
+
+    if (!targets.length) {
+      return res.status(400).json({
+        error: 'Targets array is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const results = {
+      timestamp: new Date().toISOString(),
+      discoveredDevices: [],
+      platform: process.platform,
+      method: 'Node.js built-in with detailed service detection',
+      note: 'Enhanced discovery with Docker container detection and service icons'
+    };
+
+    for (const target of targets) {
+      const device = {
+        ip: target,
+        hostname: target,
+        status: 'Unknown',
+        services: [],
+        containers: [],
+        os: 'Unknown',
+        timestamp: new Date().toISOString(),
+        platform: process.platform
+      };
+
+      try {
+        // 1. DNS Lookup para obter hostname
+        try {
+          const hostname = await new Promise((resolve) => {
+            require('dns').lookup(target, (err, address, family) => {
+              resolve(err ? target : address);
+            });
+          });
+          device.hostname = hostname;
+        } catch (error) {
+          device.hostname = target;
+        }
+
+        // 2. Teste básico de conectividade
+        const isReachable = await new Promise((resolve) => {
+          const http = require('http');
+          const req = http.request({
+            hostname: target,
+            port: 80,
+            path: '/',
+            method: 'HEAD',
+            timeout: 5000
+          }, (res) => {
+            resolve(true);
+          });
+
+          req.on('error', () => resolve(false));
+          req.on('timeout', () => {
+            req.destroy();
+            resolve(false);
+          });
+
+          req.end();
+        });
+
+        device.status = isReachable ? 'Online' : 'Offline';
+
+        // 3. Detecção detalhada de serviços
+        if (checkPorts && isReachable) {
+          device.services = await detectDetailedServices(target);
+
+          // 4. Se encontrou Docker, listar containers
+          const dockerService = device.services.find(s => s.service === 'Docker');
+          if (dockerService) {
+            device.containers = await detectDockerContainers(target);
+          }
+
+          // 5. Detectar Sistema Operacional baseado nos serviços encontrados
+          const serviceNames = device.services.map(s => s.service.toLowerCase());
+          if (serviceNames.some(s => s.includes('sql server') || s.includes('iis'))) {
+            device.os = 'Windows Server';
+          } else if (serviceNames.some(s => ['apache', 'nginx', 'mysql', 'postgresql', 'docker'].some(svc => s.includes(svc)))) {
+            device.os = 'Linux Server';
+          } else if (device.containers.length > 0) {
+            device.os = 'Docker Host';
+          } else {
+            device.os = 'Generic Server';
+          }
+        }
+
+      } catch (error) {
+        console.warn(`Failed to discover ${target}:`, error.message);
+        device.status = 'Error';
+        device.error = error.message;
+      }
+
+      results.discoveredDevices.push(device);
+    }
+
+    res.json(results);
+
+  } catch (error) {
+    console.error('Cross-platform discovery error:', error.message);
+    res.status(500).json({
+      error: 'Cross-platform discovery failed',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+      platform: process.platform
     });
   }
 });
