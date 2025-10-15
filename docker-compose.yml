@@ -177,10 +177,10 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
 
   nginx-exporter:
-    image: nginxinc/nginx-prometheus-exporter:latest
+    image: nginx/nginx-prometheus-exporter:1.5.1
     container_name: nginx-exporter
     restart: unless-stopped
-    command: -nginx.scrape-uri=http://nginx/nginx_status
+    command: --nginx.scrape-uri=http://nginx/nginx_status
     ports:
       - "9113:9113"
     networks:
