@@ -43,6 +43,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
 
   const menuItems: MenuItem[] = [
     { key: 'dashboard', icon: <DashboardOutlined />, label: 'DASHBOARD', path: '/dashboard' },
+    { key: 'observability', icon: <BarChartOutlined />, label: 'OBSERVABILIDADE', path: '/observability' },
+    { key: 'reports', icon: <LineChartOutlined />, label: 'RELATÓRIOS', path: '/reports' },
     { key: 'nginx', icon: <CloudServerOutlined />, label: 'NGINX', path: '/nginxcore' },
     { key: 'apis', icon: <ApiOutlined />, label: "API'S SWAGGER", path: '/apis' },
     { key: 'prometheus', icon: <MonitorOutlined />, label: 'PROMETHEUS', path: '/prometheuscore' },
@@ -81,6 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
     if (path === '/' || path === '/dashboard') return 'dashboard';
     
     // Mapear as novas rotas para as chaves do menu
+    if (path === '/reports') return 'reports';
     if (path === '/nginxcore') return 'nginx';
     if (path === '/apis') return 'apis';
     if (path === '/prometheuscore') return 'prometheus';
@@ -95,6 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
     if (path === '/rediscore') return 'redis';
     if (path === '/rabbitmqcore') return 'rabbitmq';
     if (path === '/integrationscore') return 'integrations';
+    if (path === '/observability') return 'observability';
     
     return 'dashboard'; // Fallback para dashboard
   };

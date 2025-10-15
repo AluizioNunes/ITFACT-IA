@@ -18,6 +18,8 @@ import RabbitMQ from './pages/RabbitMQ';
 import Prometheus from './pages/Prometheus';
 import Loki from './pages/Loki';
 import Integrations from './pages/Integrations';
+import Observability from './pages/Observability';
+import Reports from './pages/Reports';
 
 const { Content } = Layout;
 
@@ -54,6 +56,8 @@ const App: React.FC = () => {
               <Route path="/rediscore" element={<Redis />} />
               <Route path="/rabbitmqcore" element={<RabbitMQ />} />
               <Route path="/integrationscore" element={<Integrations />} />
+              <Route path="/observability" element={<Observability />} />
+              <Route path="/reports" element={<Reports />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>

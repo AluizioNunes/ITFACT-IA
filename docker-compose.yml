@@ -7,7 +7,7 @@ networks:
 services:
   nginx:
     build:
-      context: ./nginx
+      context: ./Backend/nginx
       dockerfile: Dockerfile
     container_name: nginx
     restart: unless-stopped
@@ -24,26 +24,48 @@ services:
       - cmm_network
     depends_on:
       - frontend
-      - backend
+      - api_nestjs
+      - api_fastapi
       - postgresql
     environment:
       - TZ=America/Manaus
 
-  backend:
+  api_nestjs:
     build:
-      context: ./api
+      context: ./Backend/NestJS
       dockerfile: Dockerfile
-    container_name: backend
+    container_name: api_nestjs
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "3002:3002"
     networks:
       - cmm_network
     environment:
       - NODE_ENV=production
-      - PORT=3001
+      - PORT=3002
       - TZ=America/Manaus
-      - DB_HOST=postgresql
+      - POSTGRES_HOST=postgresql
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=postgres
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318/v1/traces
+      - JWT_SECRET=dev-secret
+      - ADMIN_USER=admin
+      - ADMIN_PASS=admin
+
+  api_fastapi:
+    build:
+      context: ./Backend/FastAPI
+      dockerfile: Dockerfile
+    container_name: api_fastapi
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      - cmm_network
+    environment:
+      - TZ=America/Manaus
 
   frontend:
     build:
@@ -57,10 +79,11 @@ services:
       - "3000:80"
     environment:
       - NODE_ENV=production
+      - VITE_PROMETHEUS_URL=/prometheus
 
   postgresql:
     build:
-      context: ./postgresql
+      context: ./Backend/postgresql
       dockerfile: Dockerfile
     container_name: postgresql
     restart: unless-stopped
@@ -81,6 +104,102 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./Backend/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - cmm_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3003:3000"
+    networks:
+      - cmm_network
+    environment:
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-piechart-panel
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - ./Backend/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./Backend/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./Backend/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    networks:
+      - cmm_network
+
+  promtail:
+    image: grafana/promtail:2.9.4
+    container_name: promtail
+    restart: unless-stopped
+    volumes:
+      - /var/log:/var/log
+      - ./Backend/promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - cmm_network
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    restart: unless-stopped
+    ports:
+      - "4318:4318" # OTLP HTTP
+    networks:
+      - cmm_network
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    networks:
+      - cmm_network
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  nginx-exporter:
+    image: nginxinc/nginx-prometheus-exporter:latest
+    container_name: nginx-exporter
+    restart: unless-stopped
+    command: -nginx.scrape-uri=http://nginx/nginx_status
+    ports:
+      - "9113:9113"
+    networks:
+      - cmm_network
+    depends_on:
+      - nginx
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgres-exporter
+    restart: unless-stopped
+    environment:
+      - DATA_SOURCE_NAME=postgresql://admin:admin@postgresql:5432/postgres?sslmode=disable
+    ports:
+      - "9187:9187"
+    networks:
+      - cmm_network
+    depends_on:
+      - postgresql
 
 volumes:
   postgres_data:

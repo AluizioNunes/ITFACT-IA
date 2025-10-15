@@ -1,0 +1,10 @@
+apiVersion: 1
+providers:
+  - name: 'CMM Dashboards'
+    orgId: 1
+    folder: 'CMM'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

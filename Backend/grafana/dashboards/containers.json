@@ -1,0 +1,68 @@
+{
+  "id": null,
+  "uid": "cmm-containers",
+  "title": "CMM - Containers (cAdvisor)",
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "30s",
+  "editable": true,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Top 5 CPU (rate 1m)",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "topk(5, sum(rate(container_cpu_usage_seconds_total[1m])) by (name))", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Top 5 Memória",
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "topk(5, sum(container_memory_usage_bytes) by (name))", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes" }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Top 5 Network RX (rate 1m)",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "topk(5, sum(rate(container_network_receive_bytes_total[1m])) by (name))", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "Bps" }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Top 5 Network TX (rate 1m)",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "topk(5, sum(rate(container_network_transmit_bytes_total[1m])) by (name))", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "Bps" }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Top 5 FS Usage",
+      "gridPos": { "x": 0, "y": 24, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "topk(5, sum(container_fs_usage_bytes) by (name))", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes" }
+      }
+    }
+  ]
+}

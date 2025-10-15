@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Card, Typography, Row, Col, Tabs, Table, Tag, Space, Button, Statistic, Progress, Input, Select, Form, Alert, Divider, message } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Card, Typography, Row, Col, Tabs, Table, Tag, Space, Button, Statistic, Progress, Input, Select, Form, Alert, Divider, message, Drawer, Descriptions, Collapse, Badge } from 'antd';
 import {
   DatabaseOutlined,
   SettingOutlined,
@@ -21,6 +21,7 @@ import {
   GlobalOutlined,
   WifiOutlined
 } from '@ant-design/icons';
+import MultiSeriesChart from '../components/MultiSeriesChart';
 
 const { Title, Paragraph } = Typography;
 const { TabPane } = Tabs;
@@ -32,9 +33,47 @@ const Integrations: React.FC = () => {
   const [discoveredServers, setDiscoveredServers] = useState<any[]>([]);
   const [snmpTarget, setSnmpTarget] = useState('');
   const [snmpCommunity, setSnmpCommunity] = useState('public');
+  const [snmpVersion, setSnmpVersion] = useState<'v1' | 'v2c' | 'v3'>('v2c');
+  const [snmpV3User, setSnmpV3User] = useState('');
+  const [snmpV3AuthProtocol, setSnmpV3AuthProtocol] = useState<'NONE' | 'MD5' | 'SHA' | 'SHA256' | 'SHA384' | 'SHA512'>('SHA');
+  const [snmpV3AuthPassword, setSnmpV3AuthPassword] = useState('');
+  const [snmpV3PrivProtocol, setSnmpV3PrivProtocol] = useState<'NONE' | 'DES' | 'AES128' | 'AES192' | 'AES256'>('AES128');
+  const [snmpV3PrivPassword, setSnmpV3PrivPassword] = useState('');
   const [domainTarget, setDomainTarget] = useState('');
   const [ipRangeStart, setIpRangeStart] = useState('');
   const [ipRangeEnd, setIpRangeEnd] = useState('');
+  const [cidrTarget, setCidrTarget] = useState('');
+  // Optional credentials for enrichment
+  const [sshUser, setSshUser] = useState('');
+  const [sshPass, setSshPass] = useState('');
+  const [sshKey, setSshKey] = useState('');
+  const [sshPort, setSshPort] = useState<number>(22);
+  const [sshTimeout, setSshTimeout] = useState<number>(3.0);
+  const [winrmUser, setWinrmUser] = useState('');
+  const [winrmPass, setWinrmPass] = useState('');
+  const [winrmUseTls, setWinrmUseTls] = useState<boolean>(false);
+  const [winrmPort, setWinrmPort] = useState<number>(5985);
+  const [winrmTimeout, setWinrmTimeout] = useState<number>(4.0);
+
+  // Host details drawer state
+  const [detailsVisible, setDetailsVisible] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [selectedHost, setSelectedHost] = useState<any | null>(null);
+  const [hostDetails, setHostDetails] = useState<any | null>(null);
+  const [dockerDetails, setDockerDetails] = useState<any | null>(null);
+  const [dbProbes, setDbProbes] = useState<any[] | null>(null);
+  const [metricsSeries, setMetricsSeries] = useState<Record<string, Array<{ time: string; value: number }>>>({});
+  const [metricsAvailable, setMetricsAvailable] = useState(false);
+  const [metricsTimer, setMetricsTimer] = useState<any>(null);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (metricsTimer) {
+        try { clearInterval(metricsTimer); } catch (e) {}
+      }
+    };
+  }, [metricsTimer]);
 
   // Dados simulados para Inventário
   const inventoryData = [
@@ -158,9 +197,27 @@ const Integrations: React.FC = () => {
     setDiscoveryMethod(newMethod);
     setSnmpTarget('');
     setSnmpCommunity('public');
+    setSnmpVersion('v2c');
+    setSnmpV3User('');
+    setSnmpV3AuthProtocol('SHA');
+    setSnmpV3AuthPassword('');
+    setSnmpV3PrivProtocol('AES128');
+    setSnmpV3PrivPassword('');
     setDomainTarget('');
     setIpRangeStart('');
     setIpRangeEnd('');
+    setCidrTarget('');
+    // reset creds
+    setSshUser('');
+    setSshPass('');
+    setSshKey('');
+    setSshPort(22);
+    setSshTimeout(3.0);
+    setWinrmUser('');
+    setWinrmPass('');
+    setWinrmUseTls(false);
+    setWinrmPort(5985);
+    setWinrmTimeout(4.0);
   };
 
   const isValidIP = (ip: string): boolean => {
@@ -184,9 +241,12 @@ const Integrations: React.FC = () => {
       message.error('Por favor, digite o IP ou hostname para o SNMP Scan');
       return;
     }
-
-    if (discoveryMethod === 'snmp' && !snmpCommunity.trim()) {
+    if (discoveryMethod === 'snmp' && snmpVersion !== 'v3' && !snmpCommunity.trim()) {
       message.error('Por favor, digite a comunidade SNMP');
+      return;
+    }
+    if (discoveryMethod === 'snmp' && snmpVersion === 'v3' && !snmpV3User.trim()) {
+      message.error('Para SNMP v3, informe o usuário');
       return;
     }
 
@@ -195,8 +255,26 @@ const Integrations: React.FC = () => {
       return;
     }
 
-    if (discoveryMethod === 'iprange' && (!ipRangeStart.trim() || !ipRangeEnd.trim())) {
-      message.error('Por favor, digite o range de IP completo (inicial e final)');
+    if (discoveryMethod === 'iprange') {
+      const start = ipRangeStart.trim();
+      const end = ipRangeEnd.trim();
+      if (!start) {
+        message.error('Por favor, digite o IP inicial');
+        return;
+      }
+      if (!isValidIP(start)) {
+        message.error('IP inicial inválido');
+        return;
+      }
+      // Se não informar IP final, assume descoberta de um único IP
+      if (end && !isValidIP(end)) {
+        message.error('IP final inválido');
+        return;
+      }
+    }
+
+    if (discoveryMethod === 'nmap' && !cidrTarget.trim()) {
+      message.error('Por favor, informe a rede em CIDR (ex: 192.168.1.0/24)');
       return;
     }
 
@@ -207,13 +285,22 @@ const Integrations: React.FC = () => {
 
       if (discoveryMethod === 'snmp') {
         try {
+          const payload: any = { target: snmpTarget.trim(), version: snmpVersion };
+          if (snmpVersion === 'v3') {
+            payload.v3 = {
+              user: snmpV3User.trim(),
+              authProtocol: snmpV3AuthProtocol === 'NONE' ? undefined : snmpV3AuthProtocol,
+              authPassword: snmpV3AuthPassword || undefined,
+              privProtocol: snmpV3PrivProtocol === 'NONE' ? undefined : snmpV3PrivProtocol,
+              privPassword: snmpV3PrivPassword || undefined
+            };
+          } else {
+            payload.community = snmpCommunity.trim();
+          }
           const snmpResponse = await fetch('/api/discovery/snmp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              target: snmpTarget.trim(),
-              community: snmpCommunity.trim()
-            })
+            body: JSON.stringify(payload)
           });
 
           if (snmpResponse.ok) {
@@ -234,17 +321,33 @@ const Integrations: React.FC = () => {
           console.warn('SNMP failed, using cross-platform discovery');
         }
       } else if (discoveryMethod === 'iprange') {
+        const start = ipRangeStart.trim();
+        const end = ipRangeEnd.trim() || ipRangeStart.trim();
+        const target = end ? `${start}-${end}` : start;
+
         const networkResponse = await fetch('/api/discovery/network', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            target: `${ipRangeStart.trim()}-${ipRangeEnd.trim()}`,
-            method: 'nmap'
+            target,
+            method: 'nmap',
+            // optional enrichment creds
+            sshUser: sshUser || undefined,
+            sshPass: sshPass || undefined,
+            sshKey: sshKey || undefined,
+            sshPort: sshPort || undefined,
+            sshTimeout: sshTimeout || undefined,
+            winrmUser: winrmUser || undefined,
+            winrmPass: winrmPass || undefined,
+            winrmUseTls: winrmUseTls || undefined,
+            winrmPort: winrmPort || undefined,
+            winrmTimeout: winrmTimeout || undefined
           })
         });
 
         if (networkResponse.ok) {
           const networkData = await networkResponse.json();
+          const locationLabel = target.includes('-') ? `Range ${start}-${end}` : `IP ${start}`;
           results = networkData.discoveredDevices.map((device: any, index: number) => ({
             key: `net-${index}`,
             hostname: device.hostname,
@@ -253,9 +356,12 @@ const Integrations: React.FC = () => {
             services: device.services?.map((s: any) => s.service) || [],
             os: device.os,
             lastSeen: device.timestamp,
-            location: `Range ${ipRangeStart.trim()}-${ipRangeEnd.trim()}`,
+            location: locationLabel,
             real: true
           }));
+        } else {
+          const errText = await networkResponse.text();
+          message.error(`Falha na descoberta de rede (${networkResponse.status}): ${errText || 'erro desconhecido'}`);
         }
       } else if (discoveryMethod === 'domain') {
         const domainResponse = await fetch('/api/discovery/cross-platform', {
@@ -281,16 +387,152 @@ const Integrations: React.FC = () => {
             real: true
           }));
         }
+      } else if (discoveryMethod === 'nmap') {
+        const cidrResponse = await fetch('/api/discovery/network', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            target: cidrTarget.trim(),
+            method: 'tcp',
+            // optional enrichment creds
+            sshUser: sshUser || undefined,
+            sshPass: sshPass || undefined,
+            sshKey: sshKey || undefined,
+            sshPort: sshPort || undefined,
+            sshTimeout: sshTimeout || undefined,
+            winrmUser: winrmUser || undefined,
+            winrmPass: winrmPass || undefined,
+            winrmUseTls: winrmUseTls || undefined,
+            winrmPort: winrmPort || undefined,
+            winrmTimeout: winrmTimeout || undefined
+          })
+        });
+
+        if (cidrResponse.ok) {
+          const cidrData = await cidrResponse.json();
+          results = cidrData.discoveredDevices.map((device: any, index: number) => ({
+            key: `cidr-${index}`,
+            hostname: device.hostname,
+            ip: device.ip,
+            status: device.status,
+            services: device.services?.map((s: any) => s.service) || [],
+            os: device.os,
+            lastSeen: device.timestamp,
+            location: `Rede ${cidrTarget.trim()}`,
+            real: true
+          }));
+        }
       } else {
         results = [];
       }
 
       setDiscoveredServers(results);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro na descoberta:', error);
+      message.error(`Erro na descoberta: ${error?.message || 'falha desconhecida'}`);
       setDiscoveredServers([]);
     } finally {
       setIsDiscovering(false);
+    }
+  };
+
+  const fetchHostDetails = async (record: any) => {
+    setSelectedHost(record);
+    setDetailsVisible(true);
+    setDetailsLoading(true);
+    // Clear previous metrics timer if any
+    if (metricsTimer) {
+      try { clearInterval(metricsTimer); } catch (e) {}
+      setMetricsTimer(null);
+    }
+  try {
+      const [hostRes, dockerRes, dbRes] = await Promise.all([
+        (() => {
+          const qs = new URLSearchParams({ ip: record.ip, method: 'aggressive' });
+          if (sshUser) qs.append('sshUser', sshUser);
+          if (sshPass) qs.append('sshPass', sshPass);
+          if (sshKey) qs.append('sshKey', sshKey);
+          if (sshPort) qs.append('sshPort', String(sshPort));
+          if (sshTimeout) qs.append('sshTimeout', String(sshTimeout));
+          if (winrmUser) qs.append('winrmUser', winrmUser);
+          if (winrmPass) qs.append('winrmPass', winrmPass);
+          if (typeof winrmUseTls === 'boolean') qs.append('winrmUseTls', String(winrmUseTls));
+          if (winrmPort) qs.append('winrmPort', String(winrmPort));
+          if (winrmTimeout) qs.append('winrmTimeout', String(winrmTimeout));
+          return fetch(`/api/discovery/hostinfo?${qs.toString()}`);
+        })(),
+        (() => {
+          const qs = new URLSearchParams({ ip: record.ip });
+          if (sshUser) qs.append('sshUser', sshUser);
+          if (sshPass) qs.append('sshPass', sshPass);
+          if (sshKey) qs.append('sshKey', sshKey);
+          if (sshPort) qs.append('sshPort', String(sshPort));
+          if (sshTimeout) qs.append('sshTimeout', String(sshTimeout));
+          return fetch(`/api/discovery/docker?${qs.toString()}`);
+        })(),
+        fetch(`/api/discovery/dbprobe?ip=${encodeURIComponent(record.ip)}`)
+      ]);
+      const hostJson = hostRes.ok ? await hostRes.json() : null;
+      const dockerJson = dockerRes.ok ? await dockerRes.json() : null;
+      const dbJson = dbRes.ok ? await dbRes.json() : null;
+      setHostDetails(hostJson);
+      setDockerDetails(dockerJson);
+      setDbProbes(dbJson?.databases || null);
+
+      // Start metrics polling if Node Exporter reachable
+      const pollMetrics = async () => {
+        try {
+          const r = await fetch(`/api/discovery/metrics?ip=${encodeURIComponent(record.ip)}&points=50`);
+          if (r.ok) {
+            const j = await r.json();
+            setMetricsAvailable(!!j.present);
+            if (j.series) {
+              setMetricsSeries(j.series);
+            }
+          }
+        } catch (e) {
+          // ignore polling errors
+        }
+      };
+      await pollMetrics();
+      const t = setInterval(pollMetrics, 2000);
+      setMetricsTimer(t);
+    } catch (err) {
+      console.error('Erro ao buscar detalhes do host:', err);
+      setHostDetails(null);
+      setDockerDetails(null);
+      setDbProbes(null);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const fetchDockerViaSSH = async () => {
+    if (!selectedHost || !selectedHost.ip) {
+      message.error('Host não selecionado. Abra os detalhes do host primeiro.');
+      return;
+    }
+    try {
+      const qs = new URLSearchParams({ ip: selectedHost.ip });
+      if (sshUser) qs.append('sshUser', sshUser);
+      if (sshPass) qs.append('sshPass', sshPass);
+      if (sshKey) qs.append('sshKey', sshKey);
+      if (sshPort) qs.append('sshPort', String(sshPort));
+      if (sshTimeout) qs.append('sshTimeout', String(sshTimeout));
+      const r = await fetch(`/api/discovery/docker?${qs.toString()}`);
+      if (!r.ok) {
+        throw new Error(`HTTP ${r.status}`);
+      }
+      const j = await r.json();
+      setDockerDetails(j);
+      if (j?.present) {
+        message.success('Containers coletados via SSH com sucesso.');
+      } else {
+        message.warning('Não foi possível confirmar Docker via SSH. Verifique credenciais.');
+      }
+    } catch (e: any) {
+      console.error('Falha ao coletar Docker via SSH:', e);
+      message.error(`Falha ao coletar Docker via SSH: ${e?.message || 'erro desconhecido'}`);
     }
   };
 
@@ -353,6 +595,15 @@ const Integrations: React.FC = () => {
         );
       }
     },
+    {
+      title: 'Ações',
+      key: 'actions',
+      render: (_: any, record: any) => (
+        <Space>
+          <Button size="small" onClick={() => fetchHostDetails(record)}>Detalhes</Button>
+        </Space>
+      )
+    }
   ];
 
   const inventoryColumns = [
@@ -528,7 +779,7 @@ const Integrations: React.FC = () => {
                         <Option value="snmp">SNMP Scan</Option>
                         <Option value="domain">Domain Discovery</Option>
                         <Option value="iprange">IP Range Scan</Option>
-                        <Option value="nmap">Nmap Scan</Option>
+                        <Option value="nmap">CIDR Scan (TCP)</Option>
                       </Select>
                     </Form.Item>
 
@@ -557,8 +808,97 @@ const Integrations: React.FC = () => {
                       </>
                     )}
 
+                    {discoveryMethod === 'nmap' && (
+                      <Form.Item
+                        label="Rede (CIDR)"
+                        rules={[{ required: true, message: 'CIDR é obrigatório' }]}
+                      >
+                        <Input
+                          placeholder="192.168.1.0/24"
+                          value={cidrTarget}
+                          onChange={(e) => setCidrTarget(e.target.value)}
+                        />
+                      </Form.Item>
+                    )}
+
+                    <Collapse style={{ marginBottom: 12 }}>
+                      <Collapse.Panel header="Credenciais (Opcional)" key="creds">
+                        <Divider orientation="left">Linux SSH</Divider>
+                        <Row gutter={8}>
+                          <Col span={12}>
+                            <Form.Item label="Usuário SSH">
+                              <Input placeholder="root" value={sshUser} onChange={(e) => setSshUser(e.target.value)} />
+                            </Form.Item>
+                          </Col>
+                          <Col span={12}>
+                            <Form.Item label="Senha SSH">
+                              <Input.Password placeholder="••••••" value={sshPass} onChange={(e) => setSshPass(e.target.value)} />
+                            </Form.Item>
+                          </Col>
+                        </Row>
+                        <Row gutter={8}>
+                          <Col span={12}>
+                            <Form.Item label="Chave Privada (caminho)">
+                              <Input placeholder="/home/user/.ssh/id_rsa" value={sshKey} onChange={(e) => setSshKey(e.target.value)} />
+                            </Form.Item>
+                          </Col>
+                          <Col span={6}>
+                            <Form.Item label="Porta SSH">
+                              <Input type="number" value={sshPort} onChange={(e) => setSshPort(Number(e.target.value || 22))} />
+                            </Form.Item>
+                          </Col>
+                          <Col span={6}>
+                            <Form.Item label="Timeout SSH (s)">
+                              <Input type="number" value={sshTimeout} onChange={(e) => setSshTimeout(Number(e.target.value || 3.0))} />
+                            </Form.Item>
+                          </Col>
+                        </Row>
+
+                        <Divider orientation="left">Windows WinRM</Divider>
+                        <Row gutter={8}>
+                          <Col span={12}>
+                            <Form.Item label="Usuário WinRM">
+                              <Input placeholder="Administrator" value={winrmUser} onChange={(e) => setWinrmUser(e.target.value)} />
+                            </Form.Item>
+                          </Col>
+                          <Col span={12}>
+                            <Form.Item label="Senha WinRM">
+                              <Input.Password placeholder="••••••" value={winrmPass} onChange={(e) => setWinrmPass(e.target.value)} />
+                            </Form.Item>
+                          </Col>
+                        </Row>
+                        <Row gutter={8}>
+                          <Col span={6}>
+                            <Form.Item label="TLS (HTTPS)">
+                              <Space>
+                                <Badge status={winrmUseTls ? 'success' : 'default'} text={winrmUseTls ? 'ON' : 'OFF'} />
+                                <Button size="small" onClick={() => setWinrmUseTls(!winrmUseTls)}>{winrmUseTls ? 'Desativar' : 'Ativar'}</Button>
+                              </Space>
+                            </Form.Item>
+                          </Col>
+                          <Col span={6}>
+                            <Form.Item label="Porta WinRM">
+                              <Input type="number" value={winrmPort} onChange={(e) => setWinrmPort(Number(e.target.value || (winrmUseTls ? 5986 : 5985)))} />
+                            </Form.Item>
+                          </Col>
+                          <Col span={6}>
+                            <Form.Item label="Timeout WinRM (s)">
+                              <Input type="number" value={winrmTimeout} onChange={(e) => setWinrmTimeout(Number(e.target.value || 4.0))} />
+                            </Form.Item>
+                          </Col>
+                        </Row>
+                      </Collapse.Panel>
+                    </Collapse>
+
                     {discoveryMethod === 'snmp' && (
                       <>
+                        <Form.Item label="Versão SNMP">
+                          <Select value={snmpVersion} onChange={(v) => setSnmpVersion(v as any)} style={{ width: '100%' }}>
+                            <Option value="v1">v1</Option>
+                            <Option value="v2c">v2c</Option>
+                            <Option value="v3">v3</Option>
+                          </Select>
+                        </Form.Item>
                         <Form.Item
                           label="IP ou Hostname"
                           rules={[
@@ -583,15 +923,60 @@ const Integrations: React.FC = () => {
                         </Form.Item>
                         <Form.Item
                           label="Comunidade SNMP"
-                          rules={[{ required: true, message: 'Comunidade SNMP é obrigatória' }]}
+                          rules={snmpVersion !== 'v3' ? [{ required: true, message: 'Comunidade SNMP é obrigatória' }] : []}
                           help="Comunidade SNMP padrão (geralmente 'public')"
                         >
                           <Input
                             placeholder="public"
                             value={snmpCommunity}
                             onChange={(e) => setSnmpCommunity(e.target.value)}
+                            disabled={snmpVersion === 'v3'}
                           />
                         </Form.Item>
+                        {snmpVersion === 'v3' && (
+                          <>
+                            <Form.Item label="Usuário v3" rules={[{ required: true, message: 'Usuário v3 é obrigatório' }]}> 
+                              <Input placeholder="usuario" value={snmpV3User} onChange={(e) => setSnmpV3User(e.target.value)} />
+                            </Form.Item>
+                            <Row gutter={8}>
+                              <Col span={12}>
+                                <Form.Item label="Auth Protocol">
+                                  <Select value={snmpV3AuthProtocol} onChange={(v) => setSnmpV3AuthProtocol(v as any)}>
+                                    <Option value="NONE">NONE</Option>
+                                    <Option value="MD5">MD5</Option>
+                                    <Option value="SHA">SHA</Option>
+                                    <Option value="SHA256">SHA256</Option>
+                                    <Option value="SHA384">SHA384</Option>
+                                    <Option value="SHA512">SHA512</Option>
+                                  </Select>
+                                </Form.Item>
+                              </Col>
+                              <Col span={12}>
+                                <Form.Item label="Auth Password">
+                                  <Input.Password placeholder="auth pass" value={snmpV3AuthPassword} onChange={(e) => setSnmpV3AuthPassword(e.target.value)} />
+                                </Form.Item>
+                              </Col>
+                            </Row>
+                            <Row gutter={8}>
+                              <Col span={12}>
+                                <Form.Item label="Priv Protocol">
+                                  <Select value={snmpV3PrivProtocol} onChange={(v) => setSnmpV3PrivProtocol(v as any)}>
+                                    <Option value="NONE">NONE</Option>
+                                    <Option value="DES">DES</Option>
+                                    <Option value="AES128">AES128</Option>
+                                    <Option value="AES192">AES192</Option>
+                                    <Option value="AES256">AES256</Option>
+                                  </Select>
+                                </Form.Item>
+                              </Col>
+                              <Col span={12}>
+                                <Form.Item label="Priv Password">
+                                  <Input.Password placeholder="priv pass" value={snmpV3PrivPassword} onChange={(e) => setSnmpV3PrivPassword(e.target.value)} />
+                                </Form.Item>
+                              </Col>
+                            </Row>
+                          </>
+                        )}
                       </>
                     )}
 
@@ -662,7 +1047,20 @@ const Integrations: React.FC = () => {
                       columns={discoveredColumns}
                       dataSource={discoveredServers}
                       pagination={{ pageSize: 8 }}
-                      scroll={{ x: 800 }}
+                      scroll={{ x: 900 }}
+                      expandable={{
+                        expandedRowRender: (record) => (
+                          <Space direction="vertical" style={{ width: '100%' }}>
+                            <Badge status={record.status === 'Online' ? 'success' : 'error'} text={record.status} />
+                            <Space wrap>
+                              {(record.services || []).map((s: string, i: number) => (
+                                <Tag key={i} color="geekblue">{s}</Tag>
+                              ))}
+                            </Space>
+                            <Button size="small" type="link" onClick={() => fetchHostDetails(record)}>Ver detalhes completos</Button>
+                          </Space>
+                        )
+                      }}
                     />
                   ) : (
                     <Alert
@@ -722,6 +1120,224 @@ const Integrations: React.FC = () => {
           </TabPane>
         </Tabs>
       </Card>
+
+      <Drawer
+        title={selectedHost ? `Detalhes: ${selectedHost.hostname || selectedHost.ip}` : 'Detalhes do Host'}
+        open={detailsVisible}
+        width={720}
+        onClose={() => { 
+          setDetailsVisible(false); 
+          setSelectedHost(null); 
+          setHostDetails(null); 
+          setDockerDetails(null); 
+          setDbProbes(null);
+          setMetricsAvailable(false);
+          setMetricsSeries({});
+          if (metricsTimer) { try { clearInterval(metricsTimer); } catch (e) {} }
+          setMetricsTimer(null);
+        }}
+      >
+        {detailsLoading ? (
+          <Alert message="Carregando detalhes do host..." type="info" showIcon />
+        ) : hostDetails ? (
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Descriptions bordered size="small" column={2} title="Informações do Host">
+              <Descriptions.Item label="Hostname">{hostDetails.hostname}</Descriptions.Item>
+              <Descriptions.Item label="IP">{hostDetails.ip}</Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag color={hostDetails.status === 'Online' ? 'green' : 'red'}>{hostDetails.status}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Sistema">
+                {(() => {
+                  const osCandidate = (hostDetails?.node_exporter?.uname)
+                    || (dockerDetails?.info?.OperatingSystem)
+                    || (typeof hostDetails?.os === 'string' ? hostDetails.os : (hostDetails?.os?.toString() || 'Unknown'));
+                  return osCandidate;
+                })()}
+              </Descriptions.Item>
+              <Descriptions.Item label="Virtualização">
+                {hostDetails.virtualization ? hostDetails.virtualization : '—'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Serviços Detectados" span={2}>
+                <Space wrap>
+                  {(() => {
+                    const openPorts: number[] = Array.isArray(hostDetails.open_ports) ? hostDetails.open_ports : [];
+                    const baseDetailed = Array.isArray(hostDetails.services_detailed)
+                      ? hostDetails.services_detailed
+                      : (hostDetails.services || []).map((s: any) => (
+                          typeof s === 'string' ? { service: s, port: undefined, verified: undefined, detail: undefined } : s
+                        ));
+                    const detailed = baseDetailed.filter((svc: any) => {
+                      if (typeof svc.port === 'number' && openPorts.length > 0) {
+                        return openPorts.includes(svc.port);
+                      }
+                      return true;
+                    });
+                    return detailed.map((svc: any, i: number) => (
+                      <Tag key={i} color={svc.verified ? 'green' : 'blue'} title={svc.detail || ''}>
+                        {svc.service}{svc.port ? `:${svc.port}` : ''}
+                      </Tag>
+                    ));
+                  })()}
+              </Space>
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Collapse defaultActiveKey={["node", "docker", "dbs"]}>
+              <Collapse.Panel header="Node Exporter / Recursos" key="node">
+                {hostDetails.node_exporter?.present ? (
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <Descriptions bordered size="small" column={2}>
+                      <Descriptions.Item label="Mem Total">{hostDetails.node_exporter.mem_total_bytes ?? 'N/A'}</Descriptions.Item>
+                      <Descriptions.Item label="Mem Disponível">{hostDetails.node_exporter.mem_available_bytes ?? 'N/A'}</Descriptions.Item>
+                      <Descriptions.Item label="CPU Total (s)">{hostDetails.node_exporter.cpu_seconds_total ?? 'N/A'}</Descriptions.Item>
+                      <Descriptions.Item label="FS Total Bytes">{hostDetails.node_exporter.fs_bytes_total ?? 'N/A'}</Descriptions.Item>
+                    </Descriptions>
+                    {hostDetails.node_exporter.uname && (
+                      <Alert message={hostDetails.node_exporter.uname} type="success" />
+                    )}
+                    {metricsAvailable ? (
+                      <MultiSeriesChart
+                        title="Recursos (CPU/Mem/FS/RX/TX)"
+                        series={[
+                          { name: 'CPU %', data: metricsSeries['cpu_usage_percent'] || [] },
+                          { name: 'Mem %', data: metricsSeries['mem_used_percent'] || [] },
+                          { name: 'FS %', data: metricsSeries['fs_used_percent'] || [] },
+                          { name: 'RX B/s', data: metricsSeries['net_rx_bps'] || [] },
+                          { name: 'TX B/s', data: metricsSeries['net_tx_bps'] || [] }
+                        ]}
+                        height={260}
+                        theme="modern"
+                        showDataZoom={true}
+                        showLegend={true}
+                        gradient={false}
+                      />
+                    ) : (
+                      <Alert message="Coletando séries em tempo real..." type="info" showIcon />
+                    )}
+                  </Space>
+                ) : (
+                  <Alert message="Node Exporter não detectado (porta 9100)" type="warning" showIcon />
+                )}
+              </Collapse.Panel>
+
+              <Collapse.Panel header="Docker / Containers" key="docker">
+                {dockerDetails?.present ? (
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <Descriptions bordered size="small" column={2}>
+                      <Descriptions.Item label="Engine">{dockerDetails.version?.Platform?.Name || 'Docker'}</Descriptions.Item>
+                      <Descriptions.Item label="Version">{dockerDetails.version?.Version || 'N/A'}</Descriptions.Item>
+                      <Descriptions.Item label="OS">{dockerDetails.info?.OperatingSystem || 'N/A'}</Descriptions.Item>
+                      <Descriptions.Item label="Containers Ativos">{dockerDetails.info?.ContainersRunning ?? 'N/A'}</Descriptions.Item>
+                    </Descriptions>
+                    {dockerDetails.metrics_present && !dockerDetails.version && (
+                      <Alert
+                        message="Docker Engine métricas detectadas (porta 9323)"
+                        description="A API remota não está acessível (2375/2376). Exibindo apenas métricas disponíveis."
+                        type="info"
+                        showIcon
+                      />
+                    )}
+                    <Table
+                      size="small"
+                      columns={[
+                        { title: 'Nome', dataIndex: 'name', key: 'name' },
+                        { title: 'Imagem', dataIndex: 'image', key: 'image' },
+                        { title: 'Status', dataIndex: 'status', key: 'status' },
+                        { title: 'State', dataIndex: 'state', key: 'state' },
+                        { title: 'Serviços', dataIndex: 'services_classified', key: 'services', render: (tags: any, rec: any) => (
+                          <Space wrap>
+                            {Array.isArray(tags) && tags.length > 0
+                              ? tags.map((t: string, i: number) => <Tag key={i} color="geekblue">{t}</Tag>)
+                              : (Array.isArray(rec?.ports)
+                                  ? (rec.ports || []).map((p: any, i: number) => <Tag key={i} color="blue">{`${p.PublicPort ?? ''}->${p.PrivatePort ?? ''}/${p.Type ?? ''}`}</Tag>)
+                                  : null)}
+                          </Space>
+                        ) }
+                      ]}
+                      dataSource={(dockerDetails.containers || []).map((c: any) => ({ key: c.id, ...c }))}
+                      expandable={{
+                        expandedRowRender: (c: any) => (
+                          <Space direction="vertical" style={{ width: '100%' }}>
+                            <Descriptions bordered size="small" column={2}>
+                              <Descriptions.Item label="ID">{c.id}</Descriptions.Item>
+                              <Descriptions.Item label="Ports">{(c.ports || []).map((p: any) => `${p.PublicPort ?? ''}->${p.PrivatePort ?? ''}/${p.Type ?? ''}`).join(', ') || 'N/A'}</Descriptions.Item>
+                            </Descriptions>
+                            {c.logs_tail ? (
+                              <Card size="small" title="Logs (tail)"><pre style={{ whiteSpace: 'pre-wrap' }}>{c.logs_tail}</pre></Card>
+                            ) : (
+                              <Alert message="Logs indisponíveis" type="info" />
+                            )}
+                          </Space>
+                        )
+                      }}
+                    />
+                  </Space>
+                ) : (
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <Alert
+                      message="Docker API não acessível (2375/2376)"
+                      description="Se o host for VM/hipervisor, a API remota pode estar desabilitada. Opcionalmente exponha 2376 (TLS) ou habilite métricas do Engine em 9323."
+                      type="warning"
+                      showIcon
+                    />
+                    <Divider orientation="left">Tentar coleta via SSH</Divider>
+                    <Space wrap>
+                      <Input size="small" placeholder="Usuário SSH" value={sshUser} onChange={(e) => setSshUser(e.target.value)} style={{ width: 160 }} />
+                      <Input.Password size="small" placeholder="Senha SSH" value={sshPass} onChange={(e) => setSshPass(e.target.value)} style={{ width: 180 }} />
+                      <Input size="small" placeholder="Chave Privada (caminho)" value={sshKey} onChange={(e) => setSshKey(e.target.value)} style={{ width: 240 }} />
+                      <Input size="small" type="number" placeholder="Porta" value={sshPort} onChange={(e) => setSshPort(Number(e.target.value || 22))} style={{ width: 100 }} />
+                      <Input size="small" type="number" placeholder="Timeout (s)" value={sshTimeout} onChange={(e) => setSshTimeout(Number(e.target.value || 3.0))} style={{ width: 120 }} />
+                      <Button size="small" type="primary" onClick={fetchDockerViaSSH}>
+                        Coletar via SSH
+                      </Button>
+                    </Space>
+                    <Alert message="Dica: Preencha as credenciais SSH e clique em Coletar via SSH para listar os containers." type="info" showIcon />
+                  </Space>
+                )}
+              </Collapse.Panel>
+
+              <Collapse.Panel header="Bancos de Dados" key="dbs">
+                {dbProbes ? (
+                  <Table
+                    size="small"
+                    columns={[
+                      { title: 'Banco', dataIndex: 'name', key: 'name', render: (name: string) => (
+                        <Tag color={
+                          name === 'postgresql' ? 'geekblue' :
+                          name === 'mysql' ? 'green' :
+                          name === 'redis' ? 'red' :
+                          name === 'mongodb' ? 'darkgreen' :
+                          name === 'rabbitmq' ? 'orange' : 'volcano'
+                        }>{name}</Tag>
+                      ) },
+                      { title: 'Porta', dataIndex: 'port', key: 'port' },
+                      { title: 'Alcançável', dataIndex: 'reachable', key: 'reachable', render: (reachable: boolean) => (
+                        <Badge status={reachable ? 'success' : 'error'} text={reachable ? 'Sim' : 'Não'} />
+                      ) },
+                      { title: 'Latência (ms)', dataIndex: 'latency_ms', key: 'latency_ms', render: (v: number) => (v !== undefined ? v : '-') },
+                      { title: 'Detalhe', key: 'detail', render: (_: any, r: any) => {
+                        if (r.version) return r.version;
+                        if (typeof r.tls_supported !== 'undefined') return r.tls_supported ? 'TLS disponível' : 'Sem TLS';
+                        if (typeof r.requires_auth !== 'undefined') return r.requires_auth ? 'Autenticação requerida' : 'Aberto';
+                        if (typeof r.amqp_ready !== 'undefined') return r.amqp_ready ? 'AMQP pronto' : 'AMQP indisponível';
+                        if (r.banner) return `Banner: ${r.banner}`;
+                        if (r.error) return `Erro: ${r.error}`;
+                        return '-';
+                      } }
+                    ]}
+                    dataSource={(dbProbes || []).map((d: any, idx: number) => ({ key: `${d.name}-${idx}`, ...d }))}
+                  />
+                ) : (
+                  <Alert message="Sem resultados de conexão a bancos" type="info" showIcon />
+                )}
+              </Collapse.Panel>
+            </Collapse>
+          </Space>
+        ) : (
+          <Alert message="Sem dados de host" type="error" />
+        )}
+      </Drawer>
     </div>
   );
 };

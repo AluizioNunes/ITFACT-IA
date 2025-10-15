@@ -1,0 +1,51 @@
+{
+  "id": null,
+  "uid": "cmm-postgres",
+  "title": "CMM - PostgreSQL",
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "30s",
+  "editable": true,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Sessões Ativas",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "sum(pg_stat_activity_count)", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Transações Commit e Rollback (rate 5m)",
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "sum(rate(pg_stat_database_xact_commit_total[5m]))", "refId": "A" },
+        { "expr": "sum(rate(pg_stat_database_xact_rollback_total[5m]))", "refId": "B" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Deadlocks (5m)",
+      "gridPos": { "x": 0, "y": 16, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "sum(rate(pg_stat_database_deadlocks_total[5m]))", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Cache Hit Ratio (5m)",
+      "gridPos": { "x": 8, "y": 16, "w": 16, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "sum(increase(pg_stat_database_blks_hit_total[5m])) / (sum(increase(pg_stat_database_blks_hit_total[5m])) + sum(increase(pg_stat_database_blks_read_total[5m])))", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percent" }
+      }
+    }
+  ]
+}

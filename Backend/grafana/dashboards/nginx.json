@@ -1,0 +1,47 @@
+{
+  "id": null,
+  "uid": "cmm-nginx",
+  "title": "CMM - Nginx",
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "30s",
+  "editable": true,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Nginx Requests (rate 1m)",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "sum(rate(nginx_http_requests_total[1m]))", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Conexões Ativas",
+      "gridPos": { "x": 0, "y": 8, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "nginx_connections_active", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Nginx UP",
+      "gridPos": { "x": 8, "y": 8, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "nginx_up", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Scrapes Exporter",
+      "gridPos": { "x": 16, "y": 8, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        { "expr": "nginx_exporter_scrapes_total", "refId": "A" }
+      ]
+    }
+  ]
+}
