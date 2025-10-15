@@ -32,8 +32,8 @@ RUN mkdir -p /usr/share/nginx/html
 # Copiar os arquivos de build para o Nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copiar configuração nginx customizada
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copiar configuração nginx customizada (arquivo está em ./Backend/nginx.conf)
+COPY ./Backend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Verificar se os arquivos foram copiados corretamente
 RUN ls -la /usr/share/nginx/html && echo "Arquivos copiados com sucesso"
