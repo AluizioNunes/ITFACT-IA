@@ -7,9 +7,9 @@ RUN apk add --no-cache openssl curl
 # Create SSL directory
 RUN mkdir -p /etc/ssl/certs
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY conf.d/ /etc/nginx/conf.d/
+# Copy nginx configuration (paths must be relative to build context)
+COPY ./nginx.conf /etc/nginx/nginx.conf
+COPY ./conf.d/ /etc/nginx/conf.d/
 
 # Create SSL setup script
 RUN cat > /docker-entrypoint.d/90-setup-ssl.sh << 'EOF'
