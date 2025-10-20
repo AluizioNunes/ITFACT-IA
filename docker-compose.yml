@@ -148,8 +148,8 @@ services:
     restart: unless-stopped
     volumes:
       - /var/log:/var/log
-      - ./Backend/promtail-config.yml:/etc/promtail/config.yml:ro
-    command: -config.file=/etc/promtail/config.yml
+      - ./Backend/promtail-config.yml:/etc/promtail.yml:ro
+    command: -config.file=/etc/promtail.yml
     networks:
       - cmm_network
 
