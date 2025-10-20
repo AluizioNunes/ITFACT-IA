@@ -14,10 +14,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080"
     volumes:
       - nginx_logs:/var/log/nginx
-      # SSL certificates (optional - fallback to auto-generated if not found)
       - /opt/docker/certificados/cmm_am_gov_br_inter.crt:/etc/ssl/certs/server.crt:ro
       - /opt/docker/certificados/cmm_am_gov_br.key:/etc/ssl/certs/server.key:ro
     networks:
@@ -36,8 +34,8 @@ services:
       dockerfile: Dockerfile
     container_name: api_nestjs
     restart: unless-stopped
-    ports:
-      - "3002:3002"
+    expose:
+      - "3002"
     networks:
       - cmm_network
     environment:
@@ -58,10 +56,9 @@ services:
     build:
       context: ./Backend/FastAPI
       dockerfile: Dockerfile
-    container_name: api_fastapi
     restart: unless-stopped
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     networks:
       - cmm_network
     environment:
@@ -75,8 +72,8 @@ services:
     restart: unless-stopped
     networks:
       - cmm_network
-    ports:
-      - "3000:80"
+    expose:
+      - "80"
     environment:
       - NODE_ENV=production
       - VITE_PROMETHEUS_URL=/prometheus
@@ -87,8 +84,8 @@ services:
       dockerfile: Dockerfile
     container_name: postgresql
     restart: unless-stopped
-    ports:
-      - "5432:5432"
+    expose:
+      - "5432"
     networks:
       - cmm_network
     environment:
@@ -109,8 +106,8 @@ services:
     image: prom/prometheus:latest
     container_name: prometheus
     restart: unless-stopped
-    ports:
-      - "9090:9090"
+    expose:
+      - "9090"
     volumes:
       - ./Backend/prometheus.yml:/etc/prometheus.yml:ro
     command: --config.file=/etc/prometheus.yml
@@ -121,8 +118,8 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     restart: unless-stopped
-    ports:
-      - "3003:3000"
+    expose:
+      - "3000"
     networks:
       - cmm_network
     environment:
@@ -138,8 +135,8 @@ services:
     image: grafana/loki:2.9.4
     container_name: loki
     restart: unless-stopped
-    ports:
-      - "3100:3100"
+    expose:
+      - "3100"
     networks:
       - cmm_network
 
@@ -158,8 +155,9 @@ services:
     image: grafana/tempo:latest
     container_name: tempo
     restart: unless-stopped
-    ports:
-      - "4318:4318" # OTLP HTTP
+    expose:
+      - "3200"
+      - "4318"
     networks:
       - cmm_network
 
@@ -167,8 +165,8 @@ services:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
     restart: unless-stopped
-    ports:
-      - "8081:8080"
+    expose:
+      - "8080"
     networks:
       - cmm_network
     volumes:
@@ -179,11 +177,10 @@ services:
 
   nginx-exporter:
     image: nginx/nginx-prometheus-exporter:1.5.1
-    container_name: nginx-exporter
     restart: unless-stopped
     command: --nginx.scrape-uri=http://nginx/nginx_status
-    ports:
-      - "9113:9113"
+    expose:
+      - "9113"
     networks:
       - cmm_network
     depends_on:
@@ -195,8 +192,8 @@ services:
     restart: unless-stopped
     environment:
       - DATA_SOURCE_NAME=postgresql://admin:admin@postgresql:5432/postgres?sslmode=disable
-    ports:
-      - "9187:9187"
+    expose:
+      - "9187"
     networks:
       - cmm_network
     depends_on:
