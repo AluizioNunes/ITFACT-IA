@@ -1,5 +1,5 @@
 # Estágio de build
-FROM node:24-alpine AS builder
+FROM node:22-bullseye AS builder
 
 WORKDIR /app
 

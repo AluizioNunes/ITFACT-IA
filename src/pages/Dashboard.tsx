@@ -35,7 +35,7 @@ const containerVariants = {
       stiffness: 120
     }
   }
-};
+} as const;
 
 const cardVariants = {
   hidden: { 
@@ -74,7 +74,7 @@ const cardVariants = {
       stiffness: 500
     }
   }
-};
+} as const;
 
 const statisticVariants = {
   hidden: { scale: 0, rotate: -180 },
@@ -88,7 +88,7 @@ const statisticVariants = {
       delay: 0.3
     }
   }
-};
+} as const;
 
 const chartVariants = {
   hidden: { 
@@ -107,7 +107,7 @@ const chartVariants = {
       duration: 0.8
     }
   }
-};
+} as const;
 
 const serviceCardVariants = {
   hidden: { 
@@ -137,7 +137,7 @@ const serviceCardVariants = {
       stiffness: 300
     }
   }
-};
+} as const;
 
 const Dashboard: React.FC = () => {
   const { 
