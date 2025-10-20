@@ -9,7 +9,7 @@ services:
     build:
       context: ./Backend/nginx
       dockerfile: Dockerfile
-    container_name: nginx
+    container_name: NGINX
     restart: unless-stopped
     ports:
       - "80:80"
@@ -32,7 +32,7 @@ services:
     build:
       context: ./Backend/NestJS
       dockerfile: Dockerfile
-    container_name: api_nestjs
+    container_name: NESTJS
     restart: unless-stopped
     expose:
       - "3002"
@@ -56,6 +56,7 @@ services:
     build:
       context: ./Backend/FastAPI
       dockerfile: Dockerfile
+    container_name: FASTAPI
     restart: unless-stopped
     expose:
       - "8000"
@@ -68,7 +69,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: frontend
+    container_name: FRONTEND
     restart: unless-stopped
     networks:
       - cmm_network
@@ -82,7 +83,7 @@ services:
     build:
       context: ./Backend/postgresql
       dockerfile: Dockerfile
-    container_name: postgresql
+    container_name: POSTGRESQL
     restart: unless-stopped
     expose:
       - "5432"
@@ -104,7 +105,7 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: prometheus
+    container_name: PROMETHEUS
     restart: unless-stopped
     expose:
       - "9090"
@@ -114,9 +115,39 @@ services:
     networks:
       - cmm_network
 
+  redis:
+    image: redis:latest
+    container_name: REDIS
+    restart: unless-stopped
+    expose:
+      - "6379"
+    networks:
+      - cmm_network
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    environment:
+      - TZ=America/Manaus
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: RABBITMQ
+    restart: unless-stopped
+    expose:
+      - "5672"
+      - "15672"
+    networks:
+      - cmm_network
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+      - TZ=America/Manaus
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
   grafana:
     image: grafana/grafana:latest
-    container_name: grafana
+    container_name: GRAFANA
     restart: unless-stopped
     expose:
       - "3000"
@@ -133,7 +164,7 @@ services:
 
   loki:
     image: grafana/loki:2.9.4
-    container_name: loki
+    container_name: LOKI
     restart: unless-stopped
     expose:
       - "3100"
@@ -142,7 +173,7 @@ services:
 
   promtail:
     image: grafana/promtail:2.9.4
-    container_name: promtail
+    container_name: PROMTAIL
     restart: unless-stopped
     volumes:
       - /var/log:/var/log
@@ -153,7 +184,7 @@ services:
 
   tempo:
     image: grafana/tempo:latest
-    container_name: tempo
+    container_name: TEMPO
     restart: unless-stopped
     expose:
       - "3200"
@@ -163,7 +194,7 @@ services:
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
-    container_name: cadvisor
+    container_name: CADVISOR
     restart: unless-stopped
     expose:
       - "8080"
@@ -177,6 +208,7 @@ services:
 
   nginx-exporter:
     image: nginx/nginx-prometheus-exporter:1.5.1
+    container_name: NGINX-EXPORTER
     restart: unless-stopped
     command: --nginx.scrape-uri=http://nginx/nginx_status
     expose:
@@ -188,7 +220,7 @@ services:
 
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter:latest
-    container_name: postgres-exporter
+    container_name: POSTGRES-EXPORTER
     restart: unless-stopped
     environment:
       - DATA_SOURCE_NAME=postgresql://admin:admin@postgresql:5432/postgres?sslmode=disable
@@ -199,8 +231,39 @@ services:
     depends_on:
       - postgresql
 
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: REDIS-EXPORTER
+    restart: unless-stopped
+    expose:
+      - "9121"
+    command: ["--redis.addr=redis://redis:6379"]
+    networks:
+      - cmm_network
+    depends_on:
+      - redis
+
+  rabbitmq-exporter:
+    image: kbudde/rabbitmq-exporter:latest
+    container_name: RABBITMQ-EXPORTER
+    restart: unless-stopped
+    expose:
+      - "9419"
+    environment:
+      - RABBITMQ_URL=http://rabbitmq:15672
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=admin
+    networks:
+      - cmm_network
+    depends_on:
+      - rabbitmq
+
 volumes:
   postgres_data:
     driver: local
   nginx_logs:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
     driver: local
