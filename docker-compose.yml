@@ -112,7 +112,8 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./Backend/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./Backend/prometheus.yml:/etc/prometheus.yml:ro
+    command: --config.file=/etc/prometheus.yml
     networks:
       - cmm_network
 
