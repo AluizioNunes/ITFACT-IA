@@ -1,0 +1,55 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'api_nestjs'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['api_nestjs:3000']
+        labels:
+          service: 'core-api'
+          env: 'prod'
+
+  - job_name: 'api_fastapi'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['api_fastapi:8000']
+        labels:
+          service: 'analytics-api'
+          env: 'prod'
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'cadvisor'
+          env: 'prod'
+
+  - job_name: 'nginx_exporter'
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+        labels:
+          service: 'nginx-exporter'
+          env: 'prod'
+
+  - job_name: 'postgres_exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'postgres-exporter'
+          env: 'prod'
+
+  - job_name: 'redis_exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'redis-exporter'
+          env: 'prod'
+
+  - job_name: 'rabbitmq_exporter'
+    static_configs:
+      - targets: ['rabbitmq-exporter:9419']
+        labels:
+          service: 'rabbitmq-exporter'
+          env: 'prod'
