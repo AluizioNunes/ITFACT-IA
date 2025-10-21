@@ -218,7 +218,7 @@ services:
       - "3010:3000"
     depends_on:
       prometheus:
-        condition: service_healthy
+        condition: service_started
       loki:
         condition: service_started
       tempo:
