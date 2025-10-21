@@ -20,13 +20,13 @@ services:
       - cmm_network
     depends_on:
       frontend:
-        condition: service_healthy
+        condition: service_started
       api_nestjs:
-        condition: service_healthy
+        condition: service_started
       api_fastapi:
-        condition: service_healthy
+        condition: service_started
       postgresql:
-        condition: service_healthy
+        condition: service_started
     environment:
       - TZ=America/Manaus
     healthcheck:
@@ -50,7 +50,7 @@ services:
       - cmm_network
     depends_on:
       postgresql:
-        condition: service_healthy
+        condition: service_started
       redis:
         condition: service_started
       rabbitmq:
@@ -87,11 +87,11 @@ services:
       - AUTO_RELOAD=false
       - DB_PATH=/app/discovery.db
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/docs || wget -q -S --spider http://localhost:8000/docs || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || wget -q -S --spider http://localhost:8000/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 60s
 
   frontend:
     build:
