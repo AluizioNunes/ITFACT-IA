@@ -8,6 +8,8 @@ import requests
 import sqlite3
 import json
 import re
+import os
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from prometheus_fastapi_instrumentator import Instrumentator
 from opentelemetry import trace
@@ -125,7 +127,7 @@ SERVICE_MAP = {
 # SQLite Persistence
 # ----------------------
 
-DB_PATH = "Backend/FastAPI/discovery.db"
+DB_PATH = os.environ.get("DB_PATH", str(Path(__file__).with_name("discovery.db")))
 
 def get_db() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)

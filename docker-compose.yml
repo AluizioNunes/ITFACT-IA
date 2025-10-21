@@ -70,6 +70,7 @@ services:
     environment:
       - TZ=America/Manaus
       - AUTO_RELOAD=false
+      - DB_PATH=/app/discovery.db
 
   frontend:
     build:
@@ -122,8 +123,8 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./Backend/prometheus.yml:/etc/prometheus.yml:ro
-    command: --config.file=/etc/prometheus.yml
+      - ./Backend/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command: --config.file=/etc/prometheus/prometheus.yml
     networks:
       - cmm_network
 
@@ -197,9 +198,9 @@ services:
     container_name: PROMTAIL
     restart: unless-stopped
     volumes:
-      - /var/log:/var/log
-      - ./Backend/promtail-config.yml:/etc/promtail.yml:ro
-    command: -config.file=/etc/promtail.yml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./Backend/promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
     expose:
       - "9080"
     ports:
@@ -217,6 +218,10 @@ services:
     ports:
       - "3400:3200"
       - "4318:4318"
+    volumes:
+      - ./Backend/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    command: -config.file=/etc/tempo/tempo.yaml
     networks:
       - cmm_network
 
@@ -304,4 +309,6 @@ volumes:
   redis_data:
     driver: local
   rabbitmq_data:
+    driver: local
+  tempo_data:
     driver: local

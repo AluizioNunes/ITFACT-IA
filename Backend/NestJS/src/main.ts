@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { setupMetrics } from './metrics';
-import { setupTracing } from './tracing';
+import { AppModule } from './app.module.js';
+import { setupMetrics } from './metrics.js';
+import { setupTracing } from './tracing.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {

@@ -1,0 +1,4 @@
+time=2025-10-20T21:27:44.604Z level=WARN source=main.go:85 msg="Error loading config" err="error opening config file \"postgres_exporter.yml\": open postgres_exporter.yml: no such file or directory"
+time=2025-10-20T21:27:44.605Z level=INFO source=main.go:95 msg="Excluded databases" databases=[]
+time=2025-10-20T21:27:44.605Z level=INFO source=tls_config.go:346 msg="Listening on" address=[::]:9187
+time=2025-10-20T21:27:44.605Z level=INFO source=tls_config.go:349 msg="TLS is disabled." http2=false address=[::]:9187

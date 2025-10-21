@@ -18,7 +18,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
-EXPOSE 3002
+EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:3002/health || exit 1
+  CMD wget -qO- http://localhost:3000/health || exit 1
 CMD ["sh", "-c", "if [ \"$AUTO_RELOAD\" = \"true\" ]; then exec npm run dev; else exec node dist/main.js; fi"]

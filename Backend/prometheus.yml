@@ -6,7 +6,7 @@ scrape_configs:
   - job_name: 'api_nestjs'
     metrics_path: '/metrics'
     static_configs:
-      - targets: ['api_nestjs:3002']
+      - targets: ['api_nestjs:3000']
         labels:
           service: 'core-api'
           env: 'prod'

@@ -1,0 +1,100 @@
+logger=secret-migrator t=2025-10-20T21:27:54.482415219Z level=info msg="Migration successfully executed" id="create table secret_secure_value, index: 0" duration=1.467144ms
+logger=secret-migrator t=2025-10-20T21:27:54.487922402Z level=info msg="Executing migration" id="create table secret_secure_value, index: 1"
+logger=secret-migrator t=2025-10-20T21:27:54.488827644Z level=info msg="Migration successfully executed" id="create table secret_secure_value, index: 1" duration=904.832µs
+logger=secret-migrator t=2025-10-20T21:27:54.493331366Z level=info msg="Executing migration" id="drop table secret_keeper"
+logger=secret-migrator t=2025-10-20T21:27:54.493550382Z level=info msg="Migration successfully executed" id="drop table secret_keeper" duration=219.601µs
+logger=secret-migrator t=2025-10-20T21:27:54.503487231Z level=info msg="Executing migration" id="create table secret_keeper"
+logger=secret-migrator t=2025-10-20T21:27:54.504603639Z level=info msg="Migration successfully executed" id="create table secret_keeper" duration=1.116273ms
+logger=secret-migrator t=2025-10-20T21:27:54.51316431Z level=info msg="Executing migration" id="create table secret_keeper, index: 0"
+logger=secret-migrator t=2025-10-20T21:27:54.514657217Z level=info msg="Migration successfully executed" id="create table secret_keeper, index: 0" duration=1.492429ms
+logger=secret-migrator t=2025-10-20T21:27:54.520728004Z level=info msg="Executing migration" id="drop table secret_data_key"
+logger=secret-migrator t=2025-10-20T21:27:54.520801963Z level=info msg="Migration successfully executed" id="drop table secret_data_key" duration=75.023µs
+logger=secret-migrator t=2025-10-20T21:27:54.537016892Z level=info msg="Executing migration" id="create table secret_data_key"
+logger=secret-migrator t=2025-10-20T21:27:54.538163617Z level=info msg="Migration successfully executed" id="create table secret_data_key" duration=1.14757ms
+logger=secret-migrator t=2025-10-20T21:27:54.542670801Z level=info msg="Executing migration" id="drop table secret_encrypted_value"
+logger=secret-migrator t=2025-10-20T21:27:54.542736752Z level=info msg="Migration successfully executed" id="drop table secret_encrypted_value" duration=66.528µs
+logger=secret-migrator t=2025-10-20T21:27:54.546920776Z level=info msg="Executing migration" id="create table secret_encrypted_value"
+logger=secret-migrator t=2025-10-20T21:27:54.547553293Z level=info msg="Migration successfully executed" id="create table secret_encrypted_value" duration=632.238µs
+logger=secret-migrator t=2025-10-20T21:27:54.552075146Z level=info msg="Executing migration" id="create table secret_encrypted_value, index: 0"
+logger=secret-migrator t=2025-10-20T21:27:54.552898211Z level=info msg="Migration successfully executed" id="create table secret_encrypted_value, index: 0" duration=823.114µs
+logger=secret-migrator t=2025-10-20T21:27:54.560128951Z level=info msg="Executing migration" id="create index for list on secret_secure_value"
+logger=secret-migrator t=2025-10-20T21:27:54.56130818Z level=info msg="Migration successfully executed" id="create index for list on secret_secure_value" duration=1.181182ms
+logger=secret-migrator t=2025-10-20T21:27:54.565726866Z level=info msg="Executing migration" id="create index for list and read current on secret_data_key"
+logger=secret-migrator t=2025-10-20T21:27:54.566779746Z level=info msg="Migration successfully executed" id="create index for list and read current on secret_data_key" duration=1.051637ms
+logger=secret-migrator t=2025-10-20T21:27:54.582947445Z level=info msg="Executing migration" id="add owner_reference_api_group column to secret_secure_value"
+logger=secret-migrator t=2025-10-20T21:27:54.589691379Z level=info msg="Migration successfully executed" id="add owner_reference_api_group column to secret_secure_value" duration=6.742214ms
+logger=secret-migrator t=2025-10-20T21:27:54.594936202Z level=info msg="Executing migration" id="add owner_reference_api_version column to secret_secure_value"
+logger=secret-migrator t=2025-10-20T21:27:54.601365048Z level=info msg="Migration successfully executed" id="add owner_reference_api_version column to secret_secure_value" duration=6.428744ms
+logger=secret-migrator t=2025-10-20T21:27:54.612933955Z level=info msg="Executing migration" id="add owner_reference_kind column to secret_secure_value"
+logger=secret-migrator t=2025-10-20T21:27:54.617904048Z level=info msg="Migration successfully executed" id="add owner_reference_kind column to secret_secure_value" duration=4.969573ms
+logger=secret-migrator t=2025-10-20T21:27:54.623175429Z level=info msg="Executing migration" id="add owner_reference_name column to secret_secure_value"
+logger=secret-migrator t=2025-10-20T21:27:54.627626421Z level=info msg="Migration successfully executed" id="add owner_reference_name column to secret_secure_value" duration=4.450057ms
+logger=secret-migrator t=2025-10-20T21:27:54.631221452Z level=info msg="Executing migration" id="add lease_token column to secret_secure_value"
+logger=secret-migrator t=2025-10-20T21:27:54.63575106Z level=info msg="Migration successfully executed" id="add lease_token column to secret_secure_value" duration=4.52865ms
+logger=secret-migrator t=2025-10-20T21:27:54.643135108Z level=info msg="Executing migration" id="add lease_token index to secret_secure_value"
+logger=secret-migrator t=2025-10-20T21:27:54.643868429Z level=info msg="Migration successfully executed" id="add lease_token index to secret_secure_value" duration=733.173µs
+logger=secret-migrator t=2025-10-20T21:27:54.647954214Z level=info msg="Executing migration" id="add lease_created column to secret_secure_value"
+logger=secret-migrator t=2025-10-20T21:27:54.652353364Z level=info msg="Migration successfully executed" id="add lease_created column to secret_secure_value" duration=4.397995ms
+logger=secret-migrator t=2025-10-20T21:27:54.656001357Z level=info msg="Executing migration" id="add lease_created index to secret_secure_value"
+logger=secret-migrator t=2025-10-20T21:27:54.656713832Z level=info msg="Migration successfully executed" id="add lease_created index to secret_secure_value" duration=712.378µs
+logger=secret-migrator t=2025-10-20T21:27:54.660440726Z level=info msg="migrations completed" performed=24 skipped=0 duration=212.232371ms
+logger=secret-migrator t=2025-10-20T21:27:54.660809647Z level=info msg="Unlocking database"
+logger=infra.usagestats.collector t=2025-10-20T21:27:54.661073296Z level=info msg="registering usage stat providers" usageStatsProvidersLen=2
+logger=grafanaStorageLogger t=2025-10-20T21:27:54.661370226Z level=info msg="Storage starting"
+logger=plugin.backgroundinstaller t=2025-10-20T21:27:54.66242225Z level=info msg="Installing plugin" pluginId=grafana-metricsdrilldown-app version=
+logger=ngalert.state.manager t=2025-10-20T21:27:54.662662643Z level=info msg="Warming state cache for startup"
+logger=ngalert.multiorg.alertmanager t=2025-10-20T21:27:54.663673708Z level=info msg="Starting MultiOrg Alertmanager"
+logger=http.server t=2025-10-20T21:27:54.66393546Z level=info msg="HTTP Server Listen" address=[::]:3000 protocol=http subUrl= socket=
+logger=provisioning.alerting t=2025-10-20T21:27:54.757551772Z level=info msg="starting to provision alerting"
+logger=provisioning.alerting t=2025-10-20T21:27:54.757595851Z level=info msg="finished to provision alerting"
+logger=provisioning.dashboard t=2025-10-20T21:27:54.758026306Z level=info msg="starting to provision dashboards"
+logger=provisioning.dashboard t=2025-10-20T21:27:54.758040673Z level=info msg="finished to provision dashboards"
+logger=ngalert.state.manager t=2025-10-20T21:27:54.764516371Z level=info msg="State cache has been initialized" states=0 duration=101.853005ms
+logger=ngalert.scheduler t=2025-10-20T21:27:54.764554401Z level=info msg="Starting scheduler" tickInterval=10s maxAttempts=3
+logger=ngalert.scheduler t=2025-10-20T21:27:54.764623559Z level=info msg=starting component=ticker first_tick=2025-10-20T21:28:00Z
+logger=plugins.update.checker t=2025-10-20T21:27:55.002675724Z level=info msg="Update check succeeded" duration=340.020922ms
+logger=grafana.update.checker t=2025-10-20T21:27:55.011865161Z level=info msg="Update check succeeded" duration=349.451809ms
+logger=grafana-apiserver t=2025-10-20T21:27:55.098346292Z level=info msg="Adding GroupVersion dashboard.grafana.app v1beta1 to ResourceManager"
+logger=grafana-apiserver t=2025-10-20T21:27:55.098648084Z level=info msg="Adding GroupVersion dashboard.grafana.app v0alpha1 to ResourceManager"
+logger=grafana-apiserver t=2025-10-20T21:27:55.099083488Z level=info msg="Adding GroupVersion dashboard.grafana.app v2beta1 to ResourceManager"
+logger=grafana-apiserver t=2025-10-20T21:27:55.099419555Z level=info msg="Adding GroupVersion dashboard.grafana.app v2alpha1 to ResourceManager"
+logger=grafana-apiserver t=2025-10-20T21:27:55.100365475Z level=info msg="Adding GroupVersion folder.grafana.app v1beta1 to ResourceManager"
+logger=grafana-apiserver t=2025-10-20T21:27:55.102266723Z level=info msg="Adding GroupVersion iam.grafana.app v0alpha1 to ResourceManager"
+logger=grafana-apiserver t=2025-10-20T21:27:55.102848937Z level=info msg="Adding GroupVersion userstorage.grafana.app v0alpha1 to ResourceManager"
+logger=grafana-apiserver t=2025-10-20T21:27:55.103113857Z level=info msg="Adding GroupVersion features.grafana.app v0alpha1 to ResourceManager"
+logger=grafana-apiserver t=2025-10-20T21:27:55.104924419Z level=info msg="Adding GroupVersion notifications.alerting.grafana.app v0alpha1 to ResourceManager"
+logger=grafana-apiserver t=2025-10-20T21:27:55.106304903Z level=info msg="Adding GroupVersion playlist.grafana.app v0alpha1 to ResourceManager"
+t=2025-10-20T21:27:55.106420535Z level=info caller=logger.go:214 time=2025-10-20T21:27:55.1064082Z msg="Installed APIs for app" app=playlist
+logger=grafana-apiserver t=2025-10-20T21:27:55.106588783Z level=info msg="Skipping API plugins.grafana.app/v0alpha1 because it has no resources."
+t=2025-10-20T21:27:55.106665725Z level=info caller=logger.go:214 time=2025-10-20T21:27:55.106661526Z msg="Installed APIs for app" app=plugins
+logger=plugin.angulardetectorsprovider.dynamic t=2025-10-20T21:27:55.124414585Z level=info msg="Patterns update finished" duration=382.83175ms
+t=2025-10-20T21:27:55.154072951Z level=info caller=logger.go:214 time=2025-10-20T21:27:55.154069969Z msg="App initialized" app=playlist
+t=2025-10-20T21:27:55.154185167Z level=info caller=logger.go:214 time=2025-10-20T21:27:55.154161145Z msg="App initialized" app=plugins
+logger=app-registry t=2025-10-20T21:27:55.154328654Z level=info msg="app registry initialized"
+logger=plugin.installer t=2025-10-20T21:27:55.400827229Z level=info msg="Installing plugin" pluginId=grafana-metricsdrilldown-app version=
+logger=installer.fs t=2025-10-20T21:27:55.448677766Z level=info msg="Downloaded and extracted grafana-metricsdrilldown-app v1.0.18 zip successfully to /var/lib/grafana/plugins/grafana-metricsdrilldown-app"
+logger=plugins.registration t=2025-10-20T21:27:55.476296157Z level=info msg="Plugin registered" pluginId=grafana-metricsdrilldown-app
+logger=plugin.backgroundinstaller t=2025-10-20T21:27:55.476319134Z level=info msg="Plugin successfully installed" pluginId=grafana-metricsdrilldown-app version= duration=813.871949ms
+logger=plugin.backgroundinstaller t=2025-10-20T21:27:55.476336192Z level=info msg="Installing plugin" pluginId=grafana-lokiexplore-app version=
+logger=plugin.installer t=2025-10-20T21:27:56.184687639Z level=info msg="Installing plugin" pluginId=grafana-lokiexplore-app version=
+logger=installer.fs t=2025-10-20T21:27:56.283115216Z level=info msg="Downloaded and extracted grafana-lokiexplore-app v1.0.29 zip successfully to /var/lib/grafana/plugins/grafana-lokiexplore-app"
+logger=plugins.registration t=2025-10-20T21:27:56.33554232Z level=info msg="Plugin registered" pluginId=grafana-lokiexplore-app
+logger=plugin.backgroundinstaller t=2025-10-20T21:27:56.335568033Z level=info msg="Plugin successfully installed" pluginId=grafana-lokiexplore-app version= duration=859.227457ms
+logger=plugin.backgroundinstaller t=2025-10-20T21:27:56.335583645Z level=info msg="Installing plugin" pluginId=grafana-pyroscope-app version=
+logger=plugin.installer t=2025-10-20T21:27:57.099379533Z level=info msg="Installing plugin" pluginId=grafana-pyroscope-app version=
+logger=installer.fs t=2025-10-20T21:27:57.138878252Z level=info msg="Downloaded and extracted grafana-pyroscope-app v1.10.1 zip successfully to /var/lib/grafana/plugins/grafana-pyroscope-app"
+logger=plugins.registration t=2025-10-20T21:27:57.163216748Z level=info msg="Plugin registered" pluginId=grafana-pyroscope-app
+logger=plugin.backgroundinstaller t=2025-10-20T21:27:57.163303203Z level=info msg="Plugin successfully installed" pluginId=grafana-pyroscope-app version= duration=827.716197ms
+logger=plugin.backgroundinstaller t=2025-10-20T21:27:57.163328435Z level=info msg="Installing plugin" pluginId=grafana-exploretraces-app version=
+logger=plugin.installer t=2025-10-20T21:27:57.857488173Z level=info msg="Installing plugin" pluginId=grafana-exploretraces-app version=
+logger=installer.fs t=2025-10-20T21:27:57.915632586Z level=info msg="Downloaded and extracted grafana-exploretraces-app v1.2.0 zip successfully to /var/lib/grafana/plugins/grafana-exploretraces-app"
+logger=plugins.registration t=2025-10-20T21:27:57.943234508Z level=info msg="Plugin registered" pluginId=grafana-exploretraces-app
+logger=plugin.backgroundinstaller t=2025-10-20T21:27:57.943308318Z level=info msg="Plugin successfully installed" pluginId=grafana-exploretraces-app version= duration=779.967626ms
+logger=infra.usagestats t=2025-10-20T21:29:24.675913497Z level=info msg="Usage stats are ready to report"
+logger=cleanup t=2025-10-20T21:37:54.807111142Z level=info msg="Completed cleanup jobs" duration=143.474339ms
+logger=plugins.update.checker t=2025-10-20T21:37:55.417652999Z level=info msg="Update check succeeded" duration=414.60754ms
+logger=cleanup t=2025-10-20T21:47:54.703885805Z level=info msg="Completed cleanup jobs" duration=40.148807ms
+logger=plugins.update.checker t=2025-10-20T21:47:55.414849566Z level=info msg="Update check succeeded" duration=411.685965ms
+logger=cleanup t=2025-10-20T21:57:55.004121592Z level=info msg="Completed cleanup jobs" duration=340.19307ms
+logger=plugins.update.checker t=2025-10-20T21:57:55.419357744Z level=info msg="Update check succeeded" duration=416.471424ms
+logger=infra.usagestats t=2025-10-20T21:59:24.679513887Z level=info msg="Usage stats are ready to report"

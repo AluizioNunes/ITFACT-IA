@@ -15,7 +15,7 @@ scrape_configs:
         labels:
           job: docker-logs
           env: prod
-          __path__: /var/log/containers/*.log
+          __path__: /var/lib/docker/containers/*/*.log
     pipeline_stages:
       - docker: {}
       - labels:

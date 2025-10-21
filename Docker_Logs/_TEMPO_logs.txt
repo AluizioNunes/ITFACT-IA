@@ -1,0 +1,100 @@
+level=info ts=2025-10-20T21:27:48.394994793Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:27:48.395961493Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:27:48.396930327Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: usage-report: failed to initialize usage report: unknown backend "
+level=info ts=2025-10-20T21:27:50.848488675Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:27:50.849312964Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:27:50.850743899Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:27:54.412765139Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:27:54.413085983Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:28:01.052836229Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:28:01.053285784Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:28:14.305800284Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:28:14.30628329Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:28:40.21136877Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:28:40.211838086Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:29:31.615156213Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:29:31.617599429Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:29:31.618308287Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: usage-report: failed to initialize usage report: unknown backend "
+level=info ts=2025-10-20T21:30:32.030290396Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:30:32.030899033Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:30:32.03127414Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:31:32.249514934Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:31:32.249949145Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:32:32.547048184Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:32:32.549039901Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:32:32.54957092Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:33:32.797694246Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:33:32.798129657Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:34:33.071721578Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:34:33.074099217Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:34:33.074633565Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:35:33.298367716Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:35:33.298869345Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:36:33.579751569Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:36:33.580380846Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:36:33.581052421Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:37:33.8103365Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:37:33.810898369Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:37:33.811551019Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:38:34.248780206Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:38:34.250235876Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:39:34.473060155Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:39:34.473496007Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:40:34.695225895Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:40:34.695733877Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:41:34.953547945Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:41:34.954105783Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:41:34.954748483Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:42:35.189855179Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:42:35.190461791Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:43:35.497838004Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:43:35.498324918Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:43:35.499016628Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:44:35.779274884Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:44:35.779837596Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:45:35.991820786Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:45:35.992296083Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:45:35.994626909Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:46:36.203125438Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:46:36.203343495Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:47:36.412558356Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:47:36.414359869Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:47:36.415473601Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: usage-report: failed to initialize usage report: unknown backend "
+level=info ts=2025-10-20T21:48:36.672882438Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:48:36.673741134Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:48:36.674525402Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:49:36.87605983Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:49:36.876576589Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:50:37.067052778Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:50:37.067616184Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:50:37.068156398Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:51:37.301409489Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:51:37.30184254Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:52:37.514144347Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:52:37.514790487Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:53:37.774427035Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:53:37.77495414Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:53:37.777945737Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:54:38.073180047Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:54:38.073787982Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:54:38.07510424Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: usage-report: failed to initialize usage report: unknown backend "
+level=info ts=2025-10-20T21:55:38.576685899Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:55:38.577265269Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:55:38.578474886Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:56:38.791506956Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:56:38.791688901Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:57:39.144230193Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:57:39.145015868Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:57:39.146187925Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: usage-report: failed to initialize usage report: unknown backend "
+level=info ts=2025-10-20T21:58:39.426530194Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T21:58:39.428029976Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T21:59:39.961169138Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T21:59:39.961878892Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T21:59:39.96311226Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: usage-report: failed to initialize usage report: unknown backend "
+level=info ts=2025-10-20T22:00:40.450092358Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T22:00:40.450557809Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T22:01:40.720425596Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=error ts=2025-10-20T22:01:40.723429828Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "
+level=info ts=2025-10-20T22:02:40.986752126Z caller=main.go:103 msg="Starting Tempo" version="(version=v2.9.0, branch=main, revision=3589561dc)" target=all
+level=info ts=2025-10-20T22:02:40.987399956Z caller=server.go:281 msg="server listening on addresses" http=[::]:3200 grpc=[::]:9095
+level=error ts=2025-10-20T22:02:40.987786129Z caller=main.go:110 msg="error running Tempo" err="failed to init module services: error initialising module: store: failed to create store: unknown backend "

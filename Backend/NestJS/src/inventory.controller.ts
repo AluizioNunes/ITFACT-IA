@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { db } from './db';
-import { JwtAuthGuard } from './auth/jwt.guard';
+import { db } from './db.js';
+import { JwtAuthGuard } from './auth/jwt.guard.js';
 
 @ApiTags('inventory')
 @Controller('inventory')

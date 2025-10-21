@@ -1,6 +1,6 @@
 import { Controller, Get, Header } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { metricsText } from './metrics';
+import { metricsText } from './metrics.js';
 
 @ApiTags('metrics')
 @Controller('metrics')
