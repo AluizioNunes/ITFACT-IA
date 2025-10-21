@@ -14,8 +14,7 @@ services:
       - "443:443"
     volumes:
       - nginx_logs:/var/log/nginx
-      - /opt/docker/certificados/cmm_am_gov_br_inter.crt:/etc/ssl/certs/server.crt:ro
-      - /opt/docker/certificados/cmm_am_gov_br.key:/etc/ssl/certs/server.key:ro
+      - /opt/docker/certificados:/etc/ssl/cmm:ro
     networks:
       - cmm_network
     depends_on:
@@ -27,10 +26,16 @@ services:
         condition: service_started
       postgresql:
         condition: service_started
+      grafana:
+        condition: service_started
+      prometheus:
+        condition: service_started
+      loki:
+        condition: service_started
     environment:
       - TZ=America/Manaus
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost/ || wget -q -S --spider http://localhost/ || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost/health || wget -q -S --spider http://localhost/health || curl -fsSk https://localhost/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
