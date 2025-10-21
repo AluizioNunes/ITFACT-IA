@@ -1,100 +1,78 @@
-level=info ts=2025-10-20T21:31:43.679324872Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:31:43.67935729Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:32:43.679000494Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:32:43.679032387Z caller=table_manager.go:228 index-store=boltdb-shipper-2020-10-24 msg="syncing tables"
-level=info ts=2025-10-20T21:32:43.679043943Z caller=table_manager.go:271 index-store=boltdb-shipper-2020-10-24 msg="query readiness setup completed" duration=1.68µs distinct_users_len=0 distinct_users=
-level=info ts=2025-10-20T21:32:43.679069575Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:32:43.745602005Z caller=checkpoint.go:611 msg="starting checkpoint"
-level=info ts=2025-10-20T21:32:43.745698548Z caller=checkpoint.go:336 msg="attempting checkpoint for" dir=/loki/wal/checkpoint.000000
-level=info ts=2025-10-20T21:32:43.748800165Z caller=checkpoint.go:498 msg="atomic checkpoint finished" old=/loki/wal/checkpoint.000000.tmp new=/loki/wal/checkpoint.000000
-level=info ts=2025-10-20T21:33:43.678929848Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:33:43.679042472Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:34:43.679680756Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:34:43.67971803Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:35:43.679077969Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:35:43.679115686Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:36:43.679472934Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:36:43.679488083Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:37:43.67945964Z caller=table_manager.go:228 index-store=boltdb-shipper-2020-10-24 msg="syncing tables"
-level=info ts=2025-10-20T21:37:43.679488345Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:37:43.679496056Z caller=table_manager.go:271 index-store=boltdb-shipper-2020-10-24 msg="query readiness setup completed" duration=1.565µs distinct_users_len=0 distinct_users=
-level=info ts=2025-10-20T21:37:43.679526192Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:37:43.744930046Z caller=checkpoint.go:611 msg="starting checkpoint"
-level=info ts=2025-10-20T21:37:43.745137299Z caller=checkpoint.go:336 msg="attempting checkpoint for" dir=/loki/wal/checkpoint.000001
-level=info ts=2025-10-20T21:37:43.807095481Z caller=checkpoint.go:498 msg="atomic checkpoint finished" old=/loki/wal/checkpoint.000001.tmp new=/loki/wal/checkpoint.000001
-level=info ts=2025-10-20T21:37:49.094453987Z caller=compactor.go:508 msg="compactor startup delay completed"
-level=info ts=2025-10-20T21:37:49.094490273Z caller=compactor.go:562 msg="compactor started"
-ts=2025-10-20T21:37:49.09451167Z caller=spanlogger.go:86 level=info msg="building table names cache"
-ts=2025-10-20T21:37:49.094568338Z caller=spanlogger.go:86 level=info msg="table names cache built" duration=27.201µs
-level=info ts=2025-10-20T21:38:43.680026049Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:38:43.680070377Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:39:43.678996684Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:39:43.679029132Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:40:43.679414733Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:40:43.679449807Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:41:43.679462941Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:41:43.679490042Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:42:43.679875577Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:42:43.679908366Z caller=table_manager.go:228 index-store=boltdb-shipper-2020-10-24 msg="syncing tables"
-level=info ts=2025-10-20T21:42:43.679916667Z caller=table_manager.go:271 index-store=boltdb-shipper-2020-10-24 msg="query readiness setup completed" duration=1.697µs distinct_users_len=0 distinct_users=
-level=info ts=2025-10-20T21:42:43.679940484Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:42:43.7453476Z caller=checkpoint.go:611 msg="starting checkpoint"
-level=info ts=2025-10-20T21:42:43.74549484Z caller=checkpoint.go:336 msg="attempting checkpoint for" dir=/loki/wal/checkpoint.000002
-level=info ts=2025-10-20T21:42:43.74807381Z caller=checkpoint.go:498 msg="atomic checkpoint finished" old=/loki/wal/checkpoint.000002.tmp new=/loki/wal/checkpoint.000002
-level=info ts=2025-10-20T21:43:43.679205789Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:43:43.679222275Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:44:43.679024156Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:44:43.679056706Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:45:43.67994026Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:45:43.679966638Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:46:43.678901601Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:46:43.678973811Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:47:43.679433284Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:47:43.679474036Z caller=table_manager.go:228 index-store=boltdb-shipper-2020-10-24 msg="syncing tables"
-level=info ts=2025-10-20T21:47:43.679483331Z caller=table_manager.go:271 index-store=boltdb-shipper-2020-10-24 msg="query readiness setup completed" duration=1.663µs distinct_users_len=0 distinct_users=
-level=info ts=2025-10-20T21:47:43.679505944Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:47:43.744937344Z caller=checkpoint.go:611 msg="starting checkpoint"
-level=info ts=2025-10-20T21:47:43.74503723Z caller=checkpoint.go:336 msg="attempting checkpoint for" dir=/loki/wal/checkpoint.000003
-level=info ts=2025-10-20T21:47:43.748511031Z caller=checkpoint.go:498 msg="atomic checkpoint finished" old=/loki/wal/checkpoint.000003.tmp new=/loki/wal/checkpoint.000003
-ts=2025-10-20T21:47:49.094875633Z caller=spanlogger.go:86 level=info msg="building table names cache"
-ts=2025-10-20T21:47:49.094944328Z caller=spanlogger.go:86 level=info msg="table names cache built" duration=14.747µs
-level=info ts=2025-10-20T21:48:43.679845461Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:48:43.67988453Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:49:43.679584374Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:49:43.679615051Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:50:43.679296713Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:50:43.67932169Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:51:43.679529945Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:51:43.679563902Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:52:43.679429806Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:52:43.679443686Z caller=table_manager.go:228 index-store=boltdb-shipper-2020-10-24 msg="syncing tables"
-level=info ts=2025-10-20T21:52:43.679469721Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:52:43.679468886Z caller=table_manager.go:271 index-store=boltdb-shipper-2020-10-24 msg="query readiness setup completed" duration=1.867µs distinct_users_len=0 distinct_users=
-level=info ts=2025-10-20T21:52:43.744922789Z caller=checkpoint.go:611 msg="starting checkpoint"
-level=info ts=2025-10-20T21:52:43.745048101Z caller=checkpoint.go:336 msg="attempting checkpoint for" dir=/loki/wal/checkpoint.000004
-level=info ts=2025-10-20T21:52:43.747591154Z caller=checkpoint.go:498 msg="atomic checkpoint finished" old=/loki/wal/checkpoint.000004.tmp new=/loki/wal/checkpoint.000004
-level=info ts=2025-10-20T21:53:43.678996251Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:53:43.679031202Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:54:43.679165294Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:54:43.679202637Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:55:43.679964939Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:55:43.679982606Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:56:43.67979707Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:56:43.679831749Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:57:43.679264964Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:57:43.679298165Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:57:43.67930107Z caller=table_manager.go:228 index-store=boltdb-shipper-2020-10-24 msg="syncing tables"
-level=info ts=2025-10-20T21:57:43.679334155Z caller=table_manager.go:271 index-store=boltdb-shipper-2020-10-24 msg="query readiness setup completed" duration=1.736µs distinct_users_len=0 distinct_users=
-level=info ts=2025-10-20T21:57:43.745627776Z caller=checkpoint.go:611 msg="starting checkpoint"
-level=info ts=2025-10-20T21:57:43.745777028Z caller=checkpoint.go:336 msg="attempting checkpoint for" dir=/loki/wal/checkpoint.000005
-level=info ts=2025-10-20T21:57:43.766115918Z caller=checkpoint.go:498 msg="atomic checkpoint finished" old=/loki/wal/checkpoint.000005.tmp new=/loki/wal/checkpoint.000005
-ts=2025-10-20T21:57:49.094620961Z caller=spanlogger.go:86 level=info msg="building table names cache"
-ts=2025-10-20T21:57:49.094710869Z caller=spanlogger.go:86 level=info msg="table names cache built" duration=22.946µs
-level=info ts=2025-10-20T21:58:43.679216393Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:58:43.679264746Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T21:59:43.679169154Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T21:59:43.679198064Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T22:00:43.679060112Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
-level=info ts=2025-10-20T22:00:43.679084544Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T22:01:43.679457464Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
-level=info ts=2025-10-20T22:01:43.679446629Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
+level=warn ts=2025-10-21T13:45:00.701553209Z caller=loki.go:288 msg="global timeout not configured, using default engine timeout (\"5m0s\"). This behavior will change in the next major to always use the default global timeout (\"5m\")."
+level=info ts=2025-10-21T13:45:00.703680584Z caller=main.go:108 msg="Starting Loki" version="(version=2.9.4, branch=HEAD, revision=f599ebc535)"
+level=info ts=2025-10-21T13:45:00.70790943Z caller=server.go:322 http=[::]:3100 grpc=[::]:9095 msg="server listening on addresses"
+level=warn ts=2025-10-21T13:45:00.717212195Z caller=cache.go:127 msg="fifocache config is deprecated. use embedded-cache instead"
+level=warn ts=2025-10-21T13:45:00.717266414Z caller=experimental.go:20 msg="experimental feature in use" feature="In-memory (FIFO) cache - chunksembedded-cache"
+level=info ts=2025-10-21T13:45:00.718306397Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
+level=info ts=2025-10-21T13:45:00.718691284Z caller=table_manager.go:271 index-store=boltdb-shipper-2020-10-24 msg="query readiness setup completed" duration=3.3µs distinct_users_len=0 distinct_users=
+level=info ts=2025-10-21T13:45:00.718735111Z caller=shipper.go:165 index-store=boltdb-shipper-2020-10-24 msg="starting index shipper in RW mode"
+level=info ts=2025-10-21T13:45:00.719134327Z caller=shipper_index_client.go:76 index-store=boltdb-shipper-2020-10-24 msg="starting boltdb shipper in RW mode"
+level=info ts=2025-10-21T13:45:00.719196048Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
+level=info ts=2025-10-21T13:45:00.778031636Z caller=modules.go:1140 msg="-boltdb.shipper.compactor.shared-store not specified, initializing compactor to operator on the following object stores" stores=filesystem
+level=info ts=2025-10-21T13:45:00.781375732Z caller=worker.go:112 msg="Starting querier worker using query-scheduler and scheduler ring for addresses"
+level=info ts=2025-10-21T13:45:00.781690014Z caller=mapper.go:47 msg="cleaning up mapped rules directory" path=/loki/rules-temp
+level=info ts=2025-10-21T13:45:00.803215397Z caller=module_service.go:82 msg=initialising module=cache-generation-loader
+level=info ts=2025-10-21T13:45:00.803367168Z caller=module_service.go:82 msg=initialising module=server
+level=info ts=2025-10-21T13:45:00.803413384Z caller=module_service.go:82 msg=initialising module=memberlist-kv
+level=info ts=2025-10-21T13:45:00.803439598Z caller=module_service.go:82 msg=initialising module=query-frontend-tripperware
+level=info ts=2025-10-21T13:45:00.803453217Z caller=module_service.go:82 msg=initialising module=store
+level=info ts=2025-10-21T13:45:00.803456404Z caller=module_service.go:82 msg=initialising module=query-scheduler-ring
+level=info ts=2025-10-21T13:45:00.803476853Z caller=module_service.go:82 msg=initialising module=ring
+level=info ts=2025-10-21T13:45:00.803542531Z caller=ring.go:273 msg="ring doesn't exist in KV store yet"
+level=info ts=2025-10-21T13:45:00.803561984Z caller=ring.go:273 msg="ring doesn't exist in KV store yet"
+level=info ts=2025-10-21T13:45:00.803584457Z caller=basic_lifecycler.go:297 msg="instance not found in the ring" instance=3052561b4754 ring=scheduler
+level=info ts=2025-10-21T13:45:00.803598308Z caller=basic_lifecycler_delegates.go:63 msg="not loading tokens from file, tokens file path is empty"
+level=info ts=2025-10-21T13:45:00.803764388Z caller=module_service.go:82 msg=initialising module=ingester-querier
+level=info ts=2025-10-21T13:45:00.803765027Z caller=ringmanager.go:201 msg="waiting until scheduler is JOINING in the ring"
+level=info ts=2025-10-21T13:45:00.803773981Z caller=ringmanager.go:205 msg="scheduler is JOINING in the ring"
+level=info ts=2025-10-21T13:45:00.80378196Z caller=module_service.go:82 msg=initialising module=analytics
+level=info ts=2025-10-21T13:45:00.803806902Z caller=ringmanager.go:214 msg="waiting until scheduler is ACTIVE in the ring"
+level=info ts=2025-10-21T13:45:00.803932757Z caller=module_service.go:82 msg=initialising module=distributor
+level=info ts=2025-10-21T13:45:00.804018684Z caller=module_service.go:82 msg=initialising module=ruler
+level=info ts=2025-10-21T13:45:00.80419361Z caller=ruler.go:528 msg="ruler up and running"
+level=info ts=2025-10-21T13:45:00.804057854Z caller=module_service.go:82 msg=initialising module=ingester
+level=info ts=2025-10-21T13:45:00.804071649Z caller=module_service.go:82 msg=initialising module=compactor
+level=info ts=2025-10-21T13:45:00.80424057Z caller=ingester.go:431 msg="recovering from checkpoint"
+level=info ts=2025-10-21T13:45:00.804300787Z caller=recovery.go:40 msg="no checkpoint found, treating as no-op"
+level=info ts=2025-10-21T13:45:00.804346127Z caller=ring.go:273 msg="ring doesn't exist in KV store yet"
+level=info ts=2025-10-21T13:45:00.804356857Z caller=ingester.go:447 msg="recovered WAL checkpoint recovery finished" elapsed=135.318µs errors=false
+level=info ts=2025-10-21T13:45:00.804370143Z caller=ingester.go:453 msg="recovering from WAL"
+level=info ts=2025-10-21T13:45:00.804436567Z caller=basic_lifecycler.go:297 msg="instance not found in the ring" instance=3052561b4754 ring=compactor
+level=info ts=2025-10-21T13:45:00.804445084Z caller=basic_lifecycler_delegates.go:63 msg="not loading tokens from file, tokens file path is empty"
+level=info ts=2025-10-21T13:45:00.804550013Z caller=compactor.go:395 msg="waiting until compactor is JOINING in the ring"
+level=info ts=2025-10-21T13:45:00.804563332Z caller=compactor.go:399 msg="compactor is JOINING in the ring"
+level=info ts=2025-10-21T13:45:00.804611459Z caller=compactor.go:409 msg="waiting until compactor is ACTIVE in the ring"
+level=info ts=2025-10-21T13:45:00.804613569Z caller=ingester.go:469 msg="WAL segment recovery finished" elapsed=391.894µs errors=false
+level=info ts=2025-10-21T13:45:00.804706188Z caller=ingester.go:417 msg="closing recoverer"
+level=info ts=2025-10-21T13:45:00.80471408Z caller=ingester.go:425 msg="WAL recovery finished" time=492.217µs
+level=info ts=2025-10-21T13:45:00.804838597Z caller=lifecycler.go:614 msg="not loading tokens from file, tokens file path is empty"
+level=info ts=2025-10-21T13:45:00.804855165Z caller=wal.go:156 msg=started component=wal
+level=info ts=2025-10-21T13:45:00.804910369Z caller=lifecycler.go:643 msg="instance not found in ring, adding with no tokens" ring=ingester
+level=info ts=2025-10-21T13:45:00.804999391Z caller=lifecycler.go:483 msg="auto-joining cluster after timeout" ring=ingester
+level=info ts=2025-10-21T13:45:00.80550831Z caller=basic_lifecycler.go:297 msg="instance not found in the ring" instance=3052561b4754 ring=distributor
+level=info ts=2025-10-21T13:45:00.951602876Z caller=compactor.go:413 msg="compactor is ACTIVE in the ring"
+level=info ts=2025-10-21T13:45:00.976828329Z caller=ringmanager.go:218 msg="scheduler is ACTIVE in the ring"
+level=info ts=2025-10-21T13:45:00.9769189Z caller=module_service.go:82 msg=initialising module=query-scheduler
+level=info ts=2025-10-21T13:45:00.976996595Z caller=module_service.go:82 msg=initialising module=querier
+level=info ts=2025-10-21T13:45:00.977005289Z caller=module_service.go:82 msg=initialising module=query-frontend
+level=info ts=2025-10-21T13:45:00.977098135Z caller=loki.go:505 msg="Loki started"
+level=info ts=2025-10-21T13:45:03.97799502Z caller=worker.go:209 msg="adding connection" addr=172.19.0.7:9095
+level=info ts=2025-10-21T13:45:03.978067683Z caller=scheduler.go:615 msg="this scheduler is in the ReplicationSet, will now accept requests."
+level=info ts=2025-10-21T13:45:05.95269254Z caller=compactor.go:474 msg="this instance has been chosen to run the compactor, starting compactor"
+level=info ts=2025-10-21T13:45:05.952789177Z caller=compactor.go:503 msg="waiting 10m0s for ring to stay stable and previous compactions to finish before starting compactor"
+level=info ts=2025-10-21T13:45:10.977601086Z caller=frontend_scheduler_worker.go:107 msg="adding connection to scheduler" addr=172.19.0.7:9095
+level=info ts=2025-10-21T13:46:00.718377312Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
+level=info ts=2025-10-21T13:46:00.719589676Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
+level=info ts=2025-10-21T13:47:00.718717704Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
+level=info ts=2025-10-21T13:47:00.71979544Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
+level=info ts=2025-10-21T13:48:00.719268662Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
+level=info ts=2025-10-21T13:48:00.719327409Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
+level=info ts=2025-10-21T13:49:00.718499929Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
+level=info ts=2025-10-21T13:49:00.719552915Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
+level=info ts=2025-10-21T13:50:00.719127465Z caller=table_manager.go:136 index-store=boltdb-shipper-2020-10-24 msg="uploading tables"
+level=info ts=2025-10-21T13:50:00.719194732Z caller=table_manager.go:228 index-store=boltdb-shipper-2020-10-24 msg="syncing tables"
+level=info ts=2025-10-21T13:50:00.719216146Z caller=table_manager.go:271 index-store=boltdb-shipper-2020-10-24 msg="query readiness setup completed" duration=3.075µs distinct_users_len=0 distinct_users=
+level=info ts=2025-10-21T13:50:00.719265405Z caller=table_manager.go:171 index-store=boltdb-shipper-2020-10-24 msg="handing over indexes to shipper"
+level=info ts=2025-10-21T13:50:00.805242109Z caller=checkpoint.go:611 msg="starting checkpoint"
+level=info ts=2025-10-21T13:50:00.80552307Z caller=checkpoint.go:336 msg="attempting checkpoint for" dir=/loki/wal/checkpoint.000000
+level=info ts=2025-10-21T13:50:00.808254547Z caller=checkpoint.go:498 msg="atomic checkpoint finished" old=/loki/wal/checkpoint.000000.tmp new=/loki/wal/checkpoint.000000

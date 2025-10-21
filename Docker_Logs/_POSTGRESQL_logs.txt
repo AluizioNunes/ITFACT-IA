@@ -1,0 +1,57 @@
+PostgreSQL Database directory appears to contain a database; Skipping initialization
+2025-10-21 13:45:00 GMT [1]: [1-1] user=,db=,app=,client= LOG:  starting PostgreSQL 17.6 (Debian 17.6-2.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2025-10-21 13:45:00 GMT [1]: [2-1] user=,db=,app=,client= LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2025-10-21 13:45:00 GMT [1]: [3-1] user=,db=,app=,client= LOG:  listening on IPv6 address "::", port 5432
+2025-10-21 13:45:00 GMT [1]: [4-1] user=,db=,app=,client= LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2025-10-21 13:45:00 GMT [29]: [1-1] user=,db=,app=,client= LOG:  database system was shut down at 2025-10-21 13:44:49 GMT
+2025-10-21 13:45:00 GMT [1]: [5-1] user=,db=,app=,client= LOG:  database system is ready to accept connections
+2025-10-21 13:45:05 GMT [40]: [1-1] user=[unknown],db=[unknown],app=[unknown],client=[local] LOG:  connection received: host=[local]
+2025-10-21 13:45:05 GMT [40]: [2-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authenticated: user="admin" method=trust (/tmp/pg_hba.conf:7)
+2025-10-21 13:45:05 GMT [40]: [3-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authorized: user=admin database=postgres application_name=pg_isready
+2025-10-21 13:45:05 GMT [40]: [4-1] user=admin,db=postgres,app=pg_isready,client=[local] LOG:  disconnection: session time: 0:00:00.003 user=admin database=postgres host=[local]
+2025-10-21 13:45:35 GMT [48]: [1-1] user=[unknown],db=[unknown],app=[unknown],client=[local] LOG:  connection received: host=[local]
+2025-10-21 13:45:35 GMT [48]: [2-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authenticated: user="admin" method=trust (/tmp/pg_hba.conf:7)
+2025-10-21 13:45:35 GMT [48]: [3-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authorized: user=admin database=postgres application_name=pg_isready
+2025-10-21 13:45:35 GMT [48]: [4-1] user=admin,db=postgres,app=pg_isready,client=[local] LOG:  disconnection: session time: 0:00:00.001 user=admin database=postgres host=[local]
+2025-10-21 13:46:05 GMT [57]: [1-1] user=[unknown],db=[unknown],app=[unknown],client=[local] LOG:  connection received: host=[local]
+2025-10-21 13:46:05 GMT [57]: [2-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authenticated: user="admin" method=trust (/tmp/pg_hba.conf:7)
+2025-10-21 13:46:05 GMT [57]: [3-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authorized: user=admin database=postgres application_name=pg_isready
+2025-10-21 13:46:05 GMT [57]: [4-1] user=admin,db=postgres,app=pg_isready,client=[local] LOG:  disconnection: session time: 0:00:00.001 user=admin database=postgres host=[local]
+2025-10-21 13:46:35 GMT [65]: [1-1] user=[unknown],db=[unknown],app=[unknown],client=[local] LOG:  connection received: host=[local]
+2025-10-21 13:46:35 GMT [65]: [2-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authenticated: user="admin" method=trust (/tmp/pg_hba.conf:7)
+2025-10-21 13:46:35 GMT [65]: [3-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authorized: user=admin database=postgres application_name=pg_isready
+2025-10-21 13:46:35 GMT [65]: [4-1] user=admin,db=postgres,app=pg_isready,client=[local] LOG:  disconnection: session time: 0:00:00.001 user=admin database=postgres host=[local]
+2025-10-21 13:47:05 GMT [74]: [1-1] user=[unknown],db=[unknown],app=[unknown],client=[local] LOG:  connection received: host=[local]
+2025-10-21 13:47:05 GMT [74]: [2-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authenticated: user="admin" method=trust (/tmp/pg_hba.conf:7)
+2025-10-21 13:47:05 GMT [74]: [3-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authorized: user=admin database=postgres application_name=pg_isready
+2025-10-21 13:47:05 GMT [74]: [4-1] user=admin,db=postgres,app=pg_isready,client=[local] LOG:  disconnection: session time: 0:00:00.002 user=admin database=postgres host=[local]
+2025-10-21 13:47:35 GMT [82]: [1-1] user=[unknown],db=[unknown],app=[unknown],client=[local] LOG:  connection received: host=[local]
+2025-10-21 13:47:35 GMT [82]: [2-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authenticated: user="admin" method=trust (/tmp/pg_hba.conf:7)
+2025-10-21 13:47:35 GMT [82]: [3-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authorized: user=admin database=postgres application_name=pg_isready
+2025-10-21 13:47:35 GMT [82]: [4-1] user=admin,db=postgres,app=pg_isready,client=[local] LOG:  disconnection: session time: 0:00:00.001 user=admin database=postgres host=[local]
+2025-10-21 13:48:05 GMT [91]: [1-1] user=[unknown],db=[unknown],app=[unknown],client=[local] LOG:  connection received: host=[local]
+2025-10-21 13:48:05 GMT [91]: [2-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authenticated: user="admin" method=trust (/tmp/pg_hba.conf:7)
+2025-10-21 13:48:05 GMT [91]: [3-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authorized: user=admin database=postgres application_name=pg_isready
+2025-10-21 13:48:05 GMT [91]: [4-1] user=admin,db=postgres,app=pg_isready,client=[local] LOG:  disconnection: session time: 0:00:00.001 user=admin database=postgres host=[local]
+2025-10-21 13:48:36 GMT [99]: [1-1] user=[unknown],db=[unknown],app=[unknown],client=[local] LOG:  connection received: host=[local]
+2025-10-21 13:48:36 GMT [99]: [2-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authenticated: user="admin" method=trust (/tmp/pg_hba.conf:7)
+2025-10-21 13:48:36 GMT [99]: [3-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authorized: user=admin database=postgres application_name=pg_isready
+2025-10-21 13:48:36 GMT [99]: [4-1] user=admin,db=postgres,app=pg_isready,client=[local] LOG:  disconnection: session time: 0:00:00.001 user=admin database=postgres host=[local]
+2025-10-21 13:49:06 GMT [108]: [1-1] user=[unknown],db=[unknown],app=[unknown],client=[local] LOG:  connection received: host=[local]
+2025-10-21 13:49:06 GMT [108]: [2-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authenticated: user="admin" method=trust (/tmp/pg_hba.conf:7)
+2025-10-21 13:49:06 GMT [108]: [3-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authorized: user=admin database=postgres application_name=pg_isready
+2025-10-21 13:49:06 GMT [108]: [4-1] user=admin,db=postgres,app=pg_isready,client=[local] LOG:  disconnection: session time: 0:00:00.001 user=admin database=postgres host=[local]
+2025-10-21 13:49:36 GMT [116]: [1-1] user=[unknown],db=[unknown],app=[unknown],client=[local] LOG:  connection received: host=[local]
+2025-10-21 13:49:36 GMT [116]: [2-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authenticated: user="admin" method=trust (/tmp/pg_hba.conf:7)
+2025-10-21 13:49:36 GMT [116]: [3-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authorized: user=admin database=postgres application_name=pg_isready
+2025-10-21 13:49:36 GMT [116]: [4-1] user=admin,db=postgres,app=pg_isready,client=[local] LOG:  disconnection: session time: 0:00:00.001 user=admin database=postgres host=[local]
+2025-10-21 13:50:00 GMT [27]: [1-1] user=,db=,app=,client= LOG:  checkpoint starting: time
+2025-10-21 13:50:00 GMT [27]: [2-1] user=,db=,app=,client= LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.001 s, total=0.011 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/14EEA58, redo lsn=0/14EEA00
+2025-10-21 13:50:06 GMT [125]: [1-1] user=[unknown],db=[unknown],app=[unknown],client=[local] LOG:  connection received: host=[local]
+2025-10-21 13:50:06 GMT [125]: [2-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authenticated: user="admin" method=trust (/tmp/pg_hba.conf:7)
+2025-10-21 13:50:06 GMT [125]: [3-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authorized: user=admin database=postgres application_name=pg_isready
+2025-10-21 13:50:06 GMT [125]: [4-1] user=admin,db=postgres,app=pg_isready,client=[local] LOG:  disconnection: session time: 0:00:00.001 user=admin database=postgres host=[local]
+2025-10-21 13:50:36 GMT [133]: [1-1] user=[unknown],db=[unknown],app=[unknown],client=[local] LOG:  connection received: host=[local]
+2025-10-21 13:50:36 GMT [133]: [2-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authenticated: user="admin" method=trust (/tmp/pg_hba.conf:7)
+2025-10-21 13:50:36 GMT [133]: [3-1] user=admin,db=postgres,app=[unknown],client=[local] LOG:  connection authorized: user=admin database=postgres application_name=pg_isready
+2025-10-21 13:50:36 GMT [133]: [4-1] user=admin,db=postgres,app=pg_isready,client=[local] LOG:  disconnection: session time: 0:00:00.001 user=admin database=postgres host=[local]

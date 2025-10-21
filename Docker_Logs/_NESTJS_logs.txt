@@ -1,88 +1,22 @@
-          ^
-Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/dist/app.module' imported from /app/dist/main.js
-    at finalizeResolution (node:internal/modules/esm/resolve:274:11)
-    at moduleResolve (node:internal/modules/esm/resolve:859:10)
-    at defaultResolve (node:internal/modules/esm/resolve:983:11)
-    at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20)
-    at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38)
-    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38)
-    at ModuleJob._link (node:internal/modules/esm/module_job:183:49) {
-  code: 'ERR_MODULE_NOT_FOUND',
-  url: 'file:///app/dist/app.module'
-}
-Node.js v22.20.0
-node:internal/modules/esm/resolve:274
-    throw new ERR_MODULE_NOT_FOUND(
-          ^
-Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/dist/app.module' imported from /app/dist/main.js
-    at finalizeResolution (node:internal/modules/esm/resolve:274:11)
-    at moduleResolve (node:internal/modules/esm/resolve:859:10)
-    at defaultResolve (node:internal/modules/esm/resolve:983:11)
-    at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20)
-    at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38)
-    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38)
-    at ModuleJob._link (node:internal/modules/esm/module_job:183:49) {
-  code: 'ERR_MODULE_NOT_FOUND',
-  url: 'file:///app/dist/app.module'
-}
-Node.js v22.20.0
-node:internal/modules/esm/resolve:274
-    throw new ERR_MODULE_NOT_FOUND(
-          ^
-Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/dist/app.module' imported from /app/dist/main.js
-    at finalizeResolution (node:internal/modules/esm/resolve:274:11)
-    at moduleResolve (node:internal/modules/esm/resolve:859:10)
-    at defaultResolve (node:internal/modules/esm/resolve:983:11)
-    at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20)
-    at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38)
-    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38)
-    at ModuleJob._link (node:internal/modules/esm/module_job:183:49) {
-  code: 'ERR_MODULE_NOT_FOUND',
-  url: 'file:///app/dist/app.module'
-}
-Node.js v22.20.0
-node:internal/modules/esm/resolve:274
-    throw new ERR_MODULE_NOT_FOUND(
-          ^
-Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/dist/app.module' imported from /app/dist/main.js
-    at finalizeResolution (node:internal/modules/esm/resolve:274:11)
-    at moduleResolve (node:internal/modules/esm/resolve:859:10)
-    at defaultResolve (node:internal/modules/esm/resolve:983:11)
-    at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20)
-    at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38)
-    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38)
-    at ModuleJob._link (node:internal/modules/esm/module_job:183:49) {
-  code: 'ERR_MODULE_NOT_FOUND',
-  url: 'file:///app/dist/app.module'
-}
-Node.js v22.20.0
-node:internal/modules/esm/resolve:274
-    throw new ERR_MODULE_NOT_FOUND(
-          ^
-Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/dist/app.module' imported from /app/dist/main.js
-    at finalizeResolution (node:internal/modules/esm/resolve:274:11)
-    at moduleResolve (node:internal/modules/esm/resolve:859:10)
-    at defaultResolve (node:internal/modules/esm/resolve:983:11)
-    at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20)
-    at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38)
-    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38)
-    at ModuleJob._link (node:internal/modules/esm/module_job:183:49) {
-  code: 'ERR_MODULE_NOT_FOUND',
-  url: 'file:///app/dist/app.module'
-}
-Node.js v22.20.0
-node:internal/modules/esm/resolve:274
-    throw new ERR_MODULE_NOT_FOUND(
-          ^
-Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/dist/app.module' imported from /app/dist/main.js
-    at finalizeResolution (node:internal/modules/esm/resolve:274:11)
-    at moduleResolve (node:internal/modules/esm/resolve:859:10)
-    at defaultResolve (node:internal/modules/esm/resolve:983:11)
-    at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20)
-    at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38)
-    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38)
-    at ModuleJob._link (node:internal/modules/esm/module_job:183:49) {
-  code: 'ERR_MODULE_NOT_FOUND',
-  url: 'file:///app/dist/app.module'
-}
-Node.js v22.20.0
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [NestFactory] Starting Nest application...
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [InstanceLoader] PassportModule dependencies initialized +13ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [InstanceLoader] JwtModule dependencies initialized +0ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [InstanceLoader] ConfigHostModule dependencies initialized +0ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [InstanceLoader] ConfigModule dependencies initialized +1ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [InstanceLoader] AuthModule dependencies initialized +0ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [InstanceLoader] AppModule dependencies initialized +0ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [RoutesResolver] HealthController {/health}: +38ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [RouterExplorer] Mapped {/health, GET} route +2ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [RoutesResolver] MetricsController {/metrics}: +0ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [RouterExplorer] Mapped {/metrics, GET} route +0ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [RoutesResolver] InventoryController {/inventory}: +0ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [RouterExplorer] Mapped {/inventory/servers, GET} route +1ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [RouterExplorer] Mapped {/inventory/servers, POST} route +0ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [RouterExplorer] Mapped {/inventory/discoveries, POST} route +1ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [RouterExplorer] Mapped {/inventory/discoveries, GET} route +0ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [RoutesResolver] EventsController {/events}: +0ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [RouterExplorer] Mapped {/events/metrics, GET} route +0ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [RoutesResolver] AuthController {/auth}: +0ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [RouterExplorer] Mapped {/auth/login, POST} route +0ms
+[Nest] 1  - 10/21/2025, 9:45:01 AM     LOG [NestApplication] Nest application successfully started +2ms
+Core API is running on port 3000

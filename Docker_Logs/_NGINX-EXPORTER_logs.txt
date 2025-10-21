@@ -1,4 +1,4 @@
-time=2025-10-20T21:27:45.920Z level=INFO source=exporter.go:126 msg=nginx-prometheus-exporter version="(version=0.0.0-SNAPSHOT-bae43bc, branch=main, revision=bae43bc818cd6e47a08163a7b31f355f454e9ecb)"
-time=2025-10-20T21:27:45.920Z level=INFO source=exporter.go:127 msg="build context" build_context="(go=go1.25.3, platform=linux/amd64, user=goreleaser, date=2025-10-14T15:34:29Z, tags=unknown)"
-time=2025-10-20T21:27:45.921Z level=INFO source=tls_config.go:346 msg="Listening on" address=[::]:9113
-time=2025-10-20T21:27:45.921Z level=INFO source=tls_config.go:349 msg="TLS is disabled." http2=false address=[::]:9113
+time=2025-10-21T13:45:01.956Z level=INFO source=exporter.go:126 msg=nginx-prometheus-exporter version="(version=0.0.0-SNAPSHOT-bae43bc, branch=main, revision=bae43bc818cd6e47a08163a7b31f355f454e9ecb)"
+time=2025-10-21T13:45:01.956Z level=INFO source=exporter.go:127 msg="build context" build_context="(go=go1.25.3, platform=linux/amd64, user=goreleaser, date=2025-10-14T15:34:29Z, tags=unknown)"
+time=2025-10-21T13:45:01.957Z level=INFO source=tls_config.go:346 msg="Listening on" address=[::]:9113
+time=2025-10-21T13:45:01.957Z level=INFO source=tls_config.go:349 msg="TLS is disabled." http2=false address=[::]:9113
