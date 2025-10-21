@@ -1,17 +1,18 @@
 {
   "compilerOptions": {
-    "module": "es2020",
+    "module": "NodeNext",
     "target": "es2020",
     "declaration": false,
     "sourceMap": false,
     "outDir": "./dist",
-    "moduleResolution": "node",
+    "moduleResolution": "NodeNext",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": ["node"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

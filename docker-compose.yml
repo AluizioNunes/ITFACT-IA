@@ -123,7 +123,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - /opt/automacao/config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./Backend/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     command: --config.file=/etc/prometheus/prometheus.yml
     networks:
       - cmm_network
@@ -178,9 +178,9 @@ services:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
     volumes:
-      - /opt/automacao/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
-      - /opt/automacao/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - /opt/automacao/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./Backend/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./Backend/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./Backend/grafana/dashboards:/var/lib/grafana/dashboards:ro
 
   loki:
     image: grafana/loki:2.9.4
@@ -198,8 +198,9 @@ services:
     container_name: PROMTAIL
     restart: unless-stopped
     volumes:
+      - /var/log:/var/log
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /opt/automacao/config/promtail.yml:/etc/promtail/config.yml:ro
+      - ./Backend/promtail-config.yml:/etc/promtail/config.yml:ro
     command: -config.file=/etc/promtail/config.yml
     expose:
       - "9080"
@@ -218,12 +219,11 @@ services:
     ports:
       - "3400:3200"
       - "4318:4318"
-    volumes:
-      - /opt/automacao/config/tempo.yaml:/etc/tempo/tempo.yaml:ro
-      - tempo_data:/var/tempo
-    command: -config.file=/etc/tempo/tempo.yaml
     networks:
       - cmm_network
+    volumes:
+      - ./Backend/tempo/tempo.yaml:/etc/tempo.yaml:ro
+    command: -config.file=/etc/tempo.yaml
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -309,6 +309,4 @@ volumes:
   redis_data:
     driver: local
   rabbitmq_data:
-    driver: local
-  tempo_data:
     driver: local
