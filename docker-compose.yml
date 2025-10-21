@@ -35,14 +35,14 @@ services:
     container_name: NESTJS
     restart: unless-stopped
     expose:
-      - "3002"
+      - "3000"
     ports:
-      - "3002:3002"
+      - "3000:3000"
     networks:
       - cmm_network
     environment:
       - NODE_ENV=production
-      - PORT=3002
+      - PORT=3000
       - TZ=America/Manaus
       - POSTGRES_HOST=postgresql
       - POSTGRES_PORT=5432
@@ -169,7 +169,7 @@ services:
     expose:
       - "3000"
     ports:
-      - "3000:3000"
+      - "3010:3000"
     networks:
       - cmm_network
     environment:
@@ -200,6 +200,10 @@ services:
       - /var/log:/var/log
       - ./Backend/promtail-config.yml:/etc/promtail.yml:ro
     command: -config.file=/etc/promtail.yml
+    expose:
+      - "9080"
+    ports:
+      - "9080:9080"
     networks:
       - cmm_network
 
@@ -211,7 +215,7 @@ services:
       - "3200"
       - "4318"
     ports:
-      - "3200:3200"
+      - "3400:3200"
       - "4318:4318"
     networks:
       - cmm_network
@@ -223,7 +227,7 @@ services:
     expose:
       - "8080"
     ports:
-      - "8081:8080"
+      - "8800:8080"
     networks:
       - cmm_network
     volumes:
