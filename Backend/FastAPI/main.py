@@ -1623,6 +1623,264 @@ def inventory_services(ip: str | None = Query(None)):
 def inventory_metrics(ip: str = Query(...), metric: str = Query(...), limit: int = Query(60)):
     return {"series": get_series(ip, metric, limit)}
 
+# ----------------------
+# Quick connectivity tests
+# ----------------------
+@app.get("/api/test/ping")
+def test_ping(ip: str = Query(...), count: int = Query(1), timeout: float = Query(1.0)):
+    import subprocess, platform
+    cmd = ["ping", "-c", str(count), "-W", str(int(timeout * 1000)), ip] if platform.system().lower() != "windows" else ["ping", "-n", str(count), "-w", str(int(timeout * 1000)), ip]
+    start = time.time()
+    try:
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=timeout + 2)
+        reachable = res.returncode == 0
+        latency = (time.time() - start) * 1000
+        return {"reachable": reachable, "latency_ms": round(latency, 2), "output": res.stdout}
+    except Exception as e:
+        return {"reachable": False, "error": str(e)}
+
+@app.get("/api/test/ssh")
+def test_ssh(ip: str = Query(...), user: str = Query(...), password: Optional[str] = Query(None),
+             keyPath: Optional[str] = Query(None), port: int = Query(22), timeout: float = Query(2.5)):
+    if not paramiko:
+        return {"reachable": False, "error": "paramiko não disponível"}
+    ok, out, err = ssh_run_command(ip, user, password=password, key_path=keyPath, port=port, timeout=timeout)
+    return {"reachable": ok, "output": out, "error": err}
+
+@app.get("/api/test/snmp")
+def test_snmp(ip: str = Query(...), community: str = Query("public"), version: str = Query("v2c")):
+    info = build_snmp_hostinfo(ip, community, version)
+    ok = bool(info.get("sysDescr") or info.get("sysName"))
+    return {"reachable": ok, "info": info}
+
+# ----------------------
+# Node Exporter install via SSH (Ubuntu)
+# ----------------------
+@app.post("/api/actions/node-exporter/install")
+def actions_node_exporter_install(payload: Dict[str, Any] = Body(...)):
+    if not paramiko:
+        return {"ok": False, "error": "paramiko não disponível"}
+    ip = payload.get("ip")
+    user = payload.get("user")
+    password = payload.get("password")
+    key_path = payload.get("keyPath")
+    port = int(payload.get("port", 22))
+    timeout = float(payload.get("timeout", 3.0))
+    version = str(payload.get("version", "1.8.2"))
+    force = bool(payload.get("force", False))
+    if not ip or not user:
+        return {"ok": False, "error": "Parâmetros obrigatórios ausentes: ip/user"}
+
+    # Pre-check: if already active, skip unless force
+    if not force:
+        ok_pre, out_pre, err_pre = ssh_exec(ip, user, "systemctl is-active node_exporter || true", password=password, key_path=key_path, port=port, timeout=timeout)
+        if ok_pre and (out_pre or "") .strip() == "active":
+            probe = probe_node_exporter(ip)
+            return {"ok": True, "status": "already_running", "probe": probe}
+
+    install_script = f"""
+set -e
+PM=""
+if command -v apt-get >/dev/null 2>&1; then PM="apt"; fi
+if command -v dnf >/dev/null 2>&1; then PM="dnf"; fi
+if command -v yum >/dev/null 2>&1; then PM="yum"; fi
+if command -v zypper >/dev/null 2>&1; then PM="zypper"; fi
+install_pkgs() {{
+  case "$PM" in
+    apt) sudo -n apt-get update -y || true; sudo -n apt-get install -y curl wget || true ;;
+    dnf) sudo -n dnf -y install curl wget || true ;;
+    yum) sudo -n yum -y install curl wget || true ;;
+    zypper) sudo -n zypper -n install -y curl wget || true ;;
+    *) true ;;
+  esac
+}}
+install_pkgs
+VER="{version}"
+ARCH="$(uname -m)"
+case "$ARCH" in
+  x86_64) PKG_ARCH="amd64" ;;
+  aarch64|arm64) PKG_ARCH="arm64" ;;
+  armv7l) PKG_ARCH="armv7" ;;
+  *) PKG_ARCH="amd64" ;;
+esac
+if ! id -u node_exporter >/dev/null 2>&1; then sudo -n useradd --no-create-home --shell /bin/false node_exporter || true; fi
+cd /tmp
+URL="https://github.com/prometheus/node_exporter/releases/download/v${{VER}}/node_exporter-${{VER}}.linux-${{PKG_ARCH}}.tar.gz"
+(curl -fsSL "$URL" -o node_exporter.tar.gz) || (wget -q "$URL" -O node_exporter.tar.gz)
+rm -rf node_exporter-${{VER}}.linux-${{PKG_ARCH}}
+tar -xzf node_exporter.tar.gz
+sudo -n install -m 0755 "node_exporter-${{VER}}.linux-${{PKG_ARCH}}/node_exporter" /usr/local/bin/node_exporter
+sudo -n chown node_exporter:node_exporter /usr/local/bin/node_exporter || true
+sudo -n bash -c 'cat > /etc/systemd/system/node_exporter.service <<EOF
+[Unit]
+Description=Node Exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+ExecStart=/usr/local/bin/node_exporter --web.listen-address=:9100
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF'
+sudo -n systemctl daemon-reload
+sudo -n systemctl enable node_exporter >/dev/null 2>&1 || true
+sudo -n systemctl restart node_exporter || sudo -n systemctl start node_exporter
+sleep 1
+(ss -tulnp 2>/dev/null | grep 9100) || (netstat -tulnp 2>/dev/null | grep 9100) || true
+"""
+
+    ok_inst, out_inst, err_inst = ssh_exec(ip, user, install_script, password=password, key_path=key_path, port=port, timeout=max(timeout, 6.0))
+    probe = probe_node_exporter(ip)
+    # Persist JSON inventory with node_exporter version
+    try:
+        upsert_server_json({
+            "ip": ip,
+            "services": [{"service": "node_exporter", "port": 9100}],
+            "node_exporter": {"installed": True, "version": version, "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")},
+            "real": True,
+        })
+    except Exception:
+        pass
+    return {
+        "ok": ok_inst,
+        "status": "installed" if probe.get("present") else "not_present",
+        "probe": probe,
+        "output": out_inst,
+        "error": err_inst,
+        "version": version
+    }
+
+@app.post("/api/actions/node-exporter/stop")
+def actions_node_exporter_stop(payload: Dict[str, Any] = Body(...)):
+    if not paramiko:
+        return {"ok": False, "error": "paramiko não disponível"}
+    ip = payload.get("ip")
+    user = payload.get("user")
+    password = payload.get("password")
+    key_path = payload.get("keyPath")
+    port = int(payload.get("port", 22))
+    timeout = float(payload.get("timeout", 3.0))
+    if not ip or not user:
+        return {"ok": False, "error": "Parâmetros obrigatórios ausentes: ip/user"}
+    ok1, out1, err1 = ssh_exec(ip, user, "sudo -n systemctl stop node_exporter || true && systemctl is-active node_exporter || true", password=password, key_path=key_path, port=port, timeout=timeout)
+    status = (out1 or "").strip()
+    probe = probe_node_exporter(ip)
+    return {"ok": ok1 and status != "active", "status": status or "unknown", "probe": probe, "output": out1, "error": err1}
+
+@app.post("/api/actions/node-exporter/uninstall")
+def actions_node_exporter_uninstall(payload: Dict[str, Any] = Body(...)):
+    if not paramiko:
+        return {"ok": False, "error": "paramiko não disponível"}
+    ip = payload.get("ip")
+    user = payload.get("user")
+    password = payload.get("password")
+    key_path = payload.get("keyPath")
+    port = int(payload.get("port", 22))
+    timeout = float(payload.get("timeout", 3.0))
+    if not ip or not user:
+        return {"ok": False, "error": "Parâmetros obrigatórios ausentes: ip/user"}
+    script = """
+sudo -n systemctl stop node_exporter || true
+sudo -n systemctl disable node_exporter || true
+sudo -n rm -f /etc/systemd/system/node_exporter.service || true
+sudo -n systemctl daemon-reload || true
+sudo -n rm -f /usr/local/bin/node_exporter || true
+sudo -n userdel node_exporter 2>/dev/null || true
+"""
+    ok, out, err = ssh_exec(ip, user, script, password=password, key_path=key_path, port=port, timeout=max(timeout, 5.0))
+    probe = probe_node_exporter(ip)
+    try:
+        upsert_server_json({
+            "ip": ip,
+            "node_exporter": {"installed": False, "version": None, "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")},
+            "real": True,
+        })
+    except Exception:
+        pass
+    return {"ok": ok and not probe.get("present"), "status": "uninstalled", "probe": probe, "output": out, "error": err}
+
+# ----------------------
+# JSON Inventory (file-based)
+# ----------------------
+INVENTORY_DIR = Path(__file__).with_name("Inventory")
+SERVERS_JSON = INVENTORY_DIR / "Servers.json"
+
+def ensure_inventory_fs():
+    try:
+        INVENTORY_DIR.mkdir(parents=True, exist_ok=True)
+        if not SERVERS_JSON.exists():
+            SERVERS_JSON.write_text("[]", encoding="utf-8")
+    except Exception:
+        pass
+
+def load_servers_json() -> List[Dict[str, Any]]:
+    ensure_inventory_fs()
+    try:
+        text = SERVERS_JSON.read_text(encoding="utf-8")
+        data = json.loads(text or "[]")
+        if isinstance(data, list):
+            return data
+        return []
+    except Exception:
+        return []
+
+def save_servers_json(items: List[Dict[str, Any]]) -> None:
+    ensure_inventory_fs()
+    try:
+        SERVERS_JSON.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+def upsert_server_json(device: Dict[str, Any]) -> Dict[str, Any]:
+    items = load_servers_json()
+    now = time.strftime("%Y-%m-%d %H:%M:%S")
+    ip = device.get("ip")
+    hostname = device.get("hostname")
+    dev = {
+        "ip": ip,
+        "hostname": hostname,
+        "os": device.get("os") or "Unknown",
+        "status": device.get("status") or "Unknown",
+        "services": device.get("services") or [],
+        "last_seen": device.get("lastSeen") or now,
+        "node_exporter": device.get("node_exporter"),
+        "virtualization": device.get("virtualization"),
+        "real": bool(device.get("real", True)),
+    }
+    updated = False
+    for idx, it in enumerate(items):
+        if (ip and it.get("ip") == ip) or (hostname and it.get("hostname") == hostname):
+            base_services = it.get("services") or []
+            new_services = dev["services"] or []
+            merged = []
+            for s in base_services + new_services:
+                if s not in merged:
+                    merged.append(s)
+            dev["services"] = merged
+            it.update(dev)
+            items[idx] = it
+            updated = True
+            dev = it
+            break
+    if not updated:
+        items.append(dev)
+    save_servers_json(items)
+    return dev
+
+@app.get("/api/inventory/devices")
+def list_devices_json():
+    return {"devices": load_servers_json()}
+
+@app.post("/api/inventory/devices")
+def add_or_update_device_json(payload: Dict[str, Any] = Body(...)):
+    dev = upsert_server_json(payload or {})
+    return {"ok": True, "device": dev, "count": len(load_servers_json())}
+
 
 # Initialize DB at startup
 init_db()

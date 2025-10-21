@@ -1,67 +1,51 @@
 # Nginx Reverse Proxy Dockerfile
 FROM nginx:alpine
 
-# Install openssl for SSL certificate generation
+# Install openssl and curl
 RUN apk add --no-cache openssl curl
 
-# Create SSL directory
-RUN mkdir -p /etc/ssl/certs
+# Prepare directories
+RUN mkdir -p /etc/ssl/certs /etc/nginx/ssl
 
-# Copy nginx configuration (paths must be relative to build context)
+# Copy nginx configuration
 COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY ./conf.d/ /etc/nginx/conf.d/
 
-# Create SSL setup script
+# Create robust SSL setup script using heredoc (CRLF-safe) targeting /etc/nginx/ssl
 RUN cat > /docker-entrypoint.d/90-setup-ssl.sh << 'EOF'
 #!/bin/sh
-
-# Prevent infinite loops with completion flag
+set -e
 SSL_SETUP_FLAG="/tmp/.ssl-setup-completed"
+CERT="/etc/nginx/ssl/server.crt"
+KEY="/etc/nginx/ssl/server.key"
 
 if [ -f "$SSL_SETUP_FLAG" ]; then
-    echo "[SSL Setup] SSL setup already completed"
-    exit 0
+  echo "[SSL Setup] SSL setup already completed"
+  exit 0
 fi
 
 echo "[SSL Setup] Iniciando configuração SSL..."
-
-# Check if external SSL certificates exist and are valid
-if [ -f "/etc/ssl/certs/server.crt" ] && [ -f "/etc/ssl/certs/server.key" ]; then
-    echo "[SSL Setup] Certificados SSL externos encontrados"
-    
-    # Test certificate validity
-    if openssl x509 -in /etc/ssl/certs/server.crt -noout -checkend 86400 2>/dev/null; then
-        echo "[SSL Setup] Certificados SSL válidos e não expirados"
-        echo "$(date)" > "$SSL_SETUP_FLAG"
-        exit 0
-    else
-        echo "[SSL Setup] Certificados SSL expirados ou inválidos, gerando auto-assinados..."
-    fi
-else
-    echo "[SSL Setup] Certificados externos não encontrados, gerando auto-assinados..."
+if [ -f "$CERT" ] && [ -f "$KEY" ]; then
+  if openssl x509 -in "$CERT" -noout -checkend 86400 >/dev/null 2>&1; then
+    echo "[SSL Setup] Certificado existente válido"
+    date > "$SSL_SETUP_FLAG"
+    exit 0
+  fi
 fi
 
-# Generate self-signed certificates if needed
-if [ ! -f "/etc/ssl/certs/server.crt" ] || [ ! -f "/etc/ssl/certs/server.key" ]; then
-    echo "[SSL Setup] Gerando certificados auto-assinados..."
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-        -keyout /etc/ssl/certs/server.key \
-        -out /etc/ssl/certs/server.crt \
-        -subj "/C=BR/ST=AM/L=Manaus/O=CMM/OU=TI/CN=automacao.cmm.am.gov.br"
-    
-    echo "[SSL Setup] Certificados auto-assinados gerados com sucesso"
-fi
+echo "[SSL Setup] Gerando certificados auto-assinados..."
+mkdir -p "$(dirname "$CERT")"
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout "$KEY" \
+  -out "$CERT" \
+  -subj "/C=BR/ST=AM/L=Manaus/O=CMM/OU=TI/CN=automacao.cmm.am.gov.br"
 
-# Set permissions (ignore errors for read-only mounts)
-chmod 644 /etc/ssl/certs/server.crt 2>/dev/null || true
-chmod 600 /etc/ssl/certs/server.key 2>/dev/null || true
-
-# Mark setup as completed
-echo "$(date)" > "$SSL_SETUP_FLAG"
+chmod 644 "$CERT" || true
+chmod 600 "$KEY" || true
+date > "$SSL_SETUP_FLAG"
 echo "[SSL Setup] Configuração SSL concluída"
 EOF
 
-# Make script executable
 RUN chmod +x /docker-entrypoint.d/90-setup-ssl.sh
 
 # Health check
