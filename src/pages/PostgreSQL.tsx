@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Divider, Statistic, Spin, Alert, Progress, Table, Button } from 'antd';
 import { motion } from 'framer-motion';
+import { containerVariants } from '../ui/animations';
 import { DatabaseOutlined, ApiOutlined, BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import ApiChart from '../components/ApiChart';
 
@@ -280,9 +281,9 @@ const PostgreSQL: React.FC = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
     >
       <Divider orientation="left">
         <DatabaseOutlined style={{ marginRight: 8 }} />

@@ -51,6 +51,10 @@ services:
       - JWT_SECRET=dev-secret
       - ADMIN_USER=admin
       - ADMIN_PASS=admin
+      - AUTO_RELOAD=true
+    volumes:
+      - ./Backend/NestJS/src:/app/src
+      - ./Backend/NestJS/tsconfig.json:/app/tsconfig.json:ro
 
   api_fastapi:
     build:
@@ -64,6 +68,9 @@ services:
       - cmm_network
     environment:
       - TZ=America/Manaus
+      - AUTO_RELOAD=true
+    volumes:
+      - ./Backend/FastAPI:/app
 
   frontend:
     build:

@@ -1,6 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Card, Row, Col, Statistic, Divider, Spin, Alert, Button, Tag, Progress, Space } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
+import { containerVariants, cardVariants, statisticVariants, chartVariants, serviceCardVariants } from '../ui/animations';
+import type { Variants } from 'framer-motion';
 import {
   BarChartOutlined,
   LineChartOutlined,
@@ -22,122 +24,15 @@ import {
 import { useDashboardData } from '../hooks/useDashboardData';
 import ApiChart from '../components/ApiChart';
 
-// Variantes de animação modernas
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-      type: "spring",
-      damping: 25,
-      stiffness: 120
-    }
-  }
-} as const;
+// Variantes importadas do módulo compartilhado
 
-const cardVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: 30,
-    scale: 0.95,
-    rotateX: -15
-  },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    scale: 1,
-    rotateX: 0,
-    transition: {
-      type: "spring",
-      damping: 20,
-      stiffness: 300,
-      mass: 0.8
-    }
-  },
-  hover: {
-    scale: 1.02,
-    y: -5,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-    transition: {
-      type: "spring",
-      damping: 15,
-      stiffness: 400
-    }
-  },
-  tap: {
-    scale: 0.98,
-    transition: {
-      type: "spring",
-      damping: 25,
-      stiffness: 500
-    }
-  }
-} as const;
+// cardVariants importado do módulo compartilhado
 
-const statisticVariants = {
-  hidden: { scale: 0, rotate: -180 },
-  visible: { 
-    scale: 1, 
-    rotate: 0,
-    transition: {
-      type: "spring",
-      damping: 15,
-      stiffness: 200,
-      delay: 0.3
-    }
-  }
-} as const;
+// statisticVariants importado do módulo compartilhado
 
-const chartVariants = {
-  hidden: { 
-    opacity: 0, 
-    x: -50,
-    filter: "blur(10px)"
-  },
-  visible: { 
-    opacity: 1, 
-    x: 0,
-    filter: "blur(0px)",
-    transition: {
-      type: "spring",
-      damping: 25,
-      stiffness: 120,
-      duration: 0.8
-    }
-  }
-} as const;
+// chartVariants importado do módulo compartilhado
 
-const serviceCardVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: 50,
-    rotateY: -90
-  },
-  visible: (index: number) => ({ 
-    opacity: 1, 
-    y: 0,
-    rotateY: 0,
-    transition: {
-      type: "spring",
-      damping: 20,
-      stiffness: 200,
-      delay: index * 0.1
-    }
-  }),
-  hover: {
-    scale: 1.05,
-    rotateY: 5,
-    z: 50,
-    boxShadow: "0 15px 35px rgba(0,0,0,0.2)",
-    transition: {
-      type: "spring",
-      damping: 15,
-      stiffness: 300
-    }
-  }
-} as const;
+// serviceCardVariants importado do módulo compartilhado
 
 const Dashboard: React.FC = () => {
   const { 
@@ -155,11 +50,16 @@ const Dashboard: React.FC = () => {
     refetch 
   } = useDashboardData();
 
-  // Buscar dados na montagem do componente
+  // Evitar dupla chamada em modo Strict no dev
+  const fetchedOnce = useRef(false);
   useEffect(() => {
+    if (fetchedOnce.current) return;
+    fetchedOnce.current = true;
     refetch();
   }, [refetch]);
 
+  // Efeito de montagem tratado pelo guard fetchedOnce acima
+  
   // Função para obter cor baseada no status
   const getStatusColor = (status: string) => {
     switch (status) {

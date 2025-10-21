@@ -2,143 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { Card, Divider, Row, Col, Statistic, Button, Table, Alert, Progress, Tag, Space, Spin } from 'antd';
 import { ApiOutlined, LinkOutlined, ReloadOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import { containerVariants, headerVariants, statusCardVariants, performanceCardVariants, chartCardVariants, tableVariants, buttonVariants } from '../ui/animations';
 import { useRealApiData } from '../hooks/useRealApiData';
 import ApiChart from '../components/ApiChart';
 
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2
-    }
-  }
-};
+// Variantes importadas do módulo compartilhado
 
-const headerVariants = {
-  hidden: { opacity: 0, y: -30, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      type: "spring",
-      stiffness: 300,
-      damping: 20,
-      duration: 0.6
-    }
-  }
-};
+// headerVariants importado do módulo compartilhado
 
-const statusCardVariants = {
-  hidden: { opacity: 0, y: 30, scale: 0.9 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      type: "spring",
-      stiffness: 400,
-      damping: 25
-    }
-  },
-  hover: {
-    scale: 1.05,
-    y: -5,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-    transition: {
-      type: "spring",
-      stiffness: 400,
-      damping: 10
-    }
-  },
-  tap: {
-    scale: 0.98,
-    transition: { duration: 0.1 }
-  }
-};
+// statusCardVariants importado do módulo compartilhado
 
-const performanceCardVariants = {
-  hidden: { opacity: 0, x: -50, rotateY: -15 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    rotateY: 0,
-    transition: {
-      type: "spring",
-      stiffness: 300,
-      damping: 20,
-      duration: 0.8
-    }
-  },
-  hover: {
-    scale: 1.02,
-    rotateY: 5,
-    boxShadow: "0 15px 30px rgba(0,0,0,0.1)",
-    transition: {
-      type: "spring",
-      stiffness: 400,
-      damping: 15
-    }
-  }
-};
+// performanceCardVariants importado do módulo compartilhado
 
-const chartCardVariants = {
-  hidden: { opacity: 0, scale: 0.8, rotateX: -15 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    rotateX: 0,
-    transition: {
-      type: "spring",
-      stiffness: 250,
-      damping: 20,
-      duration: 1
-    }
-  },
-  hover: {
-    scale: 1.02,
-    rotateX: 2,
-    boxShadow: "0 20px 40px rgba(0,0,0,0.12)",
-    transition: {
-      type: "spring",
-      stiffness: 300,
-      damping: 15
-    }
-  }
-};
+// chartCardVariants importado do módulo compartilhado
 
-const tableVariants = {
-  hidden: { opacity: 0, y: 50 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 200,
-      damping: 25,
-      duration: 0.8
-    }
-  }
-};
+// tableVariants importado do módulo compartilhado
 
-const buttonVariants = {
-  hover: {
-    scale: 1.05,
-    boxShadow: "0 5px 15px rgba(0,0,0,0.2)",
-    transition: {
-      type: "spring",
-      stiffness: 400,
-      damping: 10
-    }
-  },
-  tap: {
-    scale: 0.95,
-    transition: { duration: 0.1 }
-  }
-};
+// buttonVariants importado do módulo compartilhado
 
 const APIs: React.FC = () => {
   const { metrics, endpoints, performance, health, info, services, loading, error, refetch } = useRealApiData(); // Removed refresh interval

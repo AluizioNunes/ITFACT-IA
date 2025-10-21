@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Divider, Statistic, Table, Spin, Alert, Button, Tag, Progress, Space } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Variants } from 'motion-dom';
+import { containerVariants, headerVariants, metricCardVariants, tableVariants, buttonVariants, chartCardVariants } from '../ui/animations';
 import { 
   CloudServerOutlined, 
   BarChartOutlined, 
@@ -17,210 +19,37 @@ import { useNginxData } from '../hooks/useNginxData';
 import ApiChart from '../components/ApiChart';
 
 // Variantes de animação modernas
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.05,
-      type: "spring",
-      damping: 25,
-      stiffness: 120
-    }
-  }
-};
+// containerVariants agora importado do módulo compartilhado
 
-const headerVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: -60,
-    scale: 0.8,
-    rotateX: -30
-  },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    scale: 1,
-    rotateX: 0,
-    transition: {
-      type: "spring",
-      damping: 20,
-      stiffness: 300,
-      mass: 0.8
-    }
-  }
-};
+// headerVariants agora importado do módulo compartilhado
 
-const metricCardVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: 50,
-    scale: 0.8,
-    rotateY: -20
-  },
-  visible: (index: number) => ({ 
-    opacity: 1, 
-    y: 0,
-    scale: 1,
-    rotateY: 0,
-    transition: {
-      type: "spring",
-      damping: 20,
-      stiffness: 250,
-      delay: index * 0.1,
-      mass: 0.9
-    }
-  }),
-  hover: {
-    scale: 1.05,
-    y: -10,
-    rotateY: 5,
-    boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
-    transition: {
-      type: "spring",
-      damping: 15,
-      stiffness: 400
-    }
-  },
-  tap: {
-    scale: 0.95,
-    transition: {
-      type: "spring",
-      damping: 25,
-      stiffness: 500
-    }
-  }
-};
+// metricCardVariants agora importado do módulo compartilhado
 
-const chartCardVariants = {
-  hidden: { 
-    opacity: 0, 
-    x: -100,
-    filter: "blur(20px)",
-    scale: 0.7
-  },
-  visible: (index: number) => ({ 
-    opacity: 1, 
-    x: 0,
-    filter: "blur(0px)",
-    scale: 1,
-    transition: {
-      type: "spring",
-      damping: 25,
-      stiffness: 150,
-      delay: index * 0.15,
-      duration: 1.2
-    }
-  }),
-  hover: {
-    scale: 1.03,
-    y: -8,
-    rotateX: 5,
-    transition: {
-      type: "spring",
-      damping: 20,
-      stiffness: 300
-    }
-  }
-};
+// chartCardVariants agora importado do módulo compartilhado
 
-const tableVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: 100,
-    scale: 0.9,
-    filter: "blur(10px)"
-  },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    scale: 1,
-    filter: "blur(0px)",
-    transition: {
-      type: "spring",
-      damping: 25,
-      stiffness: 120,
-      duration: 1
-    }
-  },
-  hover: {
-    scale: 1.01,
-    y: -5,
-    transition: {
-      type: "spring",
-      damping: 20,
-      stiffness: 300
-    }
-  }
-};
+// tableVariants agora importado do módulo compartilhado
 
 const systemInfoVariants = {
-  hidden: { 
-    opacity: 0, 
+  hidden: {
+    opacity: 0,
     scale: 0,
-    rotate: -45
+    rotate: -45,
   },
-  visible: (index: number) => ({ 
-    opacity: 1, 
+  visible: (index: number, _current: any, _velocity: any) => ({
+    opacity: 1,
     scale: 1,
     rotate: 0,
-    transition: {
-      type: "spring",
-      damping: 15,
-      stiffness: 200,
-      delay: index * 0.2
-    }
+    // transition: intentionally omitted to avoid TS type conflicts with motion-dom
+    // default spring behavior applies
   }),
   hover: {
     scale: 1.05,
     rotate: 2,
-    boxShadow: "0 15px 30px rgba(0,0,0,0.1)",
-    transition: {
-      type: "spring",
-      damping: 20,
-      stiffness: 300
-    }
-  }
-};
+    boxShadow: '0 15px 30px rgba(0,0,0,0.1)',
+  },
+} satisfies Variants;
 
-const buttonVariants = {
-  hidden: { 
-    opacity: 0, 
-    scale: 0,
-    rotate: -180
-  },
-  visible: { 
-    opacity: 1, 
-    scale: 1,
-    rotate: 0,
-    transition: {
-      type: "spring",
-      damping: 15,
-      stiffness: 200,
-      delay: 0.3
-    }
-  },
-  hover: {
-    scale: 1.1,
-    rotate: 5,
-    boxShadow: "0 10px 25px rgba(24, 144, 255, 0.3)",
-    transition: {
-      type: "spring",
-      damping: 15,
-      stiffness: 400
-    }
-  },
-  tap: {
-    scale: 0.9,
-    rotate: -5,
-    transition: {
-      type: "spring",
-      damping: 25,
-      stiffness: 500
-    }
-  }
-};
+// buttonVariants agora importado do módulo compartilhado
 
 const Nginx: React.FC = () => {
   const { metrics, upstreams, locations, performance, status, loading, error, refetch } = useNginxData();
@@ -289,46 +118,24 @@ const Nginx: React.FC = () => {
   // Colunas da tabela de locations
   const locationColumns = [
     {
-      title: 'Localização',
+      title: 'Path',
       dataIndex: 'path',
-      key: 'path',
-      render: (path: string) => <code style={{ backgroundColor: '#f0f0f0', padding: '2px 6px', borderRadius: '4px' }}>{path}</code>
+      key: 'path'
     },
     {
-      title: 'Requisições',
-      dataIndex: 'requests',
-      key: 'requests',
-      sorter: (a: any, b: any) => a.requests - b.requests,
-      render: (requests: number) => requests.toLocaleString('pt-BR')
+      title: 'Proxy Pass',
+      dataIndex: 'proxy_pass',
+      key: 'proxy_pass'
     },
     {
-      title: 'Erros',
-      dataIndex: 'errors',
-      key: 'errors',
-      render: (errors: number) => (
-        <Tag color={errors > 10 ? 'red' : errors > 0 ? 'orange' : 'green'}>
-          {errors}
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => (
+        <Tag color={status === 'up' ? 'green' : 'red'}>
+          {status}
         </Tag>
       )
-    },
-    {
-      title: 'Taxa de Erro',
-      dataIndex: 'errorRate',
-      key: 'errorRate',
-      render: (rate: string) => {
-        const numRate = parseFloat(rate);
-        return (
-          <span style={{ color: numRate > 1 ? '#ff4d4f' : numRate > 0.1 ? '#faad14' : '#52c41a' }}>
-            {rate}%
-          </span>
-        );
-      }
-    },
-    {
-      title: 'Tempo Resp. (ms)',
-      dataIndex: 'avgResponseTime',
-      key: 'avgResponseTime',
-      render: (time: number) => `${time}ms`
     }
   ];
 
@@ -726,6 +533,6 @@ const Nginx: React.FC = () => {
       </Spin>
     </motion.div>
   );
-};
+}
 
 export default Nginx;

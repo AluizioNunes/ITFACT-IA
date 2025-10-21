@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Row, Col, Divider, Statistic, Table, Tag, Spin, Alert, Descriptions } from 'antd';
 import { motion } from 'framer-motion';
+import { containerVariants } from '../ui/animations';
 import { DockerOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useDockerContainers } from '../hooks/useRealData';
 
@@ -79,9 +80,9 @@ const Docker: React.FC = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
     >
       <Divider orientation="left">Visão Geral do Docker</Divider>
       

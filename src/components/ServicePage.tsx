@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Divider, Row, Col, Statistic, Button } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
+import { containerVariants, headerVariants, cardVariants, metricCardVariants as metricVariants, chartVariants, buttonVariants } from '../ui/animations';
 import { BarChartOutlined, LinkOutlined, LineChartOutlined, DashboardOutlined } from '@ant-design/icons';
 import ApiChart from './ApiChart';
 
@@ -16,170 +17,17 @@ interface ServicePageProps {
   };
 }
 
-// Variantes de animação modernas
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.1,
-      type: "spring",
-      damping: 25,
-      stiffness: 120
-    }
-  }
-};
+// Variantes importadas do módulo compartilhado
 
-const headerVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: -50,
-    scale: 0.8,
-    rotateX: -30
-  },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    scale: 1,
-    rotateX: 0,
-    transition: {
-      type: "spring",
-      damping: 20,
-      stiffness: 300,
-      mass: 0.8
-    }
-  }
-};
+// headerVariants importado do módulo compartilhado
 
-const cardVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: 40,
-    scale: 0.9,
-    rotateY: -15
-  },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    scale: 1,
-    rotateY: 0,
-    transition: {
-      type: "spring",
-      damping: 20,
-      stiffness: 250,
-      mass: 0.9
-    }
-  },
-  hover: {
-    scale: 1.03,
-    y: -8,
-    rotateY: 2,
-    boxShadow: "0 15px 40px rgba(0,0,0,0.15)",
-    transition: {
-      type: "spring",
-      damping: 15,
-      stiffness: 400
-    }
-  }
-};
+// cardVariants importado do módulo compartilhado
 
-const metricVariants = {
-  hidden: { 
-    opacity: 0, 
-    scale: 0,
-    rotate: -180
-  },
-  visible: (index: number) => ({ 
-    opacity: 1, 
-    scale: 1,
-    rotate: 0,
-    transition: {
-      type: "spring",
-      damping: 15,
-      stiffness: 200,
-      delay: index * 0.1
-    }
-  }),
-  hover: {
-    scale: 1.05,
-    rotate: 5,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-    transition: {
-      type: "spring",
-      damping: 20,
-      stiffness: 300
-    }
-  }
-};
+// metricVariants importado do módulo compartilhado
 
-const chartVariants = {
-  hidden: { 
-    opacity: 0, 
-    x: -100,
-    filter: "blur(15px)",
-    scale: 0.8
-  },
-  visible: { 
-    opacity: 1, 
-    x: 0,
-    filter: "blur(0px)",
-    scale: 1,
-    transition: {
-      type: "spring",
-      damping: 25,
-      stiffness: 120,
-      duration: 1.2
-    }
-  },
-  hover: {
-    scale: 1.02,
-    y: -5,
-    transition: {
-      type: "spring",
-      damping: 20,
-      stiffness: 300
-    }
-  }
-};
+// chartVariants importado do módulo compartilhado
 
-const buttonVariants = {
-  hidden: { 
-    opacity: 0, 
-    scale: 0,
-    rotate: -90
-  },
-  visible: { 
-    opacity: 1, 
-    scale: 1,
-    rotate: 0,
-    transition: {
-      type: "spring",
-      damping: 15,
-      stiffness: 200,
-      delay: 0.3
-    }
-  },
-  hover: {
-    scale: 1.1,
-    rotate: 3,
-    boxShadow: "0 8px 20px rgba(24, 144, 255, 0.3)",
-    transition: {
-      type: "spring",
-      damping: 15,
-      stiffness: 400
-    }
-  },
-  tap: {
-    scale: 0.95,
-    rotate: -3,
-    transition: {
-      type: "spring",
-      damping: 25,
-      stiffness: 500
-    }
-  }
-};
+// buttonVariants importado do módulo compartilhado
 
 const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, metrics = [], externalUrl, chartData }) => {
   // Gerar dados mock se não fornecidos

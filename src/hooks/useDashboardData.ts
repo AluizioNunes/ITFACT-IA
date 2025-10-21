@@ -1,5 +1,31 @@
 import { useState, useCallback, useEffect } from 'react';
 
+// Helper: fetch JSON com timeout para evitar travar a UI
+const fetchJsonWithTimeout = async (url: string, timeoutMs = 2500): Promise<any | null> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    return data;
+  } catch (err) {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
+// Novo helper: tenta múltiplos endpoints e retorna o primeiro disponível
+const fetchFirstAvailableJson = async (urls: string[], timeoutMs = 1000): Promise<any | null> => {
+  for (const url of urls) {
+    const result = await fetchJsonWithTimeout(url, timeoutMs);
+    if (result) return result;
+  }
+  return null;
+};
+
 interface ServiceStatus {
   name: string;
   status: 'Active' | 'Inactive' | 'Warning';
@@ -242,40 +268,35 @@ export const useDashboardData = (): DashboardData => {
       setData(prev => ({ ...prev, loading: true, error: null }));
 
       const baseUrl = window.location.origin;
-      
-      // Buscar dados de múltiplas APIs em paralelo
+      // Requisições com timeout reduzido e fallback de endpoints para resposta mais rápida
       const [
-        systemMetricsRes,
-        nginxMetricsRes,
-        servicesRes,
-        nginxStatusRes,
-        healthRes,
-        postgresStatusRes,
-        postgresMetricsRes,
-        dockerContainersRes,
-        dockerStatusRes,
-        postgresDatabasesRes
+        systemMetrics,
+        nginxMetrics,
+        servicesData,
+        nginxStatus,
+        health,
+        postgresStatus,
+        postgresMetrics,
+        dockerContainers,
+        dockerStatus,
+        postgresDatabases
       ] = await Promise.all([
-        fetch(`${baseUrl}/api/metrics`),
-        fetch(`${baseUrl}/api/nginx/metrics`),
-        fetch(`${baseUrl}/api/services`),
-        fetch(`${baseUrl}/api/nginx/status`),
-        fetch(`${baseUrl}/api/health`),
-        fetch(`${baseUrl}/api/postgresql/status`),
-        fetch(`${baseUrl}/api/postgresql/metrics`),
-        fetch(`${baseUrl}/api/docker/containers`),
-        fetch(`${baseUrl}/api/docker/status`),
-        fetch(`${baseUrl}/api/postgresql/databases`)
+        fetchFirstAvailableJson([`${baseUrl}/api/metrics`, `${baseUrl}/metrics`], 1000),
+        fetchFirstAvailableJson([`${baseUrl}/api/nginx/metrics`], 900),
+        fetchFirstAvailableJson([`${baseUrl}/api/services`, `${baseUrl}/api/inventory/services`], 1000),
+        fetchFirstAvailableJson([`${baseUrl}/api/nginx/status`, `${baseUrl}/nginx_status`], 800),
+        fetchFirstAvailableJson([`${baseUrl}/api/health`, `${baseUrl}/health`], 800),
+        fetchFirstAvailableJson([`${baseUrl}/api/postgresql/status`, `${baseUrl}/api/discovery/dbprobe`], 1000),
+        fetchFirstAvailableJson([`${baseUrl}/api/postgresql/metrics`, `${baseUrl}/api/discovery/dbprobe`], 1000),
+        fetchFirstAvailableJson([`${baseUrl}/api/docker/containers`, `${baseUrl}/api/discovery/docker`], 1000),
+        fetchFirstAvailableJson([`${baseUrl}/api/docker/status`, `${baseUrl}/api/discovery/docker`], 800),
+        fetchFirstAvailableJson([`${baseUrl}/api/postgresql/databases`, `${baseUrl}/api/discovery/dbprobe`], 1000)
       ]);
 
-      // Verificar se pelo menos algumas APIs estão funcionando
-      const responses = [systemMetricsRes, nginxMetricsRes, servicesRes, nginxStatusRes, healthRes, postgresStatusRes, postgresMetricsRes, dockerContainersRes, dockerStatusRes, postgresDatabasesRes];
-      const validResponses = responses.filter(res => 
-        res.ok && res.headers.get('content-type')?.includes('application/json')
-      );
-
-      if (validResponses.length < 2) {
-        console.warn('Poucas APIs disponíveis, usando dados mock como fallback');
+      // Se nenhuma resposta válida veio, usa fallback rápido
+      const results = [systemMetrics, nginxMetrics, servicesData, nginxStatus, health, postgresStatus, postgresMetrics, dockerContainers, dockerStatus, postgresDatabases];
+      const validCount = results.filter(Boolean).length;
+      if (validCount < 1) {
         const mockData = getMockData();
         setData(prev => ({
           ...prev,
@@ -286,108 +307,36 @@ export const useDashboardData = (): DashboardData => {
         return;
       }
 
-      // Parse das respostas válidas
-      let systemMetrics = null;
-      let nginxMetrics = null;
-      let servicesData = null;
-      let postgresStatus = null;
-      let postgresMetrics = null;
-      let dockerContainers = null;
-      let dockerStatus = null;
-      let postgresDatabases = null;
-
-      try {
-        if (systemMetricsRes.ok) {
-          systemMetrics = await systemMetricsRes.json();
-        }
-      } catch (e) {
-        console.warn('Erro ao processar métricas do sistema');
-      }
-
-      try {
-        if (nginxMetricsRes.ok) {
-          nginxMetrics = await nginxMetricsRes.json();
-        }
-      } catch (e) {
-        console.warn('Erro ao processar métricas do Nginx');
-      }
-
-      try {
-        if (servicesRes.ok) {
-          servicesData = await servicesRes.json();
-        }
-      } catch (e) {
-        console.warn('Erro ao processar dados dos serviços');
-      }
-
-      try {
-        if (postgresStatusRes.ok) {
-          postgresStatus = await postgresStatusRes.json();
-        }
-      } catch (e) {
-        console.warn('Erro ao processar status do PostgreSQL');
-      }
-
-      try {
-        if (postgresMetricsRes.ok) {
-          postgresMetrics = await postgresMetricsRes.json();
-        }
-      } catch (e) {
-        console.warn('Erro ao processar métricas do PostgreSQL');
-      }
-
-      try {
-        if (dockerContainersRes.ok) {
-          dockerContainers = await dockerContainersRes.json();
-        }
-      } catch (e) {
-        console.warn('Erro ao processar containers do Docker');
-      }
-
-      try {
-        if (dockerStatusRes.ok) {
-          dockerStatus = await dockerStatusRes.json();
-        }
-      } catch (e) {
-        console.warn('Erro ao processar status do Docker');
-      }
-
-      try {
-        if (postgresDatabasesRes.ok) {
-          postgresDatabases = await postgresDatabasesRes.json();
-        }
-      } catch (e) {
-        console.warn('Erro ao processar bancos de dados do PostgreSQL');
-      }
-
       // Combinar dados reais com mock quando necessário
       const mockData = getMockData();
-      
+
       // Criar lista de serviços combinando dados reais e mock
       const servicesList: ServiceStatus[] = [];
-      
-      // Adicionar serviços base da API
+
+      // Adicionar serviços base da API (compatível com diferentes esquemas)
       if (servicesData?.services) {
         servicesData.services.forEach((service: any) => {
+          const name = service.name || service.service || 'Service';
+          const statusRaw = service.status || 'Active';
           let responseTime = 30 + Math.random() * 50;
           let errorRate = Math.random() * 0.5;
           let uptime = systemMetrics?.uptime?.formatted || '0h 0m';
-          
+
           // Usar dados reais para serviços específicos
-          if (service.name === 'Backend API') {
+          if (name === 'Backend API') {
             responseTime = typeof systemMetrics?.averageResponseTime === 'number' ? 
               systemMetrics.averageResponseTime : 45;
             errorRate = typeof systemMetrics?.errorRate === 'number' ? 
               systemMetrics.errorRate : 0.2;
-          } else if (service.name === 'PostgreSQL' && postgresMetrics) {
+          } else if (name === 'PostgreSQL' && postgresMetrics) {
             responseTime = postgresMetrics.performance?.avgQueryTime || 15;
             errorRate = postgresMetrics.connectionUsage > 80 ? 0.1 : 0.0;
             uptime = postgresStatus?.uptime?.formatted || uptime;
           }
-          
+
           servicesList.push({
-            name: service.name,
-            status: service.status === 'Active' ? 'Active' : 'Inactive',
+            name,
+            status: (statusRaw === 'Active' ? 'Active' : statusRaw === 'Inactive' ? 'Inactive' : 'Active'),
             uptime,
             responseTime,
             errorRate,
@@ -449,7 +398,6 @@ export const useDashboardData = (): DashboardData => {
     } catch (error) {
       console.error('Erro ao buscar dados do dashboard:', error);
       console.log('Usando dados mock como fallback completo');
-      
       const mockData = getMockData();
       setData(prev => ({
         ...prev,
