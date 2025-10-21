@@ -36,6 +36,8 @@ services:
     restart: unless-stopped
     expose:
       - "3002"
+    ports:
+      - "3002:3002"
     networks:
       - cmm_network
     environment:
@@ -61,6 +63,8 @@ services:
     restart: unless-stopped
     expose:
       - "8000"
+    ports:
+      - "8000:8000"
     networks:
       - cmm_network
     environment:
@@ -77,6 +81,8 @@ services:
       - cmm_network
     expose:
       - "80"
+    ports:
+      - "8080:80"
     environment:
       - NODE_ENV=production
       - VITE_PROMETHEUS_URL=/prometheus
@@ -89,6 +95,8 @@ services:
     restart: unless-stopped
     expose:
       - "5432"
+    ports:
+      - "5432:5432"
     networks:
       - cmm_network
     environment:
@@ -111,6 +119,8 @@ services:
     restart: unless-stopped
     expose:
       - "9090"
+    ports:
+      - "9090:9090"
     volumes:
       - ./Backend/prometheus.yml:/etc/prometheus.yml:ro
     command: --config.file=/etc/prometheus.yml
@@ -123,6 +133,8 @@ services:
     restart: unless-stopped
     expose:
       - "6379"
+    ports:
+      - "6379:6379"
     networks:
       - cmm_network
     volumes:
@@ -138,6 +150,9 @@ services:
     expose:
       - "5672"
       - "15672"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
     networks:
       - cmm_network
     environment:
@@ -153,6 +168,8 @@ services:
     restart: unless-stopped
     expose:
       - "3000"
+    ports:
+      - "3000:3000"
     networks:
       - cmm_network
     environment:
@@ -170,6 +187,8 @@ services:
     restart: unless-stopped
     expose:
       - "3100"
+    ports:
+      - "3100:3100"
     networks:
       - cmm_network
 
@@ -191,6 +210,9 @@ services:
     expose:
       - "3200"
       - "4318"
+    ports:
+      - "3200:3200"
+      - "4318:4318"
     networks:
       - cmm_network
 
@@ -200,6 +222,8 @@ services:
     restart: unless-stopped
     expose:
       - "8080"
+    ports:
+      - "8081:8080"
     networks:
       - cmm_network
     volumes:
@@ -215,6 +239,8 @@ services:
     command: --nginx.scrape-uri=http://nginx/nginx_status
     expose:
       - "9113"
+    ports:
+      - "9113:9113"
     networks:
       - cmm_network
     depends_on:
@@ -228,6 +254,8 @@ services:
       - DATA_SOURCE_NAME=postgresql://admin:admin@postgresql:5432/postgres?sslmode=disable
     expose:
       - "9187"
+    ports:
+      - "9187:9187"
     networks:
       - cmm_network
     depends_on:
@@ -239,6 +267,8 @@ services:
     restart: unless-stopped
     expose:
       - "9121"
+    ports:
+      - "9121:9121"
     command: ["--redis.addr=redis://redis:6379"]
     networks:
       - cmm_network
@@ -251,6 +281,8 @@ services:
     restart: unless-stopped
     expose:
       - "9419"
+    ports:
+      - "9419:9419"
     environment:
       - RABBITMQ_URL=http://rabbitmq:15672
       - RABBITMQ_USER=admin
