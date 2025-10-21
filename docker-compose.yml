@@ -19,12 +19,22 @@ services:
     networks:
       - cmm_network
     depends_on:
-      - frontend
-      - api_nestjs
-      - api_fastapi
-      - postgresql
+      frontend:
+        condition: service_healthy
+      api_nestjs:
+        condition: service_healthy
+      api_fastapi:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
     environment:
       - TZ=America/Manaus
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S --spider http://localhost/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   api_nestjs:
     build:
@@ -38,6 +48,13 @@ services:
       - "3000:3000"
     networks:
       - cmm_network
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -69,6 +86,12 @@ services:
       - TZ=America/Manaus
       - AUTO_RELOAD=false
       - DB_PATH=/app/discovery.db
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S --spider http://localhost:8000/docs || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
   frontend:
     build:
@@ -85,6 +108,12 @@ services:
     environment:
       - NODE_ENV=production
       - VITE_PROMETHEUS_URL=/prometheus
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S --spider http://localhost/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   postgresql:
     build:
@@ -123,6 +152,12 @@ services:
     volumes:
       - ./Backend/prometheus:/etc/prometheus:ro
     command: --config.file=/etc/prometheus/prometheus.yml
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S --spider http://localhost:9090/-/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - cmm_network
 
@@ -141,6 +176,12 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
     environment:
       - TZ=America/Manaus
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -160,6 +201,12 @@ services:
       - TZ=America/Manaus
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
   grafana:
     image: grafana/grafana:latest
@@ -169,6 +216,19 @@ services:
       - "3000"
     ports:
       - "3010:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_started
+      tempo:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S --spider http://localhost:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - cmm_network
     environment:
@@ -186,8 +246,12 @@ services:
     restart: unless-stopped
     expose:
       - "3100"
-    ports:
-      - "3100:3100"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S --spider http://localhost:3100/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - cmm_network
 
@@ -204,6 +268,15 @@ services:
       - "9080"
     ports:
       - "9080:9080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S --spider http://localhost:9080/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      loki:
+        condition: service_started
     networks:
       - cmm_network
 
@@ -220,8 +293,14 @@ services:
     networks:
       - cmm_network
     volumes:
-      - ./Backend/tempo:/etc/tempo:ro
+      - ./Backend/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
     command: -config.file=/etc/tempo/tempo.yaml
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S --spider http://localhost:3200/metrics || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -231,6 +310,12 @@ services:
       - "8080"
     ports:
       - "8800:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S --spider http://localhost:8080/metrics || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - cmm_network
     volumes:
@@ -248,6 +333,12 @@ services:
       - "9113"
     ports:
       - "9113:9113"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S --spider http://localhost:9113/metrics || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - cmm_network
     depends_on:
@@ -263,6 +354,12 @@ services:
       - "9187"
     ports:
       - "9187:9187"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S --spider http://localhost:9187/metrics || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - cmm_network
     depends_on:
@@ -277,6 +374,12 @@ services:
     ports:
       - "9121:9121"
     command: ["--redis.addr=redis://redis:6379"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S --spider http://localhost:9121/metrics || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - cmm_network
     depends_on:
@@ -294,6 +397,12 @@ services:
       - RABBITMQ_URL=http://rabbitmq:15672
       - RABBITMQ_USER=admin
       - RABBITMQ_PASSWORD=admin
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -S --spider http://localhost:9419/metrics || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - cmm_network
     depends_on:
