@@ -13,27 +13,27 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api/inventory': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost',
         changeOrigin: true,
       },
       '/api/discovery': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost',
         changeOrigin: true,
       },
       '/analytics': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost',
         changeOrigin: true,
       },
       '/metrics': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost',
         changeOrigin: true,
       },
       '/health': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost',
         changeOrigin: true,
       },
       '/api': {
-        target: 'http://172.18.1.32:3001',
+        target: 'http://localhost',
         changeOrigin: true,
       }
     }
