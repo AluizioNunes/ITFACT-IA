@@ -48,7 +48,7 @@ RUN chmod +x /usr/local/bin/verify-databases.sh
 
 # Health check customizado
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD pg_isready -U admin -d postgres || exit 1
+    CMD pg_isready -U admin -d AUTOMACAO || exit 1
 
 # Expor porta padrão
 EXPOSE 5432

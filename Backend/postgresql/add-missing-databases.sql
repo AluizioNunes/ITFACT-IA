@@ -174,8 +174,8 @@ VALUES
     ('CMM Automação', 'cmm.am.gov.br', 'ti@cmm.am.gov.br')
 ON CONFLICT DO NOTHING;
 
--- Voltar para postgres e mostrar resultado
-\c postgres;
+-- Voltar para AUTOMACAO e mostrar resultado
+\c AUTOMACAO;
 SELECT 
     'Bancos criados/verificados com sucesso!' AS status,
     string_agg(datname, ', ') AS bancos_existentes

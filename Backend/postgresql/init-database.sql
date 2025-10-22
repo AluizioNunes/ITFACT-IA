@@ -10,13 +10,11 @@ EXCEPTION WHEN duplicate_object THEN
    ALTER USER admin CREATEDB;
 END$$;
 
--- Criar extensões úteis no banco postgres (principal)
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- Removido: extensões globais no banco principal (evitar dependência do schema public)
 
 -- CRIAR BANCO DE DADOS EVOLUTIONAPI
-\c postgres;
+\c AUTOMACAO;
+DROP SCHEMA IF EXISTS public CASCADE;
 CREATE DATABASE evolutionapi OWNER admin;
 GRANT ALL PRIVILEGES ON DATABASE evolutionapi TO admin;
 
@@ -56,7 +54,7 @@ GRANT ALL ON ALL TABLES IN SCHEMA evolutionapi TO admin;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA evolutionapi TO admin;
 
 -- CRIAR BANCO DE DADOS N8N
-\c postgres;
+\c AUTOMACAO;
 CREATE DATABASE n8n OWNER admin;
 GRANT ALL PRIVILEGES ON DATABASE n8n TO admin;
 
@@ -95,7 +93,7 @@ GRANT ALL ON ALL TABLES IN SCHEMA n8n TO admin;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA n8n TO admin;
 
 -- CRIAR BANCO DE DADOS CHATWOOT
-\c postgres;
+\c AUTOMACAO;
 CREATE DATABASE chatwoot OWNER admin;
 GRANT ALL PRIVILEGES ON DATABASE chatwoot TO admin;
 
@@ -163,7 +161,8 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- VOLTA PARA O BANCO PRINCIPAL PARA MENSAGEM FINAL
-\c postgres;
+\c AUTOMACAO;
+DROP DATABASE IF EXISTS postgres;
 SELECT 'PostgreSQL 17.6 inicializado com sucesso para CMM Automação Platform' AS status_inicializacao,
        'Bancos criados: evolutionapi, n8n, chatwoot' AS bancos_criados,
        'Usuários criados: admin (para todos os bancos)' AS usuarios_criados;

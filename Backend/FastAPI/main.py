@@ -136,7 +136,7 @@ PG_HOST = os.environ.get("POSTGRES_HOST", "postgresql")
 PG_PORT = int(os.environ.get("POSTGRES_PORT", "5432"))
 PG_USER = os.environ.get("POSTGRES_USER", "admin")
 PG_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "admin")
-PG_DB = os.environ.get("POSTGRES_DB", "postgres")
+PG_DB = os.environ.get("POSTGRES_DB", "AUTOMACAO")
 
 def get_pg_conn():
     if not psycopg:
@@ -153,8 +153,9 @@ def ensure_pg_schema():
     try:
         with conn.cursor() as cur:
             cur.execute('CREATE SCHEMA IF NOT EXISTS "AUTOMACAO";')
+            cur.execute('DROP TABLE IF EXISTS "AUTOMACAO"."Dsipositivos" CASCADE;')
             cur.execute('''
-                CREATE TABLE IF NOT EXISTS "AUTOMACAO"."Dsipositivos" (
+                CREATE TABLE IF NOT EXISTS "AUTOMACAO"."Devices" (
                     id SERIAL PRIMARY KEY,
                     ip VARCHAR(64) UNIQUE,
                     hostname VARCHAR(255) UNIQUE,
@@ -1930,7 +1931,7 @@ def pg_list_devices() -> List[Dict[str, Any]]:
         return []
     try:
         with conn.cursor() as cur:
-            cur.execute('SELECT id, ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real FROM "AUTOMACAO"."Dsipositivos" ORDER BY COALESCE(updated_at, created_at) DESC')
+            cur.execute('SELECT id, ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real FROM "AUTOMACAO"."Devices" ORDER BY COALESCE(updated_at, created_at) DESC')
             rows = cur.fetchall()
         conn.close()
         devices: List[Dict[str, Any]] = []
@@ -1974,9 +1975,9 @@ def pg_get_device(ip: Optional[str] = None, hostname: Optional[str] = None) -> O
     try:
         with conn.cursor() as cur:
             if ip:
-                cur.execute('SELECT id, ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real FROM "AUTOMACAO"."Dsipositivos" WHERE ip = %s', (ip,))
+                cur.execute('SELECT id, ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real FROM "AUTOMACAO"."Devices" WHERE ip = %s', (ip,))
             else:
-                cur.execute('SELECT id, ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real FROM "AUTOMACAO"."Dsipositivos" WHERE hostname = %s', (hostname,))
+                cur.execute('SELECT id, ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real FROM "AUTOMACAO"."Devices" WHERE hostname = %s', (hostname,))
             row = cur.fetchone()
         conn.close()
         if not row:
@@ -2043,7 +2044,7 @@ def pg_upsert_device(device: Dict[str, Any]) -> Dict[str, Any]:
             if ip:
                 # Try upsert via ip
                 cur.execute('''
-                    INSERT INTO "AUTOMACAO"."Dsipositivos" (ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real, updated_at)
+                    INSERT INTO "AUTOMACAO"."Devices" (ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real, updated_at)
                     VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s::jsonb, %s, %s, NOW())
                     ON CONFLICT (ip) DO UPDATE SET
                         hostname = EXCLUDED.hostname,
@@ -2060,7 +2061,7 @@ def pg_upsert_device(device: Dict[str, Any]) -> Dict[str, Any]:
             else:
                 # Upsert via hostname
                 cur.execute('''
-                    INSERT INTO "AUTOMACAO"."Dsipositivos" (hostname, ip, os, status, services, last_seen, node_exporter, virtualization, real, updated_at)
+                    INSERT INTO "AUTOMACAO"."Devices" (hostname, ip, os, status, services, last_seen, node_exporter, virtualization, real, updated_at)
                     VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s::jsonb, %s, %s, NOW())
                     ON CONFLICT (hostname) DO UPDATE SET
                         ip = EXCLUDED.ip,
@@ -2125,10 +2126,10 @@ def pg_delete_device(device_id: str) -> Dict[str, Any]:
             # If numeric id
             try:
                 num_id = int(device_id)
-                cur.execute('DELETE FROM "AUTOMACAO"."Dsipositivos" WHERE id = %s', (num_id,))
+                cur.execute('DELETE FROM "AUTOMACAO"."Devices" WHERE id = %s', (num_id,))
             except Exception:
                 # Remove by ip or hostname
-                cur.execute('DELETE FROM "AUTOMACAO"."Dsipositivos" WHERE ip = %s OR hostname = %s', (device_id, device_id))
+                cur.execute('DELETE FROM "AUTOMACAO"."Devices" WHERE ip = %s OR hostname = %s', (device_id, device_id))
         conn.close()
         # Return remaining count
         # Best-effort: recount
@@ -2214,7 +2215,7 @@ def migrate_json_to_pg_once():
     try:
         empty = True
         with conn.cursor() as cur:
-            cur.execute('SELECT COUNT(*) FROM "AUTOMACAO"."Dsipositivos"')
+            cur.execute('SELECT COUNT(*) FROM "AUTOMACAO"."Devices"')
             row = cur.fetchone()
             empty = (not row) or (int(row[0]) == 0)
         conn.close()
