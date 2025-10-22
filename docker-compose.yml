@@ -359,7 +359,7 @@ services:
     container_name: POSTGRES-EXPORTER
     restart: unless-stopped
     environment:
-      - DATA_SOURCE_NAME=postgresql://admin:admin@postgresql:5432/postgres?sslmode=disable
+      - DATA_SOURCE_NAME=postgresql://admin:admin@postgresql:5432/AUTOMACAO?sslmode=disable
     expose:
       - "9187"
     ports:
