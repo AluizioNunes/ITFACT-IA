@@ -1062,7 +1062,7 @@ const Integrations: React.FC = () => {
             tab={
               <span>
                 <ScanOutlined />
-                Cadastro de Servidores
+                PESQUISA DE DISPOSITIVOS
               </span>
             }
             key="discovery"
