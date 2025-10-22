@@ -819,8 +819,30 @@ const Integrations: React.FC = () => {
     }
   };
 
-  const removeAddedDevice = (ip: string) => {
-    setAddedDevices(prev => prev.filter(d => d.ip !== ip));
+  const removeAddedDevice = async (device: any) => {
+    try {
+      // Encontrar o dispositivo pelo IP para obter o ID
+      const deviceToRemove = addedDevices.find(d => d.ip === device.ip);
+      if (deviceToRemove && deviceToRemove.id) {
+        const r = await fetch(`/api/inventory/devices/${deviceToRemove.id}`, {
+          method: 'DELETE'
+        });
+        if (r.ok) {
+          setAddedDevices(prev => prev.filter(d => d.ip !== device.ip));
+          message.success(`Dispositivo ${device.hostname || device.ip} removido com sucesso`);
+        } else {
+          throw new Error(`HTTP ${r.status}`);
+        }
+      } else {
+        // Se não tiver ID, remove apenas da lista local
+        setAddedDevices(prev => prev.filter(d => d.ip !== device.ip));
+        message.success(`Dispositivo removido da lista local`);
+      }
+    } catch (e: any) {
+      message.error(`Erro ao remover dispositivo: ${e?.message || 'erro desconhecido'}`);
+      // Remove da lista local mesmo se a API falhar
+      setAddedDevices(prev => prev.filter(d => d.ip !== device.ip));
+    }
   };
 
   const handleReset = () => {
@@ -1054,14 +1076,110 @@ const Integrations: React.FC = () => {
         <Paragraph style={{ fontSize: '16px', color: '#666' }}>
           Gerencie inventário de sistemas e monitore serviços integrados
         </Paragraph>
+        
+
       </div>
+
+      {/* Seção de Inventário - Dispositivos Salvos */}
+      {addedDevices.length > 0 && (
+        <Card 
+          style={{ marginBottom: '24px' }}
+          title={
+            <Space>
+              <DatabaseOutlined style={{ color: '#006400' }} />
+              <span style={{ color: '#006400' }}>Inventário de Dispositivos</span>
+            </Space>
+          }
+          extra={<Tag color="green">{addedDevices.length} dispositivos salvos</Tag>}
+        >
+          <Table
+            size="small"
+            rowKey="ip"
+            dataSource={addedDevices}
+            pagination={{ pageSize: 5, showSizeChanger: false }}
+            columns={[
+              { 
+                title: 'Hostname', 
+                dataIndex: 'hostname', 
+                key: 'hostname', 
+                ellipsis: true,
+                render: (text: string) => <strong style={{ color: '#006400' }}>{text}</strong>
+              },
+              { 
+                title: 'IP Address', 
+                dataIndex: 'ip', 
+                key: 'ip', 
+                render: (ip: string) => <Tag color="blue">{ip}</Tag> 
+              },
+              { 
+                title: 'Status', 
+                dataIndex: 'status', 
+                key: 'status', 
+                render: (s: string) => (
+                  <Tag color={s === 'Online' ? 'green' : 'red'}>{s}</Tag>
+                )
+              },
+              { 
+                title: 'Sistema Operacional', 
+                dataIndex: 'os', 
+                key: 'os', 
+                ellipsis: true 
+              },
+              { 
+                title: 'Serviços', 
+                dataIndex: 'services', 
+                key: 'services',
+                render: (services: string[]) => (
+                  <div>
+                    {services?.slice(0, 3).map((service, idx) => (
+                      <Tag key={idx} size="small" color="geekblue">{service}</Tag>
+                    ))}
+                    {services?.length > 3 && <Tag size="small">+{services.length - 3}</Tag>}
+                  </div>
+                )
+              },
+              { 
+                title: 'Última Verificação', 
+                dataIndex: 'last_seen', 
+                key: 'last_seen',
+                render: (date: string) => date ? new Date(date).toLocaleString('pt-BR') : '-'
+              },
+              { 
+                title: 'Ações', 
+                key: 'actions', 
+                render: (_: any, record: any) => (
+                  <Space>
+                    <Button 
+                      size="small" 
+                      type="primary" 
+                      onClick={() => {
+                        setSelectedHost(record);
+                        showDetails(record);
+                      }}
+                    >
+                      Detalhes
+                    </Button>
+                    <Button 
+                      danger 
+                      size="small" 
+                      onClick={() => removeAddedDevice(record)}
+                    >
+                      Remover
+                    </Button>
+                  </Space>
+                )
+              }
+            ]}
+          />
+        </Card>
+      )}
 
       <Card>
         <Tabs defaultActiveKey="discovery" type="card" size="large">
           <TabPane
             tab={
               <span>
-                <ScanOutlined />
+                <SearchOutlined />
                 PESQUISA DE DISPOSITIVOS
               </span>
             }
@@ -1387,7 +1505,7 @@ const Integrations: React.FC = () => {
                         )},
                         { title: 'Sistema', dataIndex: 'os', key: 'os', ellipsis: true },
                         { title: 'Ações', key: 'actions', render: (_: any, r: any) => (
-                          <Button danger size="small" onClick={() => removeAddedDevice(r.ip)}>Remover</Button>
+                          <Button danger size="small" onClick={() => removeAddedDevice(r)}>Remover</Button>
                         )}
                       ]}
                     />
@@ -1398,46 +1516,234 @@ const Integrations: React.FC = () => {
               </Col>
             </Row>
 
-            <Divider />
 
+          </TabPane>
+
+          <TabPane
+            tab={
+              <span>
+                <DatabaseOutlined />
+                INVENTÁRIO
+              </span>
+            }
+            key="inventory"
+          >
             <Row gutter={[16, 16]}>
-              <Col xs={24} sm={12} md={8}>
-                <Card
-                  hoverable
-                  style={{ textAlign: 'center' }}
-                  onClick={() => console.log('Verificar inventário')}
-                >
-                  <DatabaseOutlined style={{ fontSize: '32px', color: '#006400', marginBottom: '8px' }} />
-                  <Title level={4}>Verificar Inventário</Title>
-                  <Paragraph type="secondary">
-                    Scan completo de todos os sistemas e componentes
-                  </Paragraph>
+              <Col span={24}>
+                <Card title="Dispositivos no Inventário" size="small">
+                  {addedDevices.length > 0 ? (
+                    <Table
+                      size="small"
+                      rowKey="ip"
+                      dataSource={addedDevices}
+                      pagination={{ pageSize: 10 }}
+                      expandable={{
+                        expandedRowRender: (record) => (
+                          <Descriptions bordered size="small" column={2}>
+                            <Descriptions.Item label="Hostname">{record.hostname}</Descriptions.Item>
+                            <Descriptions.Item label="IP">{record.ip}</Descriptions.Item>
+                            <Descriptions.Item label="Status">{record.status}</Descriptions.Item>
+                            <Descriptions.Item label="Sistema Operacional">{record.os}</Descriptions.Item>
+                            <Descriptions.Item label="Tipo">{record.type || 'N/A'}</Descriptions.Item>
+                            <Descriptions.Item label="Localização">{record.location || 'N/A'}</Descriptions.Item>
+                            <Descriptions.Item label="Última Verificação">{record.lastCheck || 'N/A'}</Descriptions.Item>
+                            <Descriptions.Item label="Observações">{record.notes || 'Nenhuma observação'}</Descriptions.Item>
+                          </Descriptions>
+                        ),
+                        rowExpandable: () => true,
+                      }}
+                      columns={[
+                        { 
+                          title: 'Hostname', 
+                          dataIndex: 'hostname', 
+                          key: 'hostname', 
+                          ellipsis: true,
+                          sorter: (a, b) => (a.hostname || '').localeCompare(b.hostname || '')
+                        },
+                        { 
+                          title: 'IP', 
+                          dataIndex: 'ip', 
+                          key: 'ip', 
+                          render: (ip: string) => <Tag color="blue">{ip}</Tag>,
+                          sorter: (a, b) => a.ip.localeCompare(b.ip)
+                        },
+                        { 
+                          title: 'Status', 
+                          dataIndex: 'status', 
+                          key: 'status', 
+                          render: (s: string) => (
+                            <Tag color={s === 'Online' ? 'green' : 'red'}>{s}</Tag>
+                          ),
+                          filters: [
+                            { text: 'Online', value: 'Online' },
+                            { text: 'Offline', value: 'Offline' }
+                          ],
+                          onFilter: (value, record) => record.status === value
+                        },
+                        { 
+                          title: 'Sistema', 
+                          dataIndex: 'os', 
+                          key: 'os', 
+                          ellipsis: true,
+                          sorter: (a, b) => (a.os || '').localeCompare(b.os || '')
+                        },
+                        { 
+                          title: 'Ações', 
+                          key: 'actions', 
+                          render: (_: any, record: any) => (
+                            <Space>
+                              <Button 
+                                size="small" 
+                                onClick={() => {
+                                  setSelectedHost(record);
+                                  setDetailsVisible(true);
+                                }}
+                              >
+                                Detalhes
+                              </Button>
+                              <Button 
+                                danger 
+                                size="small" 
+                                onClick={() => removeAddedDevice(record)}
+                              >
+                                Remover
+                              </Button>
+                            </Space>
+                          )
+                        }
+                      ]}
+                    />
+                  ) : (
+                    <Alert 
+                      message="Nenhum dispositivo no inventário" 
+                      description="Adicione dispositivos através da aba 'PESQUISA DE DISPOSITIVOS'" 
+                      type="info" 
+                      showIcon 
+                    />
+                  )}
                 </Card>
               </Col>
-              <Col xs={24} sm={12} md={8}>
-                <Card
-                  hoverable
-                  style={{ textAlign: 'center' }}
-                  onClick={() => console.log('Testar serviços')}
-                >
-                  <SettingOutlined style={{ fontSize: '32px', color: '#006400', marginBottom: '8px' }} />
-                  <Title level={4}>Testar Serviços</Title>
-                  <Paragraph type="secondary">
-                    Verificação de conectividade e health checks
-                  </Paragraph>
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={8}>
-                <Card
-                  hoverable
-                  style={{ textAlign: 'center' }}
-                  onClick={() => console.log('Gerar relatório')}
-                >
-                  <ApiOutlined style={{ fontSize: '32px', color: '#006400', marginBottom: '8px' }} />
-                  <Title level={4}>Gerar Relatório</Title>
-                  <Paragraph type="secondary">
-                    Relatório detalhado de status e performance
-                  </Paragraph>
+            </Row>
+          </TabPane>
+
+          <TabPane
+            tab={
+              <span>
+                <SettingOutlined />
+                SERVIÇOS
+              </span>
+            }
+            key="services"
+          >
+            <Row gutter={[16, 16]}>
+              <Col span={24}>
+                <Card title="Serviços Detectados" size="small">
+                  {addedDevices.length > 0 ? (
+                    <Collapse accordion>
+                      {addedDevices.map((device) => (
+                        <Collapse.Panel
+                          header={
+                            <Space>
+                              <Tag color="blue">{device.hostname || device.ip}</Tag>
+                              <Badge count={device.services?.length || 0} showZero color="green" />
+                            </Space>
+                          }
+                          key={device.ip}
+                        >
+                          {device.services && device.services.length > 0 ? (
+                            <Table
+                              size="small"
+                              dataSource={device.services}
+                              pagination={false}
+                              columns={[
+                                { 
+                                  title: 'Porta', 
+                                  dataIndex: 'port', 
+                                  key: 'port',
+                                  width: 80,
+                                  render: (port: number) => <Tag color="blue">{port}</Tag>
+                                },
+                                { 
+                                  title: 'Protocolo', 
+                                  dataIndex: 'protocol', 
+                                  key: 'protocol',
+                                  width: 100,
+                                  render: (protocol: string) => <Tag color="green">{protocol}</Tag>
+                                },
+                                { 
+                                  title: 'Serviço', 
+                                  dataIndex: 'service', 
+                                  key: 'service',
+                                  width: 120
+                                },
+                                { 
+                                  title: 'Estado', 
+                                  dataIndex: 'state', 
+                                  key: 'state',
+                                  width: 100,
+                                  render: (state: string) => (
+                                    <Tag color={state === 'open' ? 'green' : 'red'}>{state}</Tag>
+                                  )
+                                },
+                                { 
+                                  title: 'Descrição/Função', 
+                                  dataIndex: 'description', 
+                                  key: 'description',
+                                  render: (desc: string, record: any) => {
+                                    const serviceDescriptions: { [key: string]: string } = {
+                                      'ssh': 'Secure Shell - Acesso remoto seguro ao sistema',
+                                      'http': 'Servidor Web HTTP - Hospedagem de sites e aplicações web',
+                                      'https': 'Servidor Web HTTPS - Hospedagem segura de sites e aplicações web',
+                                      'ftp': 'File Transfer Protocol - Transferência de arquivos',
+                                      'smtp': 'Simple Mail Transfer Protocol - Envio de emails',
+                                      'pop3': 'Post Office Protocol - Recebimento de emails',
+                                      'imap': 'Internet Message Access Protocol - Acesso a emails',
+                                      'dns': 'Domain Name System - Resolução de nomes de domínio',
+                                      'dhcp': 'Dynamic Host Configuration Protocol - Atribuição automática de IPs',
+                                      'snmp': 'Simple Network Management Protocol - Monitoramento de rede',
+                                      'telnet': 'Telnet - Acesso remoto não seguro (legado)',
+                                      'mysql': 'Banco de dados MySQL',
+                                      'postgresql': 'Banco de dados PostgreSQL',
+                                      'redis': 'Banco de dados Redis - Cache em memória',
+                                      'mongodb': 'Banco de dados MongoDB - NoSQL',
+                                      'docker': 'Docker Engine - Containerização',
+                                      'kubernetes': 'Kubernetes API - Orquestração de containers',
+                                      'nginx': 'Servidor Web Nginx - Proxy reverso e balanceador de carga',
+                                      'apache': 'Servidor Web Apache',
+                                      'rdp': 'Remote Desktop Protocol - Acesso remoto Windows'
+                                    };
+                                    
+                                    const serviceName = record.service?.toLowerCase() || '';
+                                    const defaultDesc = serviceDescriptions[serviceName] || desc || 'Serviço não identificado';
+                                    
+                                    return (
+                                      <Paragraph ellipsis={{ rows: 2, expandable: true }}>
+                                        {defaultDesc}
+                                      </Paragraph>
+                                    );
+                                  }
+                                }
+                              ]}
+                            />
+                          ) : (
+                            <Alert 
+                              message="Nenhum serviço detectado" 
+                              description="Execute um scan de portas para detectar serviços" 
+                              type="warning" 
+                              showIcon 
+                            />
+                          )}
+                        </Collapse.Panel>
+                      ))}
+                    </Collapse>
+                  ) : (
+                    <Alert 
+                      message="Nenhum dispositivo disponível" 
+                      description="Adicione dispositivos através da aba 'PESQUISA DE DISPOSITIVOS' para visualizar seus serviços" 
+                      type="info" 
+                      showIcon 
+                    />
+                  )}
                 </Card>
               </Col>
             </Row>

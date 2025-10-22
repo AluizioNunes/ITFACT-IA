@@ -1628,30 +1628,74 @@ def inventory_metrics(ip: str = Query(...), metric: str = Query(...), limit: int
 # ----------------------
 @app.get("/api/test/ping")
 def test_ping(ip: str = Query(...), count: int = Query(1), timeout: float = Query(1.0)):
-    import subprocess, platform
-    cmd = ["ping", "-c", str(count), "-W", str(int(timeout * 1000)), ip] if platform.system().lower() != "windows" else ["ping", "-n", str(count), "-w", str(int(timeout * 1000)), ip]
+    """Teste de conectividade usando socket TCP ao invés de ping ICMP"""
     start = time.time()
     try:
-        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=timeout + 2)
-        reachable = res.returncode == 0
+        # Tenta conectar na porta 80 primeiro, depois 443, depois 22
+        test_ports = [80, 443, 22, 8080, 3000]
+        reachable = False
+        
+        for port in test_ports:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(timeout)
+                result = sock.connect_ex((ip, port))
+                sock.close()
+                if result == 0:
+                    reachable = True
+                    break
+            except:
+                continue
+        
         latency = (time.time() - start) * 1000
-        return {"reachable": reachable, "latency_ms": round(latency, 2), "output": res.stdout}
+        return {
+            "reachable": reachable, 
+            "latency_ms": round(latency, 2), 
+            "output": f"TCP connectivity test to {ip} - {'SUCCESS' if reachable else 'FAILED'}"
+        }
     except Exception as e:
         return {"reachable": False, "error": str(e)}
 
 @app.get("/api/test/ssh")
-def test_ssh(ip: str = Query(...), user: str = Query(...), password: Optional[str] = Query(None),
+def test_ssh(ip: str = Query(...), user: Optional[str] = Query(None), password: Optional[str] = Query(None),
              keyPath: Optional[str] = Query(None), port: int = Query(22), timeout: float = Query(2.5)):
+    """Teste de conectividade SSH - se não tiver credenciais, testa apenas a porta"""
+    
+    # Se não tiver usuário, faz apenas teste de conectividade na porta SSH
+    if not user:
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(timeout)
+            result = sock.connect_ex((ip, port))
+            sock.close()
+            reachable = result == 0
+            return {
+                "reachable": reachable, 
+                "output": f"SSH port {port} connectivity test - {'SUCCESS' if reachable else 'FAILED'}",
+                "error": None if reachable else f"Cannot connect to port {port}"
+            }
+        except Exception as e:
+            return {"reachable": False, "output": None, "error": str(e)}
+    
+    # Se tiver usuário, tenta autenticação SSH
     if not paramiko:
         return {"reachable": False, "error": "paramiko não disponível"}
+    
     ok, out, err = ssh_run_command(ip, user, password=password, key_path=keyPath, port=port, timeout=timeout)
     return {"reachable": ok, "output": out, "error": err}
 
 @app.get("/api/test/snmp")
 def test_snmp(ip: str = Query(...), community: str = Query("public"), version: str = Query("v2c")):
-    info = build_snmp_hostinfo(ip, community, version)
-    ok = bool(info.get("sysDescr") or info.get("sysName"))
-    return {"reachable": ok, "info": info}
+    """Teste de conectividade SNMP"""
+    if not HAS_PYSNMP:
+        return {"reachable": False, "error": "SNMP indisponível - biblioteca pysnmp não instalada", "info": {}}
+    
+    try:
+        info = build_snmp_hostinfo(ip, community, version)
+        ok = bool(info.get("sysDescr") or info.get("sysName"))
+        return {"reachable": ok, "info": info, "error": None if ok else "Nenhuma resposta SNMP obtida"}
+    except Exception as e:
+        return {"reachable": False, "error": f"Erro SNMP: {str(e)}", "info": {}}
 
 # ----------------------
 # Node Exporter install via SSH (Ubuntu)
@@ -1880,6 +1924,20 @@ def list_devices_json():
 def add_or_update_device_json(payload: Dict[str, Any] = Body(...)):
     dev = upsert_server_json(payload or {})
     return {"ok": True, "device": dev, "count": len(load_servers_json())}
+
+@app.delete("/api/inventory/devices/{device_id}")
+def remove_device_json(device_id: str):
+    items = load_servers_json()
+    original_count = len(items)
+    
+    # Try to remove by IP or hostname
+    items = [item for item in items if item.get("ip") != device_id and item.get("hostname") != device_id]
+    
+    if len(items) < original_count:
+        save_servers_json(items)
+        return {"ok": True, "message": "Device removed successfully", "count": len(items)}
+    else:
+        return {"ok": False, "message": "Device not found", "count": len(items)}
 
 
 # Initialize DB at startup
