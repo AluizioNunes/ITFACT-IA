@@ -1,5 +1,6 @@
 -- Script de inicialização para PostgreSQL 17.6
 -- CMM Automação Platform Database Setup - Apenas bancos necessários
+-- Banco principal: AUTOMACAO (sem schema public)
 
 -- Criar usuário admin se não existir
 DO

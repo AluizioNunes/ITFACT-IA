@@ -3,12 +3,12 @@
 # Script para verificar se os bancos de dados foram criados corretamente
 echo "Verificando bancos de dados..."
 
-# Verificar conexão com PostgreSQL
-echo "Testando conexão com PostgreSQL..."
+# Verificar conexão com banco principal AUTOMACAO
+echo "Testando conexão com banco principal AUTOMACAO..."
 pg_isready -U admin -d AUTOMACAO -h localhost -p 5432
 
 if [ $? -eq 0 ]; then
-    echo "Conexão com PostgreSQL estabelecida com sucesso!"
+    echo "Conexão com banco principal AUTOMACAO estabelecida com sucesso!"
     
     # Listar bancos de dados
     echo "Listando bancos de dados:"
@@ -28,6 +28,6 @@ if [ $? -eq 0 ]; then
         psql -U admin -d $db -h localhost -p 5432 -c "SELECT schema_name FROM information_schema.schemata WHERE schema_name = '$db';"
     done
 else
-    echo "Falha na conexão com PostgreSQL!"
+    echo "Falha na conexão com banco principal AUTOMACAO!"
     exit 1
 fi

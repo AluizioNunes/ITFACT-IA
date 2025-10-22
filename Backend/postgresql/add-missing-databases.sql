@@ -1,5 +1,5 @@
 -- Script para adicionar bancos N8N e Chatwoot que podem estar faltando
--- Execute este script conectado ao PostgreSQL como superuser
+-- Banco principal: AUTOMACAO; execute como superuser se necessário
 
 -- Verificar se usuário admin existe, criar se necessário
 DO
