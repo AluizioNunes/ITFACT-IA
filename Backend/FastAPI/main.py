@@ -25,6 +25,10 @@ try:
     import winrm
 except Exception:
     winrm = None
+try:
+    import psycopg
+except Exception:
+    psycopg = None
 
 app = FastAPI(title="CMM Analytics API")
 
@@ -128,6 +132,51 @@ SERVICE_MAP = {
 # ----------------------
 
 DB_PATH = os.environ.get("DB_PATH", str(Path(__file__).with_name("discovery.db")))
+PG_HOST = os.environ.get("POSTGRES_HOST", "postgresql")
+PG_PORT = int(os.environ.get("POSTGRES_PORT", "5432"))
+PG_USER = os.environ.get("POSTGRES_USER", "admin")
+PG_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "admin")
+PG_DB = os.environ.get("POSTGRES_DB", "postgres")
+
+def get_pg_conn():
+    if not psycopg:
+        return None
+    try:
+        return psycopg.connect(host=PG_HOST, port=PG_PORT, user=PG_USER, password=PG_PASSWORD, dbname=PG_DB, autocommit=True)
+    except Exception:
+        return None
+
+def ensure_pg_schema():
+    conn = get_pg_conn()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cur:
+            cur.execute('CREATE SCHEMA IF NOT EXISTS "AUTOMACAO";')
+            cur.execute('''
+                CREATE TABLE IF NOT EXISTS "AUTOMACAO"."Dsipositivos" (
+                    id SERIAL PRIMARY KEY,
+                    ip VARCHAR(64) UNIQUE,
+                    hostname VARCHAR(255) UNIQUE,
+                    os VARCHAR(64),
+                    status VARCHAR(32) DEFAULT 'Unknown',
+                    services JSONB DEFAULT '[]'::jsonb,
+                    last_seen TIMESTAMPTZ,
+                    node_exporter JSONB DEFAULT '{}'::jsonb,
+                    virtualization VARCHAR(64),
+                    real BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            ''')
+        conn.close()
+        return True
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return False
 
 def get_db() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -1784,12 +1833,16 @@ sleep 1
     probe = probe_node_exporter(ip)
     # Persist JSON inventory with node_exporter version
     try:
-        upsert_server_json({
+        payload = {
             "ip": ip,
             "services": [{"service": "node_exporter", "port": 9100}],
             "node_exporter": {"installed": True, "version": version, "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")},
             "real": True,
-        })
+        }
+        if pg_ready():
+            pg_upsert_device(payload)
+        else:
+            upsert_server_json(payload)
     except Exception:
         pass
     return {
@@ -1841,21 +1894,254 @@ sudo -n userdel node_exporter 2>/dev/null || true
     ok, out, err = ssh_exec(ip, user, script, password=password, key_path=key_path, port=port, timeout=max(timeout, 5.0))
     probe = probe_node_exporter(ip)
     try:
-        upsert_server_json({
+        payload = {
             "ip": ip,
             "node_exporter": {"installed": False, "version": None, "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")},
             "real": True,
-        })
+        }
+        if pg_ready():
+            pg_upsert_device(payload)
+        else:
+            upsert_server_json(payload)
     except Exception:
         pass
     return {"ok": ok and not probe.get("present"), "status": "uninstalled", "probe": probe, "output": out, "error": err}
 
 # ----------------------
-# JSON Inventory (file-based)
+# Inventory Persistence (PostgreSQL first, JSON fallback)
 # ----------------------
 INVENTORY_DIR = Path(__file__).with_name("Inventory")
 SERVERS_JSON = INVENTORY_DIR / "Servers.json"
 
+# --- PostgreSQL helpers ---
+def pg_ready() -> bool:
+    c = get_pg_conn()
+    if not c:
+        return False
+    try:
+        c.close()
+    except Exception:
+        pass
+    return True
+
+def pg_list_devices() -> List[Dict[str, Any]]:
+    conn = get_pg_conn()
+    if not conn:
+        return []
+    try:
+        with conn.cursor() as cur:
+            cur.execute('SELECT id, ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real FROM "AUTOMACAO"."Dsipositivos" ORDER BY COALESCE(updated_at, created_at) DESC')
+            rows = cur.fetchall()
+        conn.close()
+        devices: List[Dict[str, Any]] = []
+        for r in rows:
+            services = r[5]
+            node_exporter = r[7]
+            if isinstance(services, str):
+                try:
+                    services = json.loads(services or "[]")
+                except Exception:
+                    services = []
+            if isinstance(node_exporter, str):
+                try:
+                    node_exporter = json.loads(node_exporter or "{}")
+                except Exception:
+                    node_exporter = None
+            devices.append({
+                "id": r[0],
+                "ip": r[1],
+                "hostname": r[2],
+                "os": r[3],
+                "status": r[4],
+                "services": services or [],
+                "last_seen": r[6],
+                "node_exporter": node_exporter,
+                "virtualization": r[8],
+                "real": bool(r[9]) if r[9] is not None else True,
+            })
+        return devices
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return []
+
+def pg_get_device(ip: Optional[str] = None, hostname: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    conn = get_pg_conn()
+    if not conn:
+        return None
+    try:
+        with conn.cursor() as cur:
+            if ip:
+                cur.execute('SELECT id, ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real FROM "AUTOMACAO"."Dsipositivos" WHERE ip = %s', (ip,))
+            else:
+                cur.execute('SELECT id, ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real FROM "AUTOMACAO"."Dsipositivos" WHERE hostname = %s', (hostname,))
+            row = cur.fetchone()
+        conn.close()
+        if not row:
+            return None
+        services = row[5]
+        node_exporter = row[7]
+        if isinstance(services, str):
+            try:
+                services = json.loads(services or "[]")
+            except Exception:
+                services = []
+        if isinstance(node_exporter, str):
+            try:
+                node_exporter = json.loads(node_exporter or "{}")
+            except Exception:
+                node_exporter = None
+        return {
+            "id": row[0], "ip": row[1], "hostname": row[2], "os": row[3], "status": row[4],
+            "services": services or [], "last_seen": row[6], "node_exporter": node_exporter,
+            "virtualization": row[8], "real": bool(row[9]) if row[9] is not None else True,
+        }
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return None
+
+def pg_upsert_device(device: Dict[str, Any]) -> Dict[str, Any]:
+    ensure_pg_schema()
+    ip = device.get("ip")
+    hostname = device.get("hostname")
+    os_label = device.get("os") or "Unknown"
+    status = device.get("status") or "Unknown"
+    last_seen = device.get("lastSeen") or time.strftime("%Y-%m-%d %H:%M:%S")
+    # Normalize services to list[str]
+    raw_services = device.get("services") or []
+    normalized_services: List[Any] = []
+    for s in raw_services:
+        if isinstance(s, str):
+            normalized_services.append(s)
+        elif isinstance(s, dict) and ("service" in s or "port" in s):
+            normalized_services.append(s)
+    node_exporter = device.get("node_exporter") or None
+    virtualization = device.get("virtualization")
+    real = bool(device.get("real", True))
+
+    # Merge services with existing
+    existing = pg_get_device(ip=ip) if ip else pg_get_device(hostname=hostname)
+    if existing:
+        base_services = existing.get("services") or []
+        merged: List[Any] = []
+        for s in list(base_services) + list(normalized_services):
+            if s not in merged:
+                merged.append(s)
+        normalized_services = merged
+
+    conn = get_pg_conn()
+    if not conn:
+        # Fallback to JSON if PG not ready
+        return upsert_server_json(device)
+    try:
+        with conn.cursor() as cur:
+            if ip:
+                # Try upsert via ip
+                cur.execute('''
+                    INSERT INTO "AUTOMACAO"."Dsipositivos" (ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real, updated_at)
+                    VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s::jsonb, %s, %s, NOW())
+                    ON CONFLICT (ip) DO UPDATE SET
+                        hostname = EXCLUDED.hostname,
+                        os = EXCLUDED.os,
+                        status = EXCLUDED.status,
+                        services = EXCLUDED.services,
+                        last_seen = EXCLUDED.last_seen,
+                        node_exporter = EXCLUDED.node_exporter,
+                        virtualization = EXCLUDED.virtualization,
+                        real = EXCLUDED.real,
+                        updated_at = NOW()
+                    RETURNING id, ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real
+                ''', (ip, hostname, os_label, status, json.dumps(normalized_services), last_seen, json.dumps(node_exporter or {}), virtualization, real))
+            else:
+                # Upsert via hostname
+                cur.execute('''
+                    INSERT INTO "AUTOMACAO"."Dsipositivos" (hostname, ip, os, status, services, last_seen, node_exporter, virtualization, real, updated_at)
+                    VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s::jsonb, %s, %s, NOW())
+                    ON CONFLICT (hostname) DO UPDATE SET
+                        ip = EXCLUDED.ip,
+                        os = EXCLUDED.os,
+                        status = EXCLUDED.status,
+                        services = EXCLUDED.services,
+                        last_seen = EXCLUDED.last_seen,
+                        node_exporter = EXCLUDED.node_exporter,
+                        virtualization = EXCLUDED.virtualization,
+                        real = EXCLUDED.real,
+                        updated_at = NOW()
+                    RETURNING id, ip, hostname, os, status, services, last_seen, node_exporter, virtualization, real
+                ''', (hostname, ip, os_label, status, json.dumps(normalized_services), last_seen, json.dumps(node_exporter or {}), virtualization, real))
+            row = cur.fetchone()
+        conn.close()
+        if not row:
+            return {
+                "ip": ip, "hostname": hostname, "os": os_label, "status": status,
+                "services": normalized_services, "last_seen": last_seen,
+                "node_exporter": node_exporter, "virtualization": virtualization, "real": real,
+            }
+        # Decode possible JSON strings
+        services = row[5]
+        node_exporter = row[7]
+        if isinstance(services, str):
+            try:
+                services = json.loads(services or "[]")
+            except Exception:
+                services = []
+        if isinstance(node_exporter, str):
+            try:
+                node_exporter = json.loads(node_exporter or "{}")
+            except Exception:
+                node_exporter = None
+        return {
+            "id": row[0], "ip": row[1], "hostname": row[2], "os": row[3], "status": row[4],
+            "services": services or [], "last_seen": row[6], "node_exporter": node_exporter,
+            "virtualization": row[8], "real": bool(row[9]) if row[9] is not None else True,
+        }
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        # Fallback to JSON
+        return upsert_server_json(device)
+
+def pg_delete_device(device_id: str) -> Dict[str, Any]:
+    conn = get_pg_conn()
+    if not conn:
+        # fallback remove by JSON
+        items = load_servers_json()
+        original_count = len(items)
+        items = [item for item in items if item.get("ip") != device_id and item.get("hostname") != device_id]
+        if len(items) < original_count:
+            save_servers_json(items)
+            return {"ok": True, "message": "Device removed successfully", "count": len(items)}
+        else:
+            return {"ok": False, "message": "Device not found", "count": len(items)}
+    try:
+        with conn.cursor() as cur:
+            # If numeric id
+            try:
+                num_id = int(device_id)
+                cur.execute('DELETE FROM "AUTOMACAO"."Dsipositivos" WHERE id = %s', (num_id,))
+            except Exception:
+                # Remove by ip or hostname
+                cur.execute('DELETE FROM "AUTOMACAO"."Dsipositivos" WHERE ip = %s OR hostname = %s', (device_id, device_id))
+        conn.close()
+        # Return remaining count
+        # Best-effort: recount
+        rem = pg_list_devices()
+        return {"ok": True, "message": "Device removed successfully", "count": len(rem)}
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return {"ok": False, "message": "Failed to remove device"}
+
+# --- JSON fallback helpers ---
 def ensure_inventory_fs():
     try:
         INVENTORY_DIR.mkdir(parents=True, exist_ok=True)
@@ -1918,29 +2204,55 @@ def upsert_server_json(device: Dict[str, Any]) -> Dict[str, Any]:
     save_servers_json(items)
     return dev
 
+def migrate_json_to_pg_once():
+    # If PG is ready and devices table is empty, import Servers.json
+    if not pg_ready():
+        return
+    conn = get_pg_conn()
+    if not conn:
+        return
+    try:
+        empty = True
+        with conn.cursor() as cur:
+            cur.execute('SELECT COUNT(*) FROM "AUTOMACAO"."Dsipositivos"')
+            row = cur.fetchone()
+            empty = (not row) or (int(row[0]) == 0)
+        conn.close()
+        if not empty:
+            return
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return
+    # Load from JSON and upsert into PG
+    items = load_servers_json()
+    for it in items:
+        try:
+            pg_upsert_device(it)
+        except Exception:
+            pass
+
+# --- Inventory API using PG first ---
 @app.get("/api/inventory/devices")
 def list_devices_json():
+    if pg_ready():
+        return {"devices": pg_list_devices()}
     return {"devices": load_servers_json()}
 
 @app.post("/api/inventory/devices")
 def add_or_update_device_json(payload: Dict[str, Any] = Body(...)):
-    dev = upsert_server_json(payload or {})
-    return {"ok": True, "device": dev, "count": len(load_servers_json())}
+    dev = pg_upsert_device(payload or {}) if pg_ready() else upsert_server_json(payload or {})
+    count = len(pg_list_devices()) if pg_ready() else len(load_servers_json())
+    return {"ok": True, "device": dev, "count": count}
 
 @app.delete("/api/inventory/devices/{device_id}")
 def remove_device_json(device_id: str):
-    items = load_servers_json()
-    original_count = len(items)
-    
-    # Try to remove by IP or hostname
-    items = [item for item in items if item.get("ip") != device_id and item.get("hostname") != device_id]
-    
-    if len(items) < original_count:
-        save_servers_json(items)
-        return {"ok": True, "message": "Device removed successfully", "count": len(items)}
-    else:
-        return {"ok": False, "message": "Device not found", "count": len(items)}
+    return pg_delete_device(device_id) if pg_ready() else pg_delete_device(device_id)
 
 
 # Initialize DB at startup
+ensure_pg_schema()
+migrate_json_to_pg_once()
 init_db()

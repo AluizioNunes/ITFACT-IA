@@ -61,3 +61,25 @@ CREATE TABLE IF NOT EXISTS public.alerts (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_alerts_entity ON public.alerts(entity_type, entity_id);
+
+-- Schema e tabela para inventário persistente (AUTOMACAO.Dsipositivos)
+CREATE SCHEMA IF NOT EXISTS "AUTOMACAO" AUTHORIZATION admin;
+
+CREATE TABLE IF NOT EXISTS "AUTOMACAO"."Dsipositivos" (
+  id SERIAL PRIMARY KEY,
+  ip VARCHAR(64) UNIQUE,
+  hostname VARCHAR(255) UNIQUE,
+  os VARCHAR(64),
+  status VARCHAR(32) DEFAULT 'Unknown',
+  services JSONB DEFAULT '[]'::jsonb,
+  last_seen TIMESTAMPTZ,
+  node_exporter JSONB DEFAULT '{}'::jsonb,
+  virtualization VARCHAR(64),
+  real BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+GRANT ALL ON SCHEMA "AUTOMACAO" TO admin;
+GRANT ALL ON ALL TABLES IN SCHEMA "AUTOMACAO" TO admin;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA "AUTOMACAO" TO admin;
