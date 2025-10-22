@@ -1710,7 +1710,9 @@ def actions_node_exporter_install(payload: Dict[str, Any] = Body(...)):
     key_path = payload.get("keyPath")
     port = int(payload.get("port", 22))
     timeout = float(payload.get("timeout", 3.0))
-    version = str(payload.get("version", "1.8.2"))
+    version = str(payload.get("version", "1.9.1"))
+    if isinstance(version, str) and version.lower() in ("latest", "stable"):
+        version = "1.9.1"
     force = bool(payload.get("force", False))
     if not ip or not user:
         return {"ok": False, "error": "Parâmetros obrigatórios ausentes: ip/user"}

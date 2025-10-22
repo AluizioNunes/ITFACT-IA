@@ -64,7 +64,7 @@ const Integrations: React.FC = () => {
   const [dbProbes, setDbProbes] = useState<any[] | null>(null);
   const [metricsSeries, setMetricsSeries] = useState<Record<string, Array<{ time: string; value: number }>>>({});
   const [metricsAvailable, setMetricsAvailable] = useState(false);
-  const [nodeExporterVersion, setNodeExporterVersion] = useState<string>('1.8.2');
+  const [nodeExporterVersion, setNodeExporterVersion] = useState<string>('1.9.1');
   const [nodeExpActionLoading, setNodeExpActionLoading] = useState<boolean>(false);
   const [metricsTimer, setMetricsTimer] = useState<any>(null);
   const [addedDevices, setAddedDevices] = useState<any[]>([]);
@@ -1828,6 +1828,7 @@ const Integrations: React.FC = () => {
                     )}
                     <Space wrap>
                       <Select size="small" value={nodeExporterVersion} onChange={(v) => setNodeExporterVersion(v)} style={{ width: 140 }}>
+                        <Option value="1.9.1">1.9.1</Option>
                         <Option value="1.8.2">1.8.2</Option>
                         <Option value="1.7.0">1.7.0</Option>
                         <Option value="1.6.1">1.6.1</Option>
@@ -1867,6 +1868,7 @@ const Integrations: React.FC = () => {
                     <Alert message="Node Exporter não detectado (porta 9100)" type="warning" showIcon />
                     <Space wrap>
                       <Select size="small" value={nodeExporterVersion} onChange={(v) => setNodeExporterVersion(v)} style={{ width: 140 }}>
+                        <Option value="1.9.1">1.9.1</Option>
                         <Option value="1.8.2">1.8.2</Option>
                         <Option value="1.7.0">1.7.0</Option>
                         <Option value="1.6.1">1.6.1</Option>
