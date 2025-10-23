@@ -221,7 +221,7 @@ services:
       start_period: 15s
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.2.3
     container_name: GRAFANA
     restart: unless-stopped
     expose:
@@ -253,7 +253,7 @@ services:
       - ./Backend/grafana/dashboards:/var/lib/grafana/dashboards:ro
 
   loki:
-    image: grafana/loki:2.9.4
+    image: grafana/loki:2.9.8
     container_name: LOKI
     restart: unless-stopped
     expose:
@@ -268,7 +268,7 @@ services:
       - cmm_network
 
   promtail:
-    image: grafana/promtail:2.9.4
+    image: grafana/promtail:2.9.8
     container_name: PROMTAIL
     restart: unless-stopped
     volumes:
@@ -293,7 +293,7 @@ services:
       - cmm_network
 
   tempo:
-    image: grafana/tempo:latest
+    image: grafana/tempo:2.3.1
     container_name: TEMPO
     restart: unless-stopped
     expose:
@@ -381,7 +381,7 @@ services:
       - postgresql
 
   redis-exporter:
-    image: oliver006/redis_exporter:latest
+    image: oliver006/redis_exporter:v1.55.0
     container_name: REDIS-EXPORTER
     restart: unless-stopped
     expose:
@@ -401,7 +401,7 @@ services:
       - redis
 
   rabbitmq-exporter:
-    image: kbudde/rabbitmq-exporter:latest
+    image: kbudde/rabbitmq-exporter:v1.0.0-RC7.1
     container_name: RABBITMQ-EXPORTER
     restart: unless-stopped
     expose:
@@ -424,7 +424,7 @@ services:
       - rabbitmq
 
   alertmanager:
-    image: prom/alertmanager:latest
+    image: prom/alertmanager:v0.26.0
     container_name: ALERTMANAGER
     restart: unless-stopped
     expose:
@@ -443,7 +443,7 @@ services:
       start_period: 45s
 
   blackbox-exporter:
-    image: prom/blackbox-exporter:latest
+    image: prom/blackbox-exporter:v0.24.0
     container_name: BLACKBOX
     restart: unless-stopped
     expose:

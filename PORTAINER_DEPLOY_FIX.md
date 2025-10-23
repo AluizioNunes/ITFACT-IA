@@ -17,6 +17,15 @@ Alteramos as seguintes imagens de `:latest` para versões específicas:
 |---------|----------------|-------------|
 | postgres-exporter | `prometheuscommunity/postgres-exporter:latest` | `prometheuscommunity/postgres-exporter:v0.18.1` |
 | python (FastAPI) | `python:3.11-slim` | `python:3.11.10-slim` |
+| nginx-prometheus-exporter | `nginx/nginx-prometheus-exporter:latest` | `nginx/nginx-prometheus-exporter:1.5.1` |
+| grafana | `grafana/grafana:latest` | `grafana/grafana:10.2.3` |
+| tempo | `grafana/tempo:latest` | `grafana/tempo:2.3.1` |
+| redis-exporter | `oliver006/redis_exporter:latest` | `oliver006/redis_exporter:v1.55.0` |
+| rabbitmq-exporter | `kbudde/rabbitmq-exporter:latest` | `kbudde/rabbitmq-exporter:v1.0.0-RC7.1` |
+| alertmanager | `prom/alertmanager:latest` | `prom/alertmanager:v0.26.0` |
+| blackbox-exporter | `prom/blackbox-exporter:latest` | `prom/blackbox-exporter:v0.24.0` |
+| loki | `grafana/loki:2.9.4` | `grafana/loki:2.9.8` |
+| promtail | `grafana/promtail:2.9.4` | `grafana/promtail:2.9.8` |
 | redis | `redis:latest` | `redis:7-alpine` |
 | cadvisor | `gcr.io/cadvisor/cadvisor:latest` | `gcr.io/cadvisor/cadvisor:v0.47.0` |
 
@@ -55,6 +64,15 @@ Se uma imagem específica falhar, faça o pull manual:
 ```bash
 docker pull prometheuscommunity/postgres-exporter:v0.18.1
 docker pull python:3.11.10-slim
+docker pull nginx/nginx-prometheus-exporter:1.5.1
+docker pull grafana/grafana:10.2.3
+docker pull grafana/tempo:2.3.1
+docker pull oliver006/redis_exporter:v1.55.0
+docker pull kbudde/rabbitmq-exporter:v1.0.0-RC7.1
+docker pull prom/alertmanager:v0.26.0
+docker pull prom/blackbox-exporter:v0.24.0
+docker pull grafana/loki:2.9.8
+docker pull grafana/promtail:2.9.8
 docker pull redis:7-alpine
 docker pull gcr.io/cadvisor/cadvisor:v0.47.0
 ```

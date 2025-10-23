@@ -166,14 +166,14 @@ export const useDockerContainers = () => {
               id: 'prometheus-container', 
               name: 'prometheus', 
               status: 'running', 
-              image: 'prom/prometheus:latest',
+              image: 'prom/prometheus:v2.53.0',
               ports: '9090/tcp'
             },
             { 
               id: 'grafana-container', 
               name: 'grafana', 
               status: 'running', 
-              image: 'grafana/grafana:latest',
+              image: 'grafana/grafana:10.2.3',
               ports: '3000/tcp'
             },
             { 
