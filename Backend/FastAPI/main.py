@@ -5,7 +5,7 @@ import socket
 import ipaddress
 import time
 import requests
-import sqlite3
+
 import json
 import re
 import os
@@ -128,10 +128,10 @@ SERVICE_MAP = {
 
 
 # ----------------------
-# SQLite Persistence
+# PostgreSQL Persistence
 # ----------------------
 
-DB_PATH = os.environ.get("DB_PATH", str(Path(__file__).with_name("discovery.db")))
+
 PG_HOST = os.environ.get("POSTGRES_HOST", "postgresql")
 PG_PORT = int(os.environ.get("POSTGRES_PORT", "5432"))
 PG_USER = os.environ.get("POSTGRES_USER", "admin")
@@ -153,7 +153,6 @@ def ensure_pg_schema():
     try:
         with conn.cursor() as cur:
             cur.execute('CREATE SCHEMA IF NOT EXISTS "AUTOMACAO";')
-            cur.execute('DROP TABLE IF EXISTS "AUTOMACAO"."Dsipositivos" CASCADE;')
             cur.execute('''
                 CREATE TABLE IF NOT EXISTS "AUTOMACAO"."Devices" (
                     id SERIAL PRIMARY KEY,
@@ -170,6 +169,61 @@ def ensure_pg_schema():
                     updated_at TIMESTAMPTZ DEFAULT NOW()
                 )
             ''')
+            cur.execute('''
+                CREATE TABLE IF NOT EXISTS "AUTOMACAO"."DeviceInterfaces" (
+                    id SERIAL PRIMARY KEY,
+                    device_id INTEGER REFERENCES "AUTOMACAO"."Devices"(id) ON DELETE CASCADE,
+                    name VARCHAR(128),
+                    mac VARCHAR(64),
+                    ipv4 VARCHAR(64),
+                    ipv6 VARCHAR(64),
+                    speed_mbps INTEGER,
+                    status VARCHAR(32),
+                    type VARCHAR(64),
+                    last_seen TIMESTAMPTZ,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW(),
+                    UNIQUE(device_id, name)
+                )
+            ''')
+            cur.execute('''
+                CREATE TABLE IF NOT EXISTS "AUTOMACAO"."NetworkLinks" (
+                    id SERIAL PRIMARY KEY,
+                    src_device_id INTEGER REFERENCES "AUTOMACAO"."Devices"(id) ON DELETE CASCADE,
+                    src_interface_id INTEGER REFERENCES "AUTOMACAO"."DeviceInterfaces"(id) ON DELETE SET NULL,
+                    dst_device_id INTEGER REFERENCES "AUTOMACAO"."Devices"(id) ON DELETE CASCADE,
+                    dst_interface_id INTEGER REFERENCES "AUTOMACAO"."DeviceInterfaces"(id) ON DELETE SET NULL,
+                    link_type VARCHAR(64),
+                    latency_ms DOUBLE PRECISION,
+                    bandwidth_mbps INTEGER,
+                    status VARCHAR(32),
+                    discovered_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW(),
+                    UNIQUE(src_device_id, dst_device_id, link_type)
+                )
+            ''')
+            cur.execute('''
+                CREATE TABLE IF NOT EXISTS "AUTOMACAO"."Metrics" (
+                    id BIGSERIAL PRIMARY KEY,
+                    device_id INTEGER REFERENCES "AUTOMACAO"."Devices"(id) ON DELETE CASCADE,
+                    metric_name VARCHAR(128) NOT NULL,
+                    metric_labels JSONB DEFAULT '{}'::jsonb,
+                    value DOUBLE PRECISION NOT NULL,
+                    ts TIMESTAMPTZ DEFAULT NOW(),
+                    UNIQUE(device_id, metric_name, ts)
+                )
+            ''')
+            cur.execute('''
+                CREATE TABLE IF NOT EXISTS "AUTOMACAO"."Events" (
+                    id BIGSERIAL PRIMARY KEY,
+                    device_id INTEGER REFERENCES "AUTOMACAO"."Devices"(id) ON DELETE CASCADE,
+                    event_type VARCHAR(128) NOT NULL,
+                    severity VARCHAR(32) DEFAULT 'info',
+                    description TEXT,
+                    attributes JSONB DEFAULT '{}'::jsonb,
+                    ts TIMESTAMPTZ DEFAULT NOW()
+                )
+            ''')
         conn.close()
         return True
     except Exception:
@@ -179,89 +233,91 @@ def ensure_pg_schema():
             pass
         return False
 
-def get_db() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    return conn
 
-def init_db():
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS hosts (
-            ip TEXT PRIMARY KEY,
-            hostname TEXT,
-            os TEXT,
-            status TEXT,
-            last_seen TEXT
-        )
-        """
-    )
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS services (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ip TEXT,
-            service TEXT,
-            port INTEGER,
-            status TEXT,
-            extra TEXT
-        )
-        """
-    )
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS metrics (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ip TEXT,
-            metric TEXT,
-            value REAL,
-            ts INTEGER
-        )
-        """
-    )
-    conn.commit()
-    conn.close()
+
+
 
 def record_discovery_host(ip: str, hostname: str, os: str, status: str, services: List[Tuple[str,int]]):
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute(
-        "REPLACE INTO hosts (ip, hostname, os, status, last_seen) VALUES (?, ?, ?, ?, ?)",
-        (ip, hostname, os, status, time.strftime("%Y-%m-%d %H:%M:%S"))
-    )
-    # purge old services for this ip
-    cur.execute("DELETE FROM services WHERE ip = ?", (ip,))
-    for svc, port in services:
-        cur.execute(
-            "INSERT INTO services (ip, service, port, status, extra) VALUES (?, ?, ?, ?, ?)",
-            (ip, svc, port, status, None)
-        )
-    conn.commit()
-    conn.close()
+    """Persist discovery results using PostgreSQL Devices upsert (PG-only)."""
+    ensure_pg_schema()
+    payload: Dict[str, Any] = {
+        "ip": ip,
+        "hostname": hostname,
+        "os": os or "Unknown",
+        "status": status or "Unknown",
+        "services": [{"service": svc, "port": port} for svc, port in services],
+        "lastSeen": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "real": True,
+    }
+    try:
+        pg_upsert_device(payload)
+    except Exception:
+        # PG-only refactor: no SQLite/JSON fallback
+        pass
 
 def record_metric(ip: str, metric: str, value: float, ts: int | None = None):
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO metrics (ip, metric, value, ts) VALUES (?, ?, ?, ?)",
-        (ip, metric, float(value), int(ts or time.time()))
-    )
-    conn.commit()
-    conn.close()
+    """Record a metric in PostgreSQL Metrics table (PG-only)."""
+    ensure_pg_schema()
+    device = pg_get_device(ip=ip)
+    if not device:
+        try:
+            pg_upsert_device({
+                "ip": ip,
+                "hostname": ip,
+                "status": "Unknown",
+                "os": "Unknown",
+                "services": [],
+                "lastSeen": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "real": True,
+            })
+            device = pg_get_device(ip=ip)
+        except Exception:
+            device = None
+    if not device:
+        return
+    conn = get_pg_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute('''
+                INSERT INTO "AUTOMACAO"."Metrics" (device_id, metric_name, metric_labels, value, ts)
+                VALUES (%s, %s, %s::jsonb, %s, to_timestamp(%s))
+            ''', (device["id"], metric, json.dumps({}), float(value), int(ts or time.time())))
+    except Exception:
+        pass
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 def get_series(ip: str, metric: str, limit: int = 60) -> List[Dict[str, Any]]:
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT value, ts FROM metrics WHERE ip = ? AND metric = ? ORDER BY ts DESC LIMIT ?",
-        (ip, metric, limit)
-    )
-    rows = cur.fetchall()
-    conn.close()
+    ensure_pg_schema()
+    conn = get_pg_conn()
+    if not conn:
+        return []
+    try:
+        with conn.cursor() as cur:
+            cur.execute('''
+                SELECT m.value, EXTRACT(EPOCH FROM m.ts)::bigint AS ts_epoch
+                FROM "AUTOMACAO"."Metrics" m
+                JOIN "AUTOMACAO"."Devices" d ON m.device_id = d.id
+                WHERE d.ip = %s AND m.metric_name = %s
+                ORDER BY m.ts DESC
+                LIMIT %s
+            ''', (ip, metric, limit))
+            rows = cur.fetchall()
+    except Exception:
+        rows = []
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
     # return in ascending time order
-    return [{"time": time.strftime("%H:%M:%S", time.localtime(r["ts"])), "value": float(r["value"]) } for r in reversed(rows)]
+    rows = list(reversed(rows))
+    return [{"time": time.strftime("%H:%M:%S", time.localtime(int(row[1]))), "value": float(row[0])} for row in rows]
 
 
 def tcp_check(ip: str, port: int, timeout: float = 0.35) -> bool:
@@ -1567,24 +1623,47 @@ def discovery_dbprobe(ip: str = Query(...), onlyOnline: bool = Query(True)):
 # ----------------------
 
 def compute_cpu_usage(ip: str, idle_cum: float, total_cum: float) -> float | None:
-    # usage = 1 - idle_delta / total_delta
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT value, ts FROM metrics WHERE ip=? AND metric='cpu_idle_cum' ORDER BY ts DESC LIMIT 1",
-        (ip,)
-    )
-    prev_idle = cur.fetchone()
-    cur.execute(
-        "SELECT value, ts FROM metrics WHERE ip=? AND metric='cpu_total_cum' ORDER BY ts DESC LIMIT 1",
-        (ip,)
-    )
-    prev_total = cur.fetchone()
-    conn.close()
-    if not prev_idle or not prev_total:
+    # usage = 1 - idle_delta / total_delta (PostgreSQL)
+    conn = get_pg_conn()
+    if not conn:
         return None
-    idle_delta = idle_cum - float(prev_idle["value"])
-    total_delta = total_cum - float(prev_total["value"])
+    prev_idle_val: float | None = None
+    prev_total_val: float | None = None
+    try:
+        with conn.cursor() as cur:
+            cur.execute('''
+                SELECT m.value
+                FROM "AUTOMACAO"."Metrics" m
+                JOIN "AUTOMACAO"."Devices" d ON m.device_id = d.id
+                WHERE d.ip = %s AND m.metric_name = 'cpu_idle_cum'
+                ORDER BY m.ts DESC
+                LIMIT 1
+            ''', (ip,))
+            row = cur.fetchone()
+            if row:
+                prev_idle_val = float(row[0])
+            cur.execute('''
+                SELECT m.value
+                FROM "AUTOMACAO"."Metrics" m
+                JOIN "AUTOMACAO"."Devices" d ON m.device_id = d.id
+                WHERE d.ip = %s AND m.metric_name = 'cpu_total_cum'
+                ORDER BY m.ts DESC
+                LIMIT 1
+            ''', (ip,))
+            row = cur.fetchone()
+            if row:
+                prev_total_val = float(row[0])
+    except Exception:
+        pass
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+    if prev_idle_val is None or prev_total_val is None:
+        return None
+    idle_delta = idle_cum - prev_idle_val
+    total_delta = total_cum - prev_total_val
     if total_delta <= 0:
         return None
     usage = max(0.0, min(100.0, (1.0 - (idle_delta / total_delta)) * 100.0))
@@ -1614,24 +1693,54 @@ def discovery_metrics(ip: str = Query(...), points: int = Query(30)):
         record_metric(ip, "fs_used_percent", fs_used)
     rx_cum = node.get("net_rx_cum") or 0.0
     tx_cum = node.get("net_tx_cum") or 0.0
-    # compute bps via delta from previous sample
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT value, ts FROM metrics WHERE ip=? AND metric='net_rx_cum' ORDER BY ts DESC LIMIT 1", (ip,))
-    prev_rx = cur.fetchone()
-    cur.execute("SELECT value, ts FROM metrics WHERE ip=? AND metric='net_tx_cum' ORDER BY ts DESC LIMIT 1", (ip,))
-    prev_tx = cur.fetchone()
-    conn.close()
+    # compute bps via delta from previous sample (PostgreSQL)
+    conn = get_pg_conn()
+    prev_rx_val: float | None = None
+    prev_rx_ts: int | None = None
+    prev_tx_val: float | None = None
+    prev_tx_ts: int | None = None
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute('''
+                    SELECT m.value, EXTRACT(EPOCH FROM m.ts)::bigint AS ts_epoch
+                    FROM "AUTOMACAO"."Metrics" m
+                    JOIN "AUTOMACAO"."Devices" d ON m.device_id = d.id
+                    WHERE d.ip = %s AND m.metric_name = 'net_rx_cum'
+                    ORDER BY m.ts DESC
+                    LIMIT 1
+                ''', (ip,))
+                row = cur.fetchone()
+                if row:
+                    prev_rx_val, prev_rx_ts = float(row[0]), int(row[1])
+                cur.execute('''
+                    SELECT m.value, EXTRACT(EPOCH FROM m.ts)::bigint AS ts_epoch
+                    FROM "AUTOMACAO"."Metrics" m
+                    JOIN "AUTOMACAO"."Devices" d ON m.device_id = d.id
+                    WHERE d.ip = %s AND m.metric_name = 'net_tx_cum'
+                    ORDER BY m.ts DESC
+                    LIMIT 1
+                ''', (ip,))
+                row = cur.fetchone()
+                if row:
+                    prev_tx_val, prev_tx_ts = float(row[0]), int(row[1])
+        except Exception:
+            pass
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
     now_ts = int(time.time())
     record_metric(ip, "net_rx_cum", rx_cum, now_ts)
     record_metric(ip, "net_tx_cum", tx_cum, now_ts)
-    if prev_rx:
-        dt = max(1, now_ts - int(prev_rx["ts"]))
-        bps = (rx_cum - float(prev_rx["value"])) / dt
+    if prev_rx_val is not None and prev_rx_ts is not None:
+        dt = max(1, now_ts - prev_rx_ts)
+        bps = (rx_cum - prev_rx_val) / dt
         record_metric(ip, "net_rx_bps", bps, now_ts)
-    if prev_tx:
-        dt = max(1, now_ts - int(prev_tx["ts"]))
-        bps = (tx_cum - float(prev_tx["value"])) / dt
+    if prev_tx_val is not None and prev_tx_ts is not None:
+        dt = max(1, now_ts - prev_tx_ts)
+        bps = (tx_cum - prev_tx_val) / dt
         record_metric(ip, "net_tx_bps", bps, now_ts)
 
     # Build series output
@@ -1650,24 +1759,67 @@ def discovery_metrics(ip: str = Query(...), points: int = Query(30)):
 
 @app.get("/api/inventory/hosts")
 def inventory_hosts():
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT ip, hostname, os, status, last_seen FROM hosts ORDER BY last_seen DESC")
-    rows = cur.fetchall()
-    conn.close()
-    return {"hosts": [dict(r) for r in rows]}
+    conn = get_pg_conn()
+    if not conn:
+        return {"hosts": []}
+    try:
+        with conn.cursor() as cur:
+            cur.execute('SELECT ip, hostname, os, status, last_seen FROM "AUTOMACAO"."Devices" ORDER BY COALESCE(updated_at, created_at) DESC')
+            rows = cur.fetchall()
+        conn.close()
+        hosts = []
+        for r in rows:
+            hosts.append({
+                "ip": r[0], "hostname": r[1], "os": r[2], "status": r[3], "last_seen": r[4],
+            })
+        return {"hosts": hosts}
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return {"hosts": []}
 
 @app.get("/api/inventory/services")
 def inventory_services(ip: str | None = Query(None)):
-    conn = get_db()
-    cur = conn.cursor()
-    if ip:
-        cur.execute("SELECT service, port, status, ip FROM services WHERE ip=? ORDER BY port", (ip,))
-    else:
-        cur.execute("SELECT service, port, status, ip FROM services ORDER BY ip, port")
-    rows = cur.fetchall()
-    conn.close()
-    return {"services": [dict(r) for r in rows]}
+    conn = get_pg_conn()
+    if not conn:
+        return {"services": []}
+    try:
+        with conn.cursor() as cur:
+            if ip:
+                cur.execute('SELECT ip, services FROM "AUTOMACAO"."Devices" WHERE ip = %s', (ip,))
+            else:
+                cur.execute('SELECT ip, services FROM "AUTOMACAO"."Devices" ORDER BY ip')
+            rows = cur.fetchall()
+        conn.close()
+        services_list: List[Dict[str, Any]] = []
+        for row in rows:
+            device_ip = row[0]
+            services = row[1]
+            if isinstance(services, str):
+                try:
+                    services = json.loads(services or "[]")
+                except Exception:
+                    services = []
+            for s in services or []:
+                if isinstance(s, dict):
+                    name = s.get("service") or s.get("name") or None
+                    port = s.get("port") if isinstance(s.get("port"), int) else None
+                    status = s.get("status") or "Unknown"
+                else:
+                    name = str(s)
+                    port = None
+                    status = "Unknown"
+                services_list.append({"service": name, "port": port, "status": status, "ip": device_ip})
+        services_list.sort(key=lambda x: ((x.get("ip") or ""), (x.get("port") or 0)))
+        return {"services": services_list}
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return {"services": []}
 
 @app.get("/api/inventory/metrics")
 def inventory_metrics(ip: str = Query(...), metric: str = Query(...), limit: int = Query(60)):
@@ -1840,10 +1992,7 @@ sleep 1
             "node_exporter": {"installed": True, "version": version, "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")},
             "real": True,
         }
-        if pg_ready():
-            pg_upsert_device(payload)
-        else:
-            upsert_server_json(payload)
+        pg_upsert_device(payload)
     except Exception:
         pass
     return {
@@ -1900,10 +2049,7 @@ sudo -n userdel node_exporter 2>/dev/null || true
             "node_exporter": {"installed": False, "version": None, "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")},
             "real": True,
         }
-        if pg_ready():
-            pg_upsert_device(payload)
-        else:
-            upsert_server_json(payload)
+        pg_upsert_device(payload)
     except Exception:
         pass
     return {"ok": ok and not probe.get("present"), "status": "uninstalled", "probe": probe, "output": out, "error": err}
@@ -1911,8 +2057,8 @@ sudo -n userdel node_exporter 2>/dev/null || true
 # ----------------------
 # Inventory Persistence (PostgreSQL first, JSON fallback)
 # ----------------------
-INVENTORY_DIR = Path(__file__).with_name("Inventory")
-SERVERS_JSON = INVENTORY_DIR / "Servers.json"
+
+
 
 # --- PostgreSQL helpers ---
 def pg_ready() -> bool:
@@ -2037,8 +2183,11 @@ def pg_upsert_device(device: Dict[str, Any]) -> Dict[str, Any]:
 
     conn = get_pg_conn()
     if not conn:
-        # Fallback to JSON if PG not ready
-        return upsert_server_json(device)
+        return {
+            "ip": ip, "hostname": hostname, "os": os_label, "status": status,
+            "services": normalized_services, "last_seen": last_seen,
+            "node_exporter": node_exporter, "virtualization": virtualization, "real": real,
+        }
     try:
         with conn.cursor() as cur:
             if ip:
@@ -2106,21 +2255,16 @@ def pg_upsert_device(device: Dict[str, Any]) -> Dict[str, Any]:
             conn.close()
         except Exception:
             pass
-        # Fallback to JSON
-        return upsert_server_json(device)
+        return {
+            "ip": ip, "hostname": hostname, "os": os_label, "status": status,
+            "services": normalized_services, "last_seen": last_seen,
+            "node_exporter": node_exporter, "virtualization": virtualization, "real": real,
+        }
 
 def pg_delete_device(device_id: str) -> Dict[str, Any]:
     conn = get_pg_conn()
     if not conn:
-        # fallback remove by JSON
-        items = load_servers_json()
-        original_count = len(items)
-        items = [item for item in items if item.get("ip") != device_id and item.get("hostname") != device_id]
-        if len(items) < original_count:
-            save_servers_json(items)
-            return {"ok": True, "message": "Device removed successfully", "count": len(items)}
-        else:
-            return {"ok": False, "message": "Device not found", "count": len(items)}
+        return {"ok": False, "message": "PostgreSQL connection not available"}
     try:
         with conn.cursor() as cur:
             # If numeric id
@@ -2143,117 +2287,30 @@ def pg_delete_device(device_id: str) -> Dict[str, Any]:
         return {"ok": False, "message": "Failed to remove device"}
 
 # --- JSON fallback helpers ---
-def ensure_inventory_fs():
-    try:
-        INVENTORY_DIR.mkdir(parents=True, exist_ok=True)
-        if not SERVERS_JSON.exists():
-            SERVERS_JSON.write_text("[]", encoding="utf-8")
-    except Exception:
-        pass
 
-def load_servers_json() -> List[Dict[str, Any]]:
-    ensure_inventory_fs()
-    try:
-        text = SERVERS_JSON.read_text(encoding="utf-8")
-        data = json.loads(text or "[]")
-        if isinstance(data, list):
-            return data
-        return []
-    except Exception:
-        return []
 
-def save_servers_json(items: List[Dict[str, Any]]) -> None:
-    ensure_inventory_fs()
-    try:
-        SERVERS_JSON.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
-    except Exception:
-        pass
 
-def upsert_server_json(device: Dict[str, Any]) -> Dict[str, Any]:
-    items = load_servers_json()
-    now = time.strftime("%Y-%m-%d %H:%M:%S")
-    ip = device.get("ip")
-    hostname = device.get("hostname")
-    dev = {
-        "ip": ip,
-        "hostname": hostname,
-        "os": device.get("os") or "Unknown",
-        "status": device.get("status") or "Unknown",
-        "services": device.get("services") or [],
-        "last_seen": device.get("lastSeen") or now,
-        "node_exporter": device.get("node_exporter"),
-        "virtualization": device.get("virtualization"),
-        "real": bool(device.get("real", True)),
-    }
-    updated = False
-    for idx, it in enumerate(items):
-        if (ip and it.get("ip") == ip) or (hostname and it.get("hostname") == hostname):
-            base_services = it.get("services") or []
-            new_services = dev["services"] or []
-            merged = []
-            for s in base_services + new_services:
-                if s not in merged:
-                    merged.append(s)
-            dev["services"] = merged
-            it.update(dev)
-            items[idx] = it
-            updated = True
-            dev = it
-            break
-    if not updated:
-        items.append(dev)
-    save_servers_json(items)
-    return dev
 
-def migrate_json_to_pg_once():
-    # If PG is ready and devices table is empty, import Servers.json
-    if not pg_ready():
-        return
-    conn = get_pg_conn()
-    if not conn:
-        return
-    try:
-        empty = True
-        with conn.cursor() as cur:
-            cur.execute('SELECT COUNT(*) FROM "AUTOMACAO"."Devices"')
-            row = cur.fetchone()
-            empty = (not row) or (int(row[0]) == 0)
-        conn.close()
-        if not empty:
-            return
-    except Exception:
-        try:
-            conn.close()
-        except Exception:
-            pass
-        return
-    # Load from JSON and upsert into PG
-    items = load_servers_json()
-    for it in items:
-        try:
-            pg_upsert_device(it)
-        except Exception:
-            pass
+
+
+
+
 
 # --- Inventory API using PG first ---
 @app.get("/api/inventory/devices")
 def list_devices_json():
-    if pg_ready():
-        return {"devices": pg_list_devices()}
-    return {"devices": load_servers_json()}
+    return {"devices": pg_list_devices()}
 
 @app.post("/api/inventory/devices")
 def add_or_update_device_json(payload: Dict[str, Any] = Body(...)):
-    dev = pg_upsert_device(payload or {}) if pg_ready() else upsert_server_json(payload or {})
-    count = len(pg_list_devices()) if pg_ready() else len(load_servers_json())
+    dev = pg_upsert_device(payload or {})
+    count = len(pg_list_devices())
     return {"ok": True, "device": dev, "count": count}
 
 @app.delete("/api/inventory/devices/{device_id}")
 def remove_device_json(device_id: str):
-    return pg_delete_device(device_id) if pg_ready() else pg_delete_device(device_id)
+    return pg_delete_device(device_id)
 
 
 # Initialize DB at startup
 ensure_pg_schema()
-migrate_json_to_pg_once()
-init_db()

@@ -90,7 +90,6 @@ services:
     environment:
       - TZ=America/Manaus
       - AUTO_RELOAD=false
-      - DB_PATH=/app/discovery.db
       - POSTGRES_HOST=postgresql
       - POSTGRES_PORT=5432
       - POSTGRES_USER=admin
@@ -417,6 +416,44 @@ services:
       - cmm_network
     depends_on:
       - rabbitmq
+
+alertmanager:
+    image: prom/alertmanager:latest
+    container_name: ALERTMANAGER
+    restart: unless-stopped
+    expose:
+      - "9093"
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./Backend/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    networks:
+      - cmm_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9093/-/healthy || wget -q -S --spider http://localhost:9093/-/healthy || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:latest
+    container_name: BLACKBOX
+    restart: unless-stopped
+    expose:
+      - "9115"
+    ports:
+      - "9115:9115"
+    volumes:
+      - ./Backend/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    networks:
+      - cmm_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9115 || wget -q -S --spider http://localhost:9115 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
 
 volumes:
   postgres_data:

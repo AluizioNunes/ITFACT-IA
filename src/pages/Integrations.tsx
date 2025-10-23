@@ -78,7 +78,7 @@ const Integrations: React.FC = () => {
     };
   }, [metricsTimer]);
 
-  // Carrega dispositivos persistidos (Inventory/Servers.json)
+  // Carrega dispositivos persistidos via PostgreSQL
   useEffect(() => {
     (async () => {
       try {
