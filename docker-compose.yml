@@ -174,7 +174,7 @@ services:
       - cmm_network
 
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     container_name: REDIS
     restart: unless-stopped
     expose:
@@ -315,7 +315,7 @@ services:
       start_period: 45s
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
     container_name: CADVISOR
     restart: unless-stopped
     expose:
@@ -357,7 +357,7 @@ services:
       - nginx
 
   postgres-exporter:
-    image: prometheuscommunity/postgres-exporter:latest
+    image: prometheuscommunity/postgres-exporter:v0.18.1
     container_name: POSTGRES-EXPORTER
     restart: unless-stopped
     environment:
