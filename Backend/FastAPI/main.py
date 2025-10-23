@@ -1,10 +1,12 @@
-from fastapi import FastAPI, Body, Query, Request, Response
+from fastapi import FastAPI, Body, Query, Request, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any, Tuple, Optional
 import socket
 import ipaddress
 import time
 import requests
+import datetime
+import xml.etree.ElementTree as ET
 
 import json
 import re
@@ -141,6 +143,106 @@ PG_PORT = int(os.environ.get("POSTGRES_PORT", "5432"))
 PG_USER = os.environ.get("POSTGRES_USER", "admin")
 PG_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "admin")
 PG_DB = os.environ.get("POSTGRES_DB", "AUTOMACAO")
+
+# Rate limiting configuration
+RATE_LIMIT_SNMP_SET = int(os.environ.get("RATE_LIMIT_SNMP_SET", "10"))  # requests per minute
+RATE_LIMIT_NETMIKO_CMD = int(os.environ.get("RATE_LIMIT_NETMIKO_CMD", "5"))  # requests per minute
+RATE_LIMITS = {}  # {ip: {action: [timestamps]}}
+
+def rate_limit_check(client_ip: str, action: str, limit: int) -> bool:
+    """Check if client IP is within rate limit for specific action"""
+    now = time.time()
+    minute_ago = now - 60
+    
+    if client_ip not in RATE_LIMITS:
+        RATE_LIMITS[client_ip] = {}
+    
+    if action not in RATE_LIMITS[client_ip]:
+        RATE_LIMITS[client_ip][action] = []
+    
+    # Clean old timestamps
+    RATE_LIMITS[client_ip][action] = [
+        ts for ts in RATE_LIMITS[client_ip][action] if ts > minute_ago
+    ]
+    
+    # Check limit
+    if len(RATE_LIMITS[client_ip][action]) >= limit:
+        return False
+    
+    # Add current timestamp
+    RATE_LIMITS[client_ip][action].append(now)
+    return True
+
+def mask_secrets(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Mask sensitive information in dictionaries"""
+    if not isinstance(data, dict):
+        return data
+    
+    masked = {}
+    sensitive_keys = {
+        'password', 'passwd', 'pass', 'secret', 'key', 'token', 
+        'auth', 'credential', 'private', 'priv', 'community'
+    }
+    
+    for k, v in data.items():
+        key_lower = k.lower()
+        if any(sensitive in key_lower for sensitive in sensitive_keys):
+            if isinstance(v, str) and len(v) > 0:
+                masked[k] = f"{v[:2]}***{v[-1:]}" if len(v) > 3 else "***"
+            else:
+                masked[k] = "***"
+        elif isinstance(v, dict):
+            masked[k] = mask_secrets(v)
+        else:
+            masked[k] = v
+    
+    return masked
+
+def validate_snmp_v3(v3_data: Dict[str, Any]) -> List[str]:
+    """Validate SNMPv3 authentication and privacy combinations"""
+    errors = []
+    
+    if not v3_data:
+        return errors
+    
+    auth_protocol = v3_data.get('authProtocol', 'none')
+    priv_protocol = v3_data.get('privProtocol', 'none')
+    auth_password = v3_data.get('authPassword', '')
+    priv_password = v3_data.get('privPassword', '')
+    
+    # Authentication validation
+    if auth_protocol != 'none':
+        if not auth_password:
+            errors.append("Authentication password required when auth protocol is specified")
+        elif len(auth_password) < 8:
+            errors.append("Authentication password must be at least 8 characters")
+    
+    # Privacy validation
+    if priv_protocol != 'none':
+        if auth_protocol == 'none':
+            errors.append("Authentication must be enabled to use privacy")
+        if not priv_password:
+            errors.append("Privacy password required when privacy protocol is specified")
+        elif len(priv_password) < 8:
+            errors.append("Privacy password must be at least 8 characters")
+    
+    return errors
+
+def measure_tcp_latency(host: str, port: int, timeout: float = 2.0) -> Optional[float]:
+    """Measure TCP connection latency to a host:port"""
+    try:
+        start_time = time.time()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        result = sock.connect_ex((host, port))
+        end_time = time.time()
+        sock.close()
+        
+        if result == 0:
+            return (end_time - start_time) * 1000  # Convert to milliseconds
+        return None
+    except Exception:
+        return None
 
 def get_pg_conn():
     if not psycopg:
@@ -1700,7 +1802,12 @@ def topologia_snmp(payload: Dict[str, Any] = Body(...)):
 
 
 @app.post("/api/snmp/set")
-def api_snmp_set(payload: Dict[str, Any] = Body(...)):
+def api_snmp_set(payload: Dict[str, Any] = Body(...), request: Request = None):
+    # Rate limiting
+    client_ip = request.client.host if request else "unknown"
+    if not rate_limit_check(client_ip, "SNMP_SET", RATE_LIMIT_SNMP_SET):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for SNMP_SET")
+    
     target = payload.get("target")
     community = payload.get("community", "private")
     version = payload.get("version", "v2c")
@@ -1710,20 +1817,34 @@ def api_snmp_set(payload: Dict[str, Any] = Body(...)):
     value = payload.get("value")
     timeout = int(payload.get("timeout", 2))
     retries = int(payload.get("retries", 0))
+    
+    # Validate SNMPv3 if needed
+    if version == "v3" and v3:
+        validation_errors = validate_snmp_v3(v3)
+        if validation_errors:
+            raise HTTPException(status_code=400, detail={"errors": validation_errors})
+    
     try:
         ip = socket.gethostbyname(target)
     except Exception:
         ip = target
+    
     result = snmp_set_ext(ip, version, community, oid, value_type, value, v3, timeout, retries)
+    
     try:
         dev = pg_get_device(ip=ip) or pg_upsert_device({"ip": ip, "hostname": payload.get("hostname")})
         dev_id = dev.get("id") if isinstance(dev, dict) else None
         if dev_id:
-            ev = pg_add_event(dev_id, "SNMP_SET", "info" if result.get("ok") else "error",
-                              f"SET {oid} ({value_type})", {
-                                  "oid": oid, "type": value_type, "value": value,
-                                  "version": version, "timeout": timeout, "retries": retries
-                              })
+            ev = pg_add_event(
+                dev_id, "SNMP_SET", "info" if result.get("ok") else "error",
+                f"SET {oid} ({value_type})", 
+                mask_secrets({
+                    "oid": oid, "type": value_type, "value": value,
+                    "version": version, "timeout": timeout, "retries": retries
+                }),
+                actor=payload.get("actor", "api"),
+                source=client_ip
+            )
             result["event_id"] = ev.get("id")
     except Exception:
         pass
@@ -1731,7 +1852,12 @@ def api_snmp_set(payload: Dict[str, Any] = Body(...)):
 
 
 @app.post("/api/netmiko/command")
-def api_netmiko_command(payload: Dict[str, Any] = Body(...)):
+def api_netmiko_command(payload: Dict[str, Any] = Body(...), request: Request = None):
+    # Rate limiting
+    client_ip = request.client.host if request else "unknown"
+    if not rate_limit_check(client_ip, "NETMIKO_CMD", RATE_LIMIT_NETMIKO_CMD):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for NETMIKO_CMD")
+    
     host = payload.get("host")
     device_type = payload.get("deviceType")
     username = payload.get("username")
@@ -1740,6 +1866,7 @@ def api_netmiko_command(payload: Dict[str, Any] = Body(...)):
     command = payload.get("command")
     port = int(payload.get("port", 22))
     timeout = int(payload.get("timeout", 8))
+    
     allowed_types = {
         "cisco_ios", "cisco_xe", "cisco_nxos", "cisco_xr",
         "arista_eos", "juniper_junos", "huawei", "hp_procurve",
@@ -1747,7 +1874,9 @@ def api_netmiko_command(payload: Dict[str, Any] = Body(...)):
     }
     if not device_type or device_type not in allowed_types:
         return {"ok": False, "error": f"deviceType inválido. Permitidos: {sorted(list(allowed_types))}"}
+    
     res = run_netmiko_command(host, device_type, username, password, command, secret, port, timeout)
+    
     try:
         ip = host
         try:
@@ -1757,10 +1886,15 @@ def api_netmiko_command(payload: Dict[str, Any] = Body(...)):
         dev = pg_get_device(ip=ip) or pg_upsert_device({"ip": ip, "hostname": payload.get("hostname")})
         dev_id = dev.get("id") if isinstance(dev, dict) else None
         if dev_id:
-            ev = pg_add_event(dev_id, "NETMIKO_CMD", "info" if res.get("ok") else "error",
-                              f"CMD: {command}", {
-                                  "deviceType": device_type, "port": port, "timeout": timeout
-                              })
+            ev = pg_add_event(
+                dev_id, "NETMIKO_CMD", "info" if res.get("ok") else "error",
+                f"CMD: {command}", 
+                mask_secrets({
+                    "deviceType": device_type, "port": port, "timeout": timeout
+                }),
+                actor=payload.get("actor", "api"),
+                source=client_ip
+            )
             res["event_id"] = ev.get("id")
     except Exception:
         pass
@@ -2650,16 +2784,21 @@ def pg_delete_device(device_id: str) -> Dict[str, Any]:
 
 # Eventos e manutenção de topologia
 
-def pg_add_event(device_id: int, event_type: str, severity: str = "info", description: Optional[str] = None, attributes: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def pg_add_event(device_id: int, event_type: str, severity: str = "info", description: Optional[str] = None, 
+                 attributes: Optional[Dict[str, Any]] = None, actor: Optional[str] = None, 
+                 source: Optional[str] = None) -> Dict[str, Any]:
     ensure_pg_schema()
     conn = get_pg_conn()
     if not conn or not device_id or not event_type:
         return {"ok": False}
     try:
+        # Mask sensitive information in attributes
+        masked_attributes = mask_secrets(attributes or {})
+        
         with conn.cursor() as cur:
             cur.execute(
-                'INSERT INTO "AUTOMACAO"."Events"(device_id, event_type, severity, description, attributes, ts) VALUES (%s, %s, %s, %s, %s, NOW()) RETURNING id',
-                (device_id, event_type, severity, description, json.dumps(attributes or {}))
+                'INSERT INTO "AUTOMACAO"."Events"(device_id, event_type, severity, description, attributes, actor, source, ts) VALUES (%s, %s, %s, %s, %s, %s, %s, NOW()) RETURNING id',
+                (device_id, event_type, severity, description, json.dumps(masked_attributes), actor, source)
             )
             rid = cur.fetchone()
         conn.close()
@@ -2679,7 +2818,7 @@ def pg_list_events(device_id: Optional[int] = None, event_type: Optional[str] = 
         return []
     try:
         with conn.cursor() as cur:
-            sql = 'SELECT id, device_id, event_type, severity, description, attributes, ts FROM "AUTOMACAO"."Events"'
+            sql = 'SELECT id, device_id, event_type, severity, description, attributes, actor, source, ts FROM "AUTOMACAO"."Events"'
             params: List[Any] = []
             if device_id is not None or event_type is not None:
                 sql += ' WHERE '
@@ -2704,7 +2843,9 @@ def pg_list_events(device_id: Optional[int] = None, event_type: Optional[str] = 
                 "severity": r[3],
                 "description": r[4],
                 "attributes": json.loads(r[5]) if isinstance(r[5], (str, bytes)) else (r[5] or {}),
-                "ts": r[6],
+                "actor": r[6],
+                "source": r[7],
+                "ts": r[8],
             }
             for r in rows
         ]
@@ -2842,6 +2983,93 @@ def pg_list_links(device_id: Optional[int] = None) -> List[Dict[str, Any]]:
 
 
 
+def pg_purge_orphan_links() -> Dict[str, Any]:
+    """Remove links that reference non-existent devices or interfaces"""
+    ensure_pg_schema()
+    conn = get_pg_conn()
+    if not conn:
+        return {"ok": False, "error": "Database connection failed"}
+    
+    try:
+        with conn.cursor() as cur:
+            # Remove links with invalid source devices
+            cur.execute('''
+                DELETE FROM "AUTOMACAO"."NetworkLinks" 
+                WHERE src_device_id IS NOT NULL 
+                AND src_device_id NOT IN (SELECT id FROM "AUTOMACAO"."Devices")
+            ''')
+            orphan_src_devices = cur.rowcount
+            
+            # Remove links with invalid destination devices
+            cur.execute('''
+                DELETE FROM "AUTOMACAO"."NetworkLinks" 
+                WHERE dst_device_id IS NOT NULL 
+                AND dst_device_id NOT IN (SELECT id FROM "AUTOMACAO"."Devices")
+            ''')
+            orphan_dst_devices = cur.rowcount
+            
+            # Remove links with invalid source interfaces
+            cur.execute('''
+                DELETE FROM "AUTOMACAO"."NetworkLinks" 
+                WHERE src_interface_id IS NOT NULL 
+                AND src_interface_id NOT IN (SELECT id FROM "AUTOMACAO"."DeviceInterfaces")
+            ''')
+            orphan_src_interfaces = cur.rowcount
+            
+            # Remove links with invalid destination interfaces
+            cur.execute('''
+                DELETE FROM "AUTOMACAO"."NetworkLinks" 
+                WHERE dst_interface_id IS NOT NULL 
+                AND dst_interface_id NOT IN (SELECT id FROM "AUTOMACAO"."DeviceInterfaces")
+            ''')
+            orphan_dst_interfaces = cur.rowcount
+            
+            total_removed = orphan_src_devices + orphan_dst_devices + orphan_src_interfaces + orphan_dst_interfaces
+            
+        conn.close()
+        return {
+            "ok": True,
+            "total_removed": total_removed,
+            "details": {
+                "orphan_src_devices": orphan_src_devices,
+                "orphan_dst_devices": orphan_dst_devices,
+                "orphan_src_interfaces": orphan_src_interfaces,
+                "orphan_dst_interfaces": orphan_dst_interfaces
+            }
+        }
+    except Exception as e:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return {"ok": False, "error": str(e)}
+
+
+def pg_update_link_latency(link_id: int, latency_ms: float) -> bool:
+    """Update latency for a specific link"""
+    ensure_pg_schema()
+    conn = get_pg_conn()
+    if not conn:
+        return False
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute('''
+                UPDATE "AUTOMACAO"."NetworkLinks" 
+                SET latency_ms = %s, updated_at = NOW() 
+                WHERE id = %s
+            ''', (latency_ms, link_id))
+            updated = cur.rowcount > 0
+        conn.close()
+        return updated
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return False
+
+
 # --- Inventory API using PG first ---
 
 @app.post("/api/topologia/links/purge")
@@ -2856,6 +3084,197 @@ def api_topologia_links_purge(payload: Dict[str, Any] = Body(...)):
     except Exception:
         pass
     return {"ok": True, "deleted": count}
+
+@app.post("/api/topologia/links/purge-orphans")
+def api_topologia_links_purge_orphans(request: Request = None):
+    """Remove links órfãos que referenciam dispositivos ou interfaces inexistentes"""
+    client_ip = request.client.host if request else "unknown"
+    
+    try:
+        count = pg_purge_orphan_links()
+        
+        # Registrar evento de auditoria
+        try:
+            pg_add_event(None, "TOPOLOGY_ORPHAN_PURGE", "info",
+                         f"Purge de links órfãos executado", 
+                         {"deleted": count, "client_ip": client_ip},
+                         actor=client_ip, source="API")
+        except Exception:
+            pass
+            
+        return {"ok": True, "deleted": count, "message": f"Removidos {count} links órfãos"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.post("/api/topologia/links/update-latency")
+def api_topologia_links_update_latency(payload: Dict[str, Any] = Body(...), request: Request = None):
+    """Atualiza a latência de um link específico"""
+    client_ip = request.client.host if request else "unknown"
+    
+    try:
+        link_id = payload.get("linkId")
+        if not link_id:
+            return {"ok": False, "error": "linkId é obrigatório"}
+        
+        # Buscar informações do link
+        with get_pg_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT l.id, d1.ip as src_ip, d2.ip as dst_ip, l.src_port, l.dst_port
+                    FROM Links l
+                    JOIN Devices d1 ON l.src_device_id = d1.id
+                    JOIN Devices d2 ON l.dst_device_id = d2.id
+                    WHERE l.id = %s
+                """, (link_id,))
+                link_info = cur.fetchone()
+                
+                if not link_info:
+                    return {"ok": False, "error": "Link não encontrado"}
+                
+                # Medir latência TCP
+                latency = measure_tcp_latency(link_info[2], link_info[4] or 22)  # dst_ip, dst_port
+                
+                if latency is not None:
+                    success = pg_update_link_latency(link_id, latency)
+                    
+                    # Registrar evento
+                    try:
+                        pg_add_event(None, "LINK_LATENCY_UPDATE", "info",
+                                     f"Latência do link {link_id} atualizada: {latency:.2f}ms",
+                                     {"link_id": link_id, "latency_ms": latency, "client_ip": client_ip},
+                                     actor=client_ip, source="API")
+                    except Exception:
+                        pass
+                    
+                    return {"ok": True, "updated": success, "latency_ms": latency}
+                else:
+                    return {"ok": False, "error": "Não foi possível medir a latência"}
+                    
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.post("/api/topologia/links/probe-latency")
+def api_topologia_links_probe_latency(payload: Dict[str, Any] = Body(...), request: Request = None):
+    """Executa sondas ativas de latência em lote para todos os links ou links específicos"""
+    client_ip = request.client.host if request else "unknown"
+    
+    try:
+        device_id = payload.get("deviceId")  # Opcional: filtrar por dispositivo
+        max_concurrent = min(payload.get("maxConcurrent", 10), 20)  # Máximo 20 threads
+        timeout = min(payload.get("timeout", 2.0), 5.0)  # Máximo 5s timeout
+        
+        # Buscar links para sondar
+        with get_pg_conn() as conn:
+            with conn.cursor() as cur:
+                if device_id:
+                    cur.execute("""
+                        SELECT l.id, d1.ip as src_ip, d2.ip as dst_ip, l.src_port, l.dst_port,
+                               d1.hostname as src_hostname, d2.hostname as dst_hostname
+                        FROM Links l
+                        JOIN Devices d1 ON l.src_device_id = d1.id
+                        JOIN Devices d2 ON l.dst_device_id = d2.id
+                        WHERE l.src_device_id = %s OR l.dst_device_id = %s
+                        ORDER BY l.id
+                    """, (device_id, device_id))
+                else:
+                    cur.execute("""
+                        SELECT l.id, d1.ip as src_ip, d2.ip as dst_ip, l.src_port, l.dst_port,
+                               d1.hostname as src_hostname, d2.hostname as dst_hostname
+                        FROM Links l
+                        JOIN Devices d1 ON l.src_device_id = d1.id
+                        JOIN Devices d2 ON l.dst_device_id = d2.id
+                        ORDER BY l.id
+                        LIMIT 100
+                    """)
+                
+                links = cur.fetchall()
+        
+        if not links:
+            return {"ok": True, "probed": 0, "results": [], "message": "Nenhum link encontrado"}
+        
+        results = []
+        updated_count = 0
+        
+        def probe_link(link_info):
+            link_id, src_ip, dst_ip, src_port, dst_port, src_hostname, dst_hostname = link_info
+            
+            # Tentar medir latência para ambas as direções
+            latency_forward = measure_tcp_latency(dst_ip, dst_port or 22, timeout)
+            latency_reverse = measure_tcp_latency(src_ip, src_port or 22, timeout)
+            
+            # Usar a melhor latência disponível
+            best_latency = None
+            if latency_forward is not None and latency_reverse is not None:
+                best_latency = min(latency_forward, latency_reverse)
+            elif latency_forward is not None:
+                best_latency = latency_forward
+            elif latency_reverse is not None:
+                best_latency = latency_reverse
+            
+            result = {
+                "link_id": link_id,
+                "src_ip": src_ip,
+                "dst_ip": dst_ip,
+                "src_hostname": src_hostname,
+                "dst_hostname": dst_hostname,
+                "latency_forward_ms": latency_forward,
+                "latency_reverse_ms": latency_reverse,
+                "best_latency_ms": best_latency,
+                "updated": False
+            }
+            
+            # Atualizar no banco se temos latência
+            if best_latency is not None:
+                result["updated"] = pg_update_link_latency(link_id, best_latency)
+            
+            return result
+        
+        # Executar sondas em paralelo
+        with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
+            future_to_link = {executor.submit(probe_link, link): link for link in links}
+            
+            for future in as_completed(future_to_link):
+                try:
+                    result = future.result()
+                    results.append(result)
+                    if result["updated"]:
+                        updated_count += 1
+                except Exception as e:
+                    link_info = future_to_link[future]
+                    results.append({
+                        "link_id": link_info[0],
+                        "src_ip": link_info[1],
+                        "dst_ip": link_info[2],
+                        "error": str(e),
+                        "updated": False
+                    })
+        
+        # Registrar evento de auditoria
+        try:
+            pg_add_event(device_id, "LINK_LATENCY_PROBE", "info",
+                         f"Sonda de latência executada: {len(links)} links, {updated_count} atualizados",
+                         {
+                             "total_links": len(links),
+                             "updated_count": updated_count,
+                             "device_id": device_id,
+                             "client_ip": client_ip,
+                             "max_concurrent": max_concurrent,
+                             "timeout": timeout
+                         },
+                         actor=client_ip, source="API")
+        except Exception:
+            pass
+        
+        return {
+            "ok": True,
+            "probed": len(links),
+            "updated": updated_count,
+            "results": results,
+            "message": f"Sondagem concluída: {updated_count}/{len(links)} links atualizados"
+        }
+        
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 @app.get("/api/events")
 def api_list_events(deviceId: Optional[int] = Query(None), eventType: Optional[str] = Query(None), limit: int = Query(200)):
@@ -2909,6 +3328,257 @@ def add_or_update_device_json(payload: Dict[str, Any] = Body(...)):
 @app.delete("/api/inventory/devices/{device_id}")
 def remove_device_json(device_id: str):
     return pg_delete_device(device_id)
+
+# --- Graph Export Functions ---
+
+def export_graph_json() -> Dict[str, Any]:
+    """Exporta o grafo de topologia em formato JSON"""
+    try:
+        # Buscar dispositivos
+        devices = pg_list_devices()
+        
+        # Buscar links
+        links = pg_list_links()
+        
+        # Preparar nós
+        nodes = []
+        for device in devices:
+            node = {
+                "id": device.get("id"),
+                "label": device.get("hostname") or device.get("ip"),
+                "ip": device.get("ip"),
+                "hostname": device.get("hostname"),
+                "os": device.get("os"),
+                "status": device.get("status"),
+                "vendor": device.get("vendor"),
+                "model": device.get("model"),
+                "version": device.get("version"),
+                "location": device.get("location"),
+                "description": device.get("description"),
+                "last_seen": device.get("last_seen"),
+                "created_at": device.get("created_at")
+            }
+            nodes.append(node)
+        
+        # Preparar arestas
+        edges = []
+        for link in links:
+            edge = {
+                "id": link.get("id"),
+                "source": link.get("src_device_id"),
+                "target": link.get("dst_device_id"),
+                "src_interface": link.get("src_interface"),
+                "dst_interface": link.get("dst_interface"),
+                "src_port": link.get("src_port"),
+                "dst_port": link.get("dst_port"),
+                "protocol": link.get("protocol"),
+                "latency_ms": link.get("latency_ms"),
+                "bandwidth": link.get("bandwidth"),
+                "status": link.get("status"),
+                "discovered_at": link.get("discovered_at"),
+                "last_seen": link.get("last_seen")
+            }
+            edges.append(edge)
+        
+        return {
+            "format": "json",
+            "version": "1.0",
+            "generated_at": datetime.datetime.now().isoformat(),
+            "metadata": {
+                "nodes_count": len(nodes),
+                "edges_count": len(edges),
+                "description": "Network topology graph exported from CMM Analytics"
+            },
+            "graph": {
+                "nodes": nodes,
+                "edges": edges
+            }
+        }
+        
+    except Exception as e:
+        raise Exception(f"Erro ao exportar grafo JSON: {str(e)}")
+
+def export_graph_graphml() -> str:
+    """Exporta o grafo de topologia em formato GraphML"""
+    try:
+        # Buscar dados
+        devices = pg_list_devices()
+        links = pg_list_links()
+        
+        # Criar elemento raiz GraphML
+        graphml = ET.Element("graphml")
+        graphml.set("xmlns", "http://graphml.graphdrawing.org/xmlns")
+        graphml.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+        graphml.set("xsi:schemaLocation", "http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd")
+        
+        # Definir atributos dos nós
+        node_attrs = [
+            ("label", "string", "Node Label"),
+            ("ip", "string", "IP Address"),
+            ("hostname", "string", "Hostname"),
+            ("os", "string", "Operating System"),
+            ("status", "string", "Status"),
+            ("vendor", "string", "Vendor"),
+            ("model", "string", "Model"),
+            ("version", "string", "Version"),
+            ("location", "string", "Location"),
+            ("description", "string", "Description")
+        ]
+        
+        for i, (attr_name, attr_type, attr_desc) in enumerate(node_attrs):
+            key_elem = ET.SubElement(graphml, "key")
+            key_elem.set("id", f"n{i}")
+            key_elem.set("for", "node")
+            key_elem.set("attr.name", attr_name)
+            key_elem.set("attr.type", attr_type)
+            desc_elem = ET.SubElement(key_elem, "desc")
+            desc_elem.text = attr_desc
+        
+        # Definir atributos das arestas
+        edge_attrs = [
+            ("src_interface", "string", "Source Interface"),
+            ("dst_interface", "string", "Destination Interface"),
+            ("src_port", "int", "Source Port"),
+            ("dst_port", "int", "Destination Port"),
+            ("protocol", "string", "Protocol"),
+            ("latency_ms", "double", "Latency (ms)"),
+            ("bandwidth", "string", "Bandwidth"),
+            ("status", "string", "Status")
+        ]
+        
+        for i, (attr_name, attr_type, attr_desc) in enumerate(edge_attrs):
+            key_elem = ET.SubElement(graphml, "key")
+            key_elem.set("id", f"e{i}")
+            key_elem.set("for", "edge")
+            key_elem.set("attr.name", attr_name)
+            key_elem.set("attr.type", attr_type)
+            desc_elem = ET.SubElement(key_elem, "desc")
+            desc_elem.text = attr_desc
+        
+        # Criar grafo
+        graph = ET.SubElement(graphml, "graph")
+        graph.set("id", "NetworkTopology")
+        graph.set("edgedefault", "undirected")
+        
+        # Adicionar nós
+        for device in devices:
+            node = ET.SubElement(graph, "node")
+            node.set("id", str(device.get("id")))
+            
+            for i, (attr_name, _, _) in enumerate(node_attrs):
+                value = device.get(attr_name)
+                if value is not None:
+                    data = ET.SubElement(node, "data")
+                    data.set("key", f"n{i}")
+                    data.text = str(value)
+        
+        # Adicionar arestas
+        for link in links:
+            edge = ET.SubElement(graph, "edge")
+            edge.set("id", str(link.get("id")))
+            edge.set("source", str(link.get("src_device_id")))
+            edge.set("target", str(link.get("dst_device_id")))
+            
+            for i, (attr_name, _, _) in enumerate(edge_attrs):
+                value = link.get(attr_name)
+                if value is not None:
+                    data = ET.SubElement(edge, "data")
+                    data.set("key", f"e{i}")
+                    data.text = str(value)
+        
+        # Converter para string
+        ET.indent(graphml, space="  ")
+        return ET.tostring(graphml, encoding="unicode", xml_declaration=True)
+        
+    except Exception as e:
+        raise Exception(f"Erro ao exportar grafo GraphML: {str(e)}")
+
+# --- Graph Export Endpoints ---
+
+@app.get("/api/topologia/export/json")
+def api_topologia_export_json(request: Request = None):
+    """Exporta o grafo de topologia em formato JSON"""
+    client_ip = request.client.host if request else "unknown"
+    
+    try:
+        graph_data = export_graph_json()
+        
+        # Registrar evento de auditoria
+        try:
+            pg_add_event(None, "TOPOLOGY_EXPORT", "info",
+                         "Exportação de grafo em formato JSON",
+                         {
+                             "format": "json",
+                             "nodes_count": graph_data["metadata"]["nodes_count"],
+                             "edges_count": graph_data["metadata"]["edges_count"],
+                             "client_ip": client_ip
+                         },
+                         actor=client_ip, source="API")
+        except Exception:
+            pass
+        
+        return graph_data
+        
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.get("/api/topologia/export/graphml")
+def api_topologia_export_graphml(request: Request = None):
+    """Exporta o grafo de topologia em formato GraphML"""
+    client_ip = request.client.host if request else "unknown"
+    
+    try:
+        graphml_content = export_graph_graphml()
+        
+        # Registrar evento de auditoria
+        try:
+            devices_count = len(pg_list_devices())
+            links_count = len(pg_list_links())
+            
+            pg_add_event(None, "TOPOLOGY_EXPORT", "info",
+                         "Exportação de grafo em formato GraphML",
+                         {
+                             "format": "graphml",
+                             "nodes_count": devices_count,
+                             "edges_count": links_count,
+                             "client_ip": client_ip
+                         },
+                         actor=client_ip, source="API")
+        except Exception:
+            pass
+        
+        # Retornar como resposta XML
+        return Response(
+            content=graphml_content,
+            media_type="application/xml",
+            headers={
+                "Content-Disposition": "attachment; filename=network_topology.graphml"
+            }
+        )
+        
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.get("/api/topologia/export/formats")
+def api_topologia_export_formats():
+    """Lista os formatos de exportação disponíveis"""
+    return {
+        "ok": True,
+        "formats": [
+            {
+                "name": "json",
+                "description": "JSON format with nodes and edges",
+                "endpoint": "/api/topologia/export/json",
+                "content_type": "application/json"
+            },
+            {
+                "name": "graphml",
+                "description": "GraphML XML format for graph analysis tools",
+                "endpoint": "/api/topologia/export/graphml",
+                "content_type": "application/xml"
+            }
+        ]
+    }
 
 
 # Initialize DB at startup
