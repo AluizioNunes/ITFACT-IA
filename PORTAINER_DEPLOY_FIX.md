@@ -8,14 +8,17 @@ Failed to pull images of the stack: compose pull operation failed: Error respons
 ## Causa
 O erro ocorre devido a timeouts de conectividade com o Docker Hub durante o pull das imagens, especialmente quando se usa tags `:latest`.
 
-## Soluções Implementadas
+## 🔧 Soluções Implementadas
 
-### 1. ✅ Versões Fixas das Imagens
-Alteramos as seguintes imagens para versões específicas:
+### 1. **Fixação de Versões de Imagens**
+Alteramos as seguintes imagens de `:latest` para versões específicas:
 
-- `prometheuscommunity/postgres-exporter:latest` → `prometheuscommunity/postgres-exporter:v0.18.1`
-- `redis:latest` → `redis:7-alpine`
-- `gcr.io/cadvisor/cadvisor:latest` → `gcr.io/cadvisor/cadvisor:v0.47.0`
+| Serviço | Imagem Original | Imagem Atual |
+|---------|----------------|-------------|
+| postgres-exporter | `prometheuscommunity/postgres-exporter:latest` | `prometheuscommunity/postgres-exporter:v0.18.1` |
+| python (FastAPI) | `python:3.11-slim` | `python:3.11.10-slim` |
+| redis | `redis:latest` | `redis:7-alpine` |
+| cadvisor | `gcr.io/cadvisor/cadvisor:latest` | `gcr.io/cadvisor/cadvisor:v0.47.0` |
 
 ### 2. ✅ Scripts de Pré-Pull
 Criados scripts para fazer pull das imagens antes do deploy:
@@ -51,6 +54,7 @@ Se uma imagem específica falhar, faça o pull manual:
 
 ```bash
 docker pull prometheuscommunity/postgres-exporter:v0.18.1
+docker pull python:3.11.10-slim
 docker pull redis:7-alpine
 docker pull gcr.io/cadvisor/cadvisor:v0.47.0
 ```

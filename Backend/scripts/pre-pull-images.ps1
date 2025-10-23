@@ -6,6 +6,7 @@ Write-Host "=== Iniciando pré-pull das imagens Docker ===" -ForegroundColor Gre
 # Lista das imagens principais do docker-compose
 $images = @(
     "prometheuscommunity/postgres-exporter:v0.18.1",
+    "python:3.11.10-slim",
     "prom/prometheus:latest",
     "grafana/grafana:latest",
     "grafana/loki:latest",
