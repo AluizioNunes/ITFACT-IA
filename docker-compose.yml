@@ -268,7 +268,7 @@ services:
       - cmm_network
 
   promtail:
-    image: grafana/promtail:2.9.8
+    image: grafana/promtail:2.9.7
     container_name: PROMTAIL
     restart: unless-stopped
     volumes:

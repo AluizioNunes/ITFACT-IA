@@ -25,7 +25,7 @@ Alteramos as seguintes imagens de `:latest` para versões específicas:
 | alertmanager | `prom/alertmanager:latest` | `prom/alertmanager:v0.26.0` |
 | blackbox-exporter | `prom/blackbox-exporter:latest` | `prom/blackbox-exporter:v0.24.0` |
 | loki | `grafana/loki:2.9.4` | `grafana/loki:2.9.8` |
-| promtail | `grafana/promtail:2.9.4` | `grafana/promtail:2.9.8` |
+| promtail | `grafana/promtail:2.9.4` | `grafana/promtail:2.9.7` |
 | redis | `redis:latest` | `redis:7-alpine` |
 | cadvisor | `gcr.io/cadvisor/cadvisor:latest` | `gcr.io/cadvisor/cadvisor:v0.47.0` |
 
@@ -72,7 +72,7 @@ docker pull kbudde/rabbitmq-exporter:v1.0.0-RC7.1
 docker pull prom/alertmanager:v0.26.0
 docker pull prom/blackbox-exporter:v0.24.0
 docker pull grafana/loki:2.9.8
-docker pull grafana/promtail:2.9.8
+docker pull grafana/promtail:2.9.7
 docker pull redis:7-alpine
 docker pull gcr.io/cadvisor/cadvisor:v0.47.0
 ```

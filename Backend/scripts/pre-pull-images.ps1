@@ -10,7 +10,7 @@ $images = @(
     "prom/prometheus:v2.53.0",
     "grafana/grafana:10.2.3",
     "grafana/loki:2.9.8",
-    "grafana/promtail:2.9.8",
+    "grafana/promtail:2.9.7",
     "prom/blackbox-exporter:v0.24.0",
     "prom/alertmanager:v0.26.0",
     "redis:7-alpine",
