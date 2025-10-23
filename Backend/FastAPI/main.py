@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Body, Query
+from fastapi import FastAPI, Body, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any, Tuple, Optional
 import socket
@@ -25,6 +25,10 @@ try:
     import winrm
 except Exception:
     winrm = None
+try:
+    from netmiko import ConnectHandler
+except Exception:
+    ConnectHandler = None
 try:
     import psycopg
 except Exception:
@@ -146,6 +150,23 @@ def get_pg_conn():
     except Exception:
         return None
 
+def ensure_pg_extensions():
+    conn = get_pg_conn()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cur:
+            cur.execute('CREATE EXTENSION IF NOT EXISTS pg_stat_statements;')
+            cur.execute('CREATE EXTENSION IF NOT EXISTS pg_wait_sampling;')
+        return True
+    except Exception:
+        return False
+
+@app.on_event("startup")
+def _startup_init():
+    ensure_pg_extensions()
+    ensure_pg_schema()
+
 def ensure_pg_schema():
     conn = get_pg_conn()
     if not conn:
@@ -221,9 +242,13 @@ def ensure_pg_schema():
                     severity VARCHAR(32) DEFAULT 'info',
                     description TEXT,
                     attributes JSONB DEFAULT '{}'::jsonb,
+                    actor VARCHAR(128),
+                    source VARCHAR(64),
                     ts TIMESTAMPTZ DEFAULT NOW()
                 )
             ''')
+            cur.execute('ALTER TABLE IF NOT EXISTS "AUTOMACAO"."Events" ADD COLUMN IF NOT EXISTS actor VARCHAR(128);')
+            cur.execute('ALTER TABLE IF NOT EXISTS "AUTOMACAO"."Events" ADD COLUMN IF NOT EXISTS source VARCHAR(64);')
         conn.close()
         return True
     except Exception:
@@ -1212,6 +1237,13 @@ try:
         ObjectIdentity,
         getCmd,
         nextCmd,
+        setCmd,
+        OctetString,
+        Integer,
+        IpAddress,
+        Gauge32,
+        Counter32,
+        ObjectIdentifier,
     )
     # v3 auth imports (optional)
     try:
@@ -1245,6 +1277,32 @@ try:
     HAS_PYSNMP = True
 except Exception:
     HAS_PYSNMP = False
+
+# --- LLDP/CDP OIDs ---
+LLDP_REM_SYSNAME = "1.0.8802.1.1.2.1.4.1.1.9"
+LLDP_REM_PORTID = "1.0.8802.1.1.2.1.4.1.1.7"
+LLDP_REM_LOCAL_PORTNUM = "1.0.8802.1.1.2.1.4.1.1.2"
+LLDP_LOC_PORT_DESC = "1.0.8802.1.1.2.1.3.7.1.3"
+LLDP_LOC_PORT_ID = "1.0.8802.1.1.2.1.3.7.1.1"
+IF_NAME = "1.3.6.1.2.1.31.1.1.1.1"
+IF_DESCR = "1.3.6.1.2.1.2.2.1.2"
+
+CDP_CACHE_DEVICEID = "1.3.6.1.4.1.9.9.23.1.2.1.1.6"
+CDP_CACHE_DEVICEPORT = "1.3.6.1.4.1.9.9.23.1.2.1.1.7"
+CDP_CACHE_PLATFORM = "1.3.6.1.4.1.9.9.23.1.2.1.1.8"
+CDP_CACHE_ADDRESS = "1.3.6.1.4.1.9.9.23.1.2.1.1.4"
+CDP_CACHE_IFINDEX = "1.3.6.1.4.1.9.9.23.1.2.1.1.2"
+
+
+def _snmp_decode(val: Any) -> str:
+    try:
+        s = str(val)
+        return s.strip('"')
+    except Exception:
+        try:
+            return val.prettyPrint()  # type: ignore
+        except Exception:
+            return str(val)
 
 def snmp_get(ip: str, community: str, oid: str, timeout: int = 1, retries: int = 0) -> Any:
     if not HAS_PYSNMP:
@@ -1353,6 +1411,90 @@ def snmp_walk_ext(ip: str, version: str, community: str, oid: str, v3: Dict[str,
     except Exception:
         pass
     return results
+
+# SNMP SET seguro (v1/v2c/v3)
+def snmp_set_ext(ip: str, version: str, community: str, oid: str, value_type: str, value: Any, v3: Dict[str, Any] | None = None, timeout: int = 2, retries: int = 0) -> Dict[str, Any]:
+    if not HAS_PYSNMP:
+        return {"ok": False, "error": "pysnmp não disponível"}
+    if not oid:
+        return {"ok": False, "error": "OID ausente"}
+    type_map = {
+        "OctetString": OctetString,
+        "Integer": Integer,
+        "IpAddress": IpAddress,
+        "Gauge32": Gauge32,
+        "Counter32": Counter32,
+        "ObjectIdentifier": ObjectIdentifier,
+    }
+    tcls = type_map.get(str(value_type))
+    if not tcls:
+        return {"ok": False, "error": f"Tipo inválido: {value_type}"}
+    try:
+        if tcls in (Integer, Gauge32, Counter32):
+            vobj = tcls(int(value))
+        elif tcls is IpAddress:
+            vobj = tcls(str(value))
+        else:
+            vobj = tcls(value)
+    except Exception as e:
+        return {"ok": False, "error": f"Falha convertendo valor: {e}"}
+    try:
+        iterator = setCmd(
+            SnmpEngine(),
+            _snmp_auth(version, community, v3),
+            UdpTransportTarget((ip, 161), timeout=timeout, retries=retries),
+            ContextData(),
+            ObjectType(ObjectIdentity(oid), vobj)
+        )
+        errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
+        if errorIndication:
+            return {"ok": False, "error": str(errorIndication)}
+        if errorStatus:
+            return {"ok": False, "error": f"{errorStatus.prettyPrint()} at {errorIndex}"}
+        result_binds: List[Tuple[str, str]] = []
+        for varBind in varBinds:
+            result_binds.append((str(varBind[0]), varBind[1].prettyPrint()))
+        return {"ok": True, "response": result_binds}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+# Execução de comandos via Netmiko
+
+def run_netmiko_command(host: str, device_type: str, username: str, password: str, command: str, secret: Optional[str] = None, port: int = 22, timeout: int = 8) -> Dict[str, Any]:
+    if ConnectHandler is None:
+        return {"ok": False, "error": "netmiko não disponível"}
+    if not host or not device_type or not username or not command:
+        return {"ok": False, "error": "Parâmetros obrigatórios ausentes"}
+    try:
+        params: Dict[str, Any] = {
+            "device_type": device_type,
+            "host": host,
+            "username": username,
+            "password": password,
+            "port": port,
+            "timeout": timeout,
+        }
+        if secret:
+            params["secret"] = secret
+        conn = ConnectHandler(**params)
+        if secret:
+            try:
+                conn.enable()
+            except Exception:
+                pass
+        output = conn.send_command(command)
+        try:
+            conn.disconnect()
+        except Exception:
+            pass
+        return {"ok": True, "output": output}
+    except Exception as e:
+        try:
+            conn.disconnect()  # type: ignore
+        except Exception:
+            pass
+        return {"ok": False, "error": str(e)}
+
 
 def build_snmp_hostinfo(ip: str, community: str, version: str = "v2c", v3: Dict[str, Any] | None = None) -> Dict[str, Any]:
     info: Dict[str, Any] = {"ip": ip, "community": community, "version": version, "available": HAS_PYSNMP}
@@ -1472,6 +1614,157 @@ def discovery_snmp(payload: Dict[str, Any] = Body(...)):
         "snmp": snmp_info,
         "services": [{"service": s} for s in host["services"]],
     }
+
+
+def _discover_snmp_neighbors(ip: str, version: str, community: str, v3: Dict[str, Any] | None = None, timeout: int = 1, retries: int = 0) -> List[Dict[str, Any]]:
+    neighbors: List[Dict[str, Any]] = []
+    try:
+        # LLDP primeiro
+        rem_sys = snmp_walk_ext(ip, version, community, LLDP_REM_SYSNAME, v3, timeout, retries)
+        if rem_sys:
+            rem_port = snmp_walk_ext(ip, version, community, LLDP_REM_PORTID, v3, timeout, retries)
+            rem_loc_num = snmp_walk_ext(ip, version, community, LLDP_REM_LOCAL_PORTNUM, v3, timeout, retries)
+            loc_desc = snmp_walk_ext(ip, version, community, LLDP_LOC_PORT_DESC, v3, timeout, retries)
+            rem_map: Dict[str, Dict[str, Any]] = {}
+            for oid, val in rem_sys:
+                key = oid.split(LLDP_REM_SYSNAME + ".")[-1]
+                rem_map[key] = {"remote_hostname": _snmp_decode(val)}
+            port_map: Dict[str, str] = {}
+            for oid, val in rem_port:
+                key = oid.split(LLDP_REM_PORTID + ".")[-1]
+                port_map[key] = _snmp_decode(val)
+            desc_by_num: Dict[str, str] = {}
+            for oid, val in loc_desc:
+                suf = oid.split(LLDP_LOC_PORT_DESC + ".")[-1]
+                desc_by_num[suf] = _snmp_decode(val)
+            for oid, val in rem_loc_num:
+                key = oid.split(LLDP_REM_LOCAL_PORTNUM + ".")[-1]
+                local_num = _snmp_decode(val)
+                local_if = desc_by_num.get(local_num) or f"port-{local_num}"
+                ent = rem_map.get(key, {})
+                rport = port_map.get(key)
+                if ent:
+                    neighbors.append({"local_if": local_if, "remote_hostname": ent.get("remote_hostname"), "remote_port": rport, "protocol": "LLDP"})
+        # Se LLDP vazio, tenta CDP
+        if not neighbors:
+            dev_ids = snmp_walk_ext(ip, version, community, CDP_CACHE_DEVICEID, v3, timeout, retries)
+            dev_ports = snmp_walk_ext(ip, version, community, CDP_CACHE_DEVICEPORT, v3, timeout, retries)
+            if_idxs = snmp_walk_ext(ip, version, community, CDP_CACHE_IFINDEX, v3, timeout, retries)
+            if_names = snmp_walk_ext(ip, version, community, IF_NAME, v3, timeout, retries)
+            names_map: Dict[str, str] = {}
+            for oid, val in if_names:
+                suf = oid.split(IF_NAME + ".")[-1]
+                names_map[suf] = _snmp_decode(val)
+            ports_map: Dict[str, str] = {}
+            for oid, val in dev_ports:
+                suf = oid.split(CDP_CACHE_DEVICEPORT + ".")[-1]
+                ports_map[suf] = _snmp_decode(val)
+            for oid, val in dev_ids:
+                suf = oid.split(CDP_CACHE_DEVICEID + ".")[-1]
+                loc_index = None
+                try:
+                    loc_index = suf.split(".")[0]
+                except Exception:
+                    pass
+                loc_name = (loc_index and names_map.get(loc_index)) or (loc_index and f"if-{loc_index}") or None
+                neighbors.append({"local_if": loc_name, "remote_hostname": _snmp_decode(val), "remote_port": ports_map.get(suf), "protocol": "CDP"})
+    except Exception:
+        pass
+    return neighbors
+
+
+@app.post("/api/topologia/snmp")
+def topologia_snmp(payload: Dict[str, Any] = Body(...)):
+    target = payload.get("target")
+    community = payload.get("community", "public")
+    version = payload.get("version", "v2c")
+    v3 = payload.get("v3") or None
+    timeout = int(payload.get("timeout", 1))
+    retries = int(payload.get("retries", 0))
+    try:
+        ip = socket.gethostbyname(target)
+    except Exception:
+        ip = target
+    neighbors = _discover_snmp_neighbors(ip, version, community, v3, timeout=timeout, retries=retries)
+    src_dev = pg_upsert_device({"ip": ip, "os": "Network", "status": "Online"})
+    src_id = src_dev.get("id")
+    persisted: List[Dict[str, Any]] = []
+    for n in neighbors:
+        dst_dev = pg_upsert_device({"hostname": n.get("remote_hostname"), "os": "Network"})
+        dst_id = dst_dev.get("id")
+        src_if_id = pg_upsert_interface(src_id, n.get("local_if"))
+        dst_if_id = pg_upsert_interface(dst_id, n.get("remote_port"))
+        pg_upsert_link(src_id, src_if_id, dst_id, dst_if_id, n.get("protocol") or "SNMP")
+        persisted.append({"src": src_id, "src_if": n.get("local_if"), "dst": dst_id, "dst_if": n.get("remote_port"), "protocol": n.get("protocol")})
+    return {"target": ip, "neighbors": neighbors, "persisted": persisted}
+
+
+@app.post("/api/snmp/set")
+def api_snmp_set(payload: Dict[str, Any] = Body(...)):
+    target = payload.get("target")
+    community = payload.get("community", "private")
+    version = payload.get("version", "v2c")
+    v3 = payload.get("v3") or None
+    oid = payload.get("oid")
+    value_type = payload.get("type", "OctetString")
+    value = payload.get("value")
+    timeout = int(payload.get("timeout", 2))
+    retries = int(payload.get("retries", 0))
+    try:
+        ip = socket.gethostbyname(target)
+    except Exception:
+        ip = target
+    result = snmp_set_ext(ip, version, community, oid, value_type, value, v3, timeout, retries)
+    try:
+        dev = pg_get_device(ip=ip) or pg_upsert_device({"ip": ip, "hostname": payload.get("hostname")})
+        dev_id = dev.get("id") if isinstance(dev, dict) else None
+        if dev_id:
+            ev = pg_add_event(dev_id, "SNMP_SET", "info" if result.get("ok") else "error",
+                              f"SET {oid} ({value_type})", {
+                                  "oid": oid, "type": value_type, "value": value,
+                                  "version": version, "timeout": timeout, "retries": retries
+                              })
+            result["event_id"] = ev.get("id")
+    except Exception:
+        pass
+    return result
+
+
+@app.post("/api/netmiko/command")
+def api_netmiko_command(payload: Dict[str, Any] = Body(...)):
+    host = payload.get("host")
+    device_type = payload.get("deviceType")
+    username = payload.get("username")
+    password = payload.get("password")
+    secret = payload.get("secret")
+    command = payload.get("command")
+    port = int(payload.get("port", 22))
+    timeout = int(payload.get("timeout", 8))
+    allowed_types = {
+        "cisco_ios", "cisco_xe", "cisco_nxos", "cisco_xr",
+        "arista_eos", "juniper_junos", "huawei", "hp_procurve",
+        "mikrotik_routeros", "ubiquiti_edgerouter", "linux",
+    }
+    if not device_type or device_type not in allowed_types:
+        return {"ok": False, "error": f"deviceType inválido. Permitidos: {sorted(list(allowed_types))}"}
+    res = run_netmiko_command(host, device_type, username, password, command, secret, port, timeout)
+    try:
+        ip = host
+        try:
+            ip = socket.gethostbyname(host)
+        except Exception:
+            pass
+        dev = pg_get_device(ip=ip) or pg_upsert_device({"ip": ip, "hostname": payload.get("hostname")})
+        dev_id = dev.get("id") if isinstance(dev, dict) else None
+        if dev_id:
+            ev = pg_add_event(dev_id, "NETMIKO_CMD", "info" if res.get("ok") else "error",
+                              f"CMD: {command}", {
+                                  "deviceType": device_type, "port": port, "timeout": timeout
+                              })
+            res["event_id"] = ev.get("id")
+    except Exception:
+        pass
+    return res
 
 
 @app.get("/api/discovery/hostinfo")
@@ -2261,6 +2554,73 @@ def pg_upsert_device(device: Dict[str, Any]) -> Dict[str, Any]:
             "node_exporter": node_exporter, "virtualization": virtualization, "real": real,
         }
 
+def pg_upsert_interface(device_id: Optional[int], name: Optional[str], mac: Optional[str] = None, ipv4: Optional[str] = None, ipv6: Optional[str] = None, speed_mbps: Optional[int] = None, status: Optional[str] = None, type_label: Optional[str] = None) -> Optional[int]:
+    ensure_pg_schema()
+    if not device_id or not name:
+        return None
+    conn = get_pg_conn()
+    if not conn:
+        return None
+    try:
+        with conn.cursor() as cur:
+            cur.execute('''
+                INSERT INTO "AUTOMACAO"."DeviceInterfaces" (device_id, name, mac, ipv4, ipv6, speed_mbps, status, type, last_seen, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                ON CONFLICT (device_id, name) DO UPDATE SET
+                    mac = EXCLUDED.mac,
+                    ipv4 = EXCLUDED.ipv4,
+                    ipv6 = EXCLUDED.ipv6,
+                    speed_mbps = EXCLUDED.speed_mbps,
+                    status = EXCLUDED.status,
+                    type = EXCLUDED.type,
+                    last_seen = NOW(),
+                    updated_at = NOW()
+                RETURNING id
+            ''', (device_id, name, mac, ipv4, ipv6, speed_mbps, status, type_label))
+            row = cur.fetchone()
+        conn.close()
+        return int(row[0]) if row else None
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return None
+
+
+def pg_upsert_link(src_device_id: Optional[int], src_interface_id: Optional[int], dst_device_id: Optional[int], dst_interface_id: Optional[int], link_type: str = "SNMP", latency_ms: Optional[float] = None, bandwidth_mbps: Optional[int] = None, status: Optional[str] = "discovered") -> Optional[int]:
+    ensure_pg_schema()
+    if not src_device_id or not dst_device_id:
+        return None
+    conn = get_pg_conn()
+    if not conn:
+        return None
+    try:
+        with conn.cursor() as cur:
+            cur.execute('''
+                INSERT INTO "AUTOMACAO"."NetworkLinks"
+                    (src_device_id, src_interface_id, dst_device_id, dst_interface_id, link_type, latency_ms, bandwidth_mbps, status, discovered_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                ON CONFLICT (src_device_id, dst_device_id, link_type) DO UPDATE SET
+                    src_interface_id = EXCLUDED.src_interface_id,
+                    dst_interface_id = EXCLUDED.dst_interface_id,
+                    latency_ms = EXCLUDED.latency_ms,
+                    bandwidth_mbps = EXCLUDED.bandwidth_mbps,
+                    status = EXCLUDED.status,
+                    updated_at = NOW()
+                RETURNING id
+            ''', (src_device_id, src_interface_id, dst_device_id, dst_interface_id, link_type, latency_ms, bandwidth_mbps, status))
+            row = cur.fetchone()
+        conn.close()
+        return int(row[0]) if row else None
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return None
+
+
 def pg_delete_device(device_id: str) -> Dict[str, Any]:
     conn = get_pg_conn()
     if not conn:
@@ -2288,6 +2648,192 @@ def pg_delete_device(device_id: str) -> Dict[str, Any]:
 
 # --- JSON fallback helpers ---
 
+# Eventos e manutenção de topologia
+
+def pg_add_event(device_id: int, event_type: str, severity: str = "info", description: Optional[str] = None, attributes: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    ensure_pg_schema()
+    conn = get_pg_conn()
+    if not conn or not device_id or not event_type:
+        return {"ok": False}
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                'INSERT INTO "AUTOMACAO"."Events"(device_id, event_type, severity, description, attributes, ts) VALUES (%s, %s, %s, %s, %s, NOW()) RETURNING id',
+                (device_id, event_type, severity, description, json.dumps(attributes or {}))
+            )
+            rid = cur.fetchone()
+        conn.close()
+        return {"ok": True, "id": rid[0]}
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return {"ok": False}
+
+
+def pg_list_events(device_id: Optional[int] = None, event_type: Optional[str] = None, limit: int = 200) -> List[Dict[str, Any]]:
+    ensure_pg_schema()
+    conn = get_pg_conn()
+    if not conn:
+        return []
+    try:
+        with conn.cursor() as cur:
+            sql = 'SELECT id, device_id, event_type, severity, description, attributes, ts FROM "AUTOMACAO"."Events"'
+            params: List[Any] = []
+            if device_id is not None or event_type is not None:
+                sql += ' WHERE '
+                conds: List[str] = []
+                if device_id is not None:
+                    conds.append('device_id = %s')
+                    params.append(device_id)
+                if event_type is not None:
+                    conds.append('event_type = %s')
+                    params.append(event_type)
+                sql += ' AND '.join(conds)
+            sql += ' ORDER BY ts DESC LIMIT %s'
+            params.append(limit)
+            cur.execute(sql, tuple(params))
+            rows = cur.fetchall()
+        conn.close()
+        return [
+            {
+                "id": r[0],
+                "device_id": r[1],
+                "event_type": r[2],
+                "severity": r[3],
+                "description": r[4],
+                "attributes": json.loads(r[5]) if isinstance(r[5], (str, bytes)) else (r[5] or {}),
+                "ts": r[6],
+            }
+            for r in rows
+        ]
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return []
+
+
+def pg_purge_links(days: int = 30, device_id: Optional[int] = None) -> int:
+    ensure_pg_schema()
+    conn = get_pg_conn()
+    if not conn:
+        return 0
+    try:
+        with conn.cursor() as cur:
+            sql = 'DELETE FROM "AUTOMACAO"."NetworkLinks" WHERE updated_at < NOW() - %s::interval'
+            params: List[Any] = [f'{max(1, int(days))} days']
+            if device_id is not None:
+                sql += ' AND (src_device_id = %s OR dst_device_id = %s)'
+                params.extend([device_id, device_id])
+            cur.execute(sql, tuple(params))
+            deleted = cur.rowcount
+        conn.close()
+        return deleted
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return 0
+
+# Listagem de interfaces e links (topologia)
+
+def pg_list_interfaces(device_id: int) -> List[Dict[str, Any]]:
+    ensure_pg_schema()
+    conn = get_pg_conn()
+    if not conn or not device_id:
+        return []
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                'SELECT id, name, mac, ipv4, ipv6, speed_mbps, status, type, last_seen, updated_at FROM "AUTOMACAO"."DeviceInterfaces" WHERE device_id = %s ORDER BY name',
+                (device_id,)
+            )
+            rows = cur.fetchall()
+        conn.close()
+        return [
+            {
+                "id": r[0],
+                "name": r[1],
+                "mac": r[2],
+                "ipv4": r[3],
+                "ipv6": r[4],
+                "speed_mbps": r[5],
+                "status": r[6],
+                "type": r[7],
+                "last_seen": r[8],
+                "updated_at": r[9],
+            }
+            for r in rows
+        ]
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return []
+
+
+def pg_list_links(device_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    ensure_pg_schema()
+    conn = get_pg_conn()
+    if not conn:
+        return []
+    try:
+        with conn.cursor() as cur:
+            sql = '''
+                SELECT
+                    l.id,
+                    l.src_device_id, sd.hostname AS src_hostname, sd.ip AS src_ip,
+                    l.src_interface_id, si.name AS src_if_name,
+                    l.dst_device_id, dd.hostname AS dst_hostname, dd.ip AS dst_ip,
+                    l.dst_interface_id, di.name AS dst_if_name,
+                    l.link_type, l.latency_ms, l.bandwidth_mbps, l.status, l.discovered_at, l.updated_at
+                FROM "AUTOMACAO"."NetworkLinks" l
+                LEFT JOIN "AUTOMACAO"."Devices" sd ON l.src_device_id = sd.id
+                LEFT JOIN "AUTOMACAO"."DeviceInterfaces" si ON l.src_interface_id = si.id
+                LEFT JOIN "AUTOMACAO"."Devices" dd ON l.dst_device_id = dd.id
+                LEFT JOIN "AUTOMACAO"."DeviceInterfaces" di ON l.dst_interface_id = di.id
+            '''
+            if device_id is not None:
+                sql += ' WHERE l.src_device_id = %s OR l.dst_device_id = %s'
+                cur.execute(sql + ' ORDER BY l.updated_at DESC', (device_id, device_id))
+            else:
+                cur.execute(sql + ' ORDER BY l.updated_at DESC')
+            rows = cur.fetchall()
+        conn.close()
+        return [
+            {
+                "id": r[0],
+                "src_device_id": r[1],
+                "src_hostname": r[2],
+                "src_ip": r[3],
+                "src_interface_id": r[4],
+                "src_if_name": r[5],
+                "dst_device_id": r[6],
+                "dst_hostname": r[7],
+                "dst_ip": r[8],
+                "dst_interface_id": r[9],
+                "dst_if_name": r[10],
+                "link_type": r[11],
+                "latency_ms": r[12],
+                "bandwidth_mbps": r[13],
+                "status": r[14],
+                "discovered_at": r[15],
+                "updated_at": r[16],
+            }
+            for r in rows
+        ]
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return []
+
 
 
 
@@ -2297,6 +2843,59 @@ def pg_delete_device(device_id: str) -> Dict[str, Any]:
 
 
 # --- Inventory API using PG first ---
+
+@app.post("/api/topologia/links/purge")
+def api_topologia_links_purge(payload: Dict[str, Any] = Body(...)):
+    days = int(payload.get("days", 30))
+    device_id = payload.get("deviceId")
+    count = pg_purge_links(days, device_id if isinstance(device_id, int) else None)
+    try:
+        if isinstance(device_id, int):
+            pg_add_event(device_id, "TOPOLOGY_PURGE", "warning",
+                         f"Purge de links antigos (> {days} dias)", {"deleted": count})
+    except Exception:
+        pass
+    return {"ok": True, "deleted": count}
+
+@app.get("/api/events")
+def api_list_events(deviceId: Optional[int] = Query(None), eventType: Optional[str] = Query(None), limit: int = Query(200)):
+    return {"ok": True, "events": pg_list_events(deviceId, eventType, limit)}
+
+@app.get("/api/topologia/interfaces")
+def api_topologia_interfaces(deviceId: int = Query(...)):
+    return {"deviceId": deviceId, "interfaces": pg_list_interfaces(deviceId)}
+
+@app.get("/api/topologia/links")
+def api_topologia_links(deviceId: Optional[int] = Query(None)):
+    return {"links": pg_list_links(deviceId)}
+
+@app.get("/api/topologia/grafo")
+def api_topologia_grafo():
+    nodes_raw = pg_list_devices()
+    nodes = [
+        {
+            "id": n.get("id"),
+            "label": n.get("hostname") or n.get("ip"),
+            "ip": n.get("ip"),
+            "os": n.get("os"),
+            "status": n.get("status"),
+        }
+        for n in nodes_raw
+    ]
+    links = pg_list_links()
+    edges = [
+        {
+            "id": l["id"],
+            "source": l["src_device_id"],
+            "target": l["dst_device_id"],
+            "src_if": l.get("src_if_name"),
+            "dst_if": l.get("dst_if_name"),
+            "type": l.get("link_type"),
+            "status": l.get("status"),
+        }
+        for l in links
+    ]
+    return {"nodes": nodes, "edges": edges}
 @app.get("/api/inventory/devices")
 def list_devices_json():
     return {"devices": pg_list_devices()}

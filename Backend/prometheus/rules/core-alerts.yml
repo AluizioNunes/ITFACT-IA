@@ -1,0 +1,67 @@
+groups:
+  - name: service_health
+    rules:
+      - alert: TargetDown
+        expr: up{job=~"api_nestjs|api_fastapi|blackbox_http|blackbox_tcp|postgres-exporter|nginx-exporter|redis-exporter|rabbitmq-exporter|cadvisor|loki"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} em {{ $labels.instance }} está DOWN"
+          description: "O alvo {{ $labels.instance }} (job {{ $labels.job }}) não está respondendo há mais de 2 minutos."
+
+      - alert: HTTPProbeFailing
+        expr: probe_success{job="blackbox_http"} == 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP probe falhando para {{ $labels.instance }}"
+          description: "Blackbox HTTP falha contínua para {{ $labels.instance }}."
+
+      - alert: TCPConnectFailing
+        expr: probe_success{job="blackbox_tcp"} == 0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TCP connect falhando para {{ $labels.instance }}"
+          description: "Blackbox TCP não consegue conectar a {{ $labels.instance }} no alvo/porta configurado."
+
+      - alert: HTTPProbeLatencyAlta
+        expr: avg_over_time(probe_duration_seconds{job="blackbox_http"}[5m]) > 1.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latência HTTP alta em {{ $labels.instance }}"
+          description: "Latência média > 1.5s em 5m para {{ $labels.instance }}."
+
+      - alert: SSLCertExpiringSoon
+        expr: (probe_ssl_earliest_cert_expiry - time()) < 86400 * 30
+        for: 2h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Certificado SSL expira em menos de 30 dias"
+          description: "{{ $labels.instance }} expira em {{ humanizeDuration $value }} dias."
+
+  - name: postgres_health
+    rules:
+      - alert: PostgresExporterDown
+        expr: up{job="postgres-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Postgres Exporter DOWN"
+          description: "O exporter de PostgreSQL não está acessível."
+
+      - alert: PostgresHighConnections
+        expr: pg_stat_activity_count{datname="AUTOMACAO"} > 200
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Muitas conexões no DB AUTOMACAO"
+          description: "Contagem de conexões excedeu 200 por mais de 10m."

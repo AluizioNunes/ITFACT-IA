@@ -1,0 +1,46 @@
+# Extended queries for postgres-exporter
+# Adds pg_wait_sampling and misc DB health metrics
+
+pg_stat_activity_count:
+  query: |
+    SELECT current_database() as datname, COUNT(*) AS count
+    FROM pg_stat_activity
+    WHERE datname = current_database();
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Database name"
+    - count:
+        usage: "GAUGE"
+        description: "Active connections count"
+
+pg_wait_sampling_event_count:
+  query: |
+    SELECT event, COUNT(*) as count
+    FROM pg_wait_sampling_profile
+    GROUP BY event;
+  metrics:
+    - event:
+        usage: "LABEL"
+        description: "Wait event"
+    - count:
+        usage: "GAUGE"
+        description: "Wait event count"
+
+pg_buffers_usage:
+  query: |
+    SELECT buffers_clean, buffers_alloc, buffers_backend, buffers_checkpoint
+    FROM pg_stat_bgwriter;
+  metrics:
+    - buffers_clean:
+        usage: "GAUGE"
+        description: "Number of buffers cleaned by the background writer"
+    - buffers_alloc:
+        usage: "GAUGE"
+        description: "Number of buffers allocated"
+    - buffers_backend:
+        usage: "GAUGE"
+        description: "Number of buffers written directly by a backend"
+    - buffers_checkpoint:
+        usage: "GAUGE"
+        description: "Number of buffers written during checkpoints"

@@ -13,7 +13,7 @@ FROM node:22-bookworm
 WORKDIR /app
 ENV NODE_ENV=production
 ENV AUTO_RELOAD=false
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl fping iperf3 && rm -rf /var/lib/apt/lists/*
 COPY package.json ./
 # Copiar node_modules (inclui dev deps) do builder para suportar modo dev
 COPY --from=builder /app/node_modules ./node_modules

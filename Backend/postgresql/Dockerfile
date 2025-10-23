@@ -17,6 +17,10 @@ RUN apt-get update && apt-get install -y \
     locales \
     vim \
     htop \
+    build-essential \
+    git \
+    make \
+    postgresql-server-dev-all \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && echo "America/Manaus" > /etc/timezone \
@@ -25,6 +29,13 @@ RUN apt-get update && apt-get install -y \
     && sed -i '/^#.* pt_BR.UTF-8 /s/^#//' /etc/locale.gen \
     && locale-gen pt_BR.UTF-8 \
     && update-locale LANG=pt_BR.UTF-8
+
+# Compilar e instalar pg_wait_sampling
+RUN git clone --depth 1 https://github.com/postgrespro/pg_wait_sampling.git /tmp/pg_wait_sampling \
+    && cd /tmp/pg_wait_sampling \
+    && make \
+    && make install \
+    && rm -rf /tmp/pg_wait_sampling
 
 # Criar diretório de scripts de inicialização
 RUN mkdir -p /docker-entrypoint-initdb.d

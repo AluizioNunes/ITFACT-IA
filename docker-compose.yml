@@ -74,6 +74,9 @@ services:
       - ADMIN_USER=admin
       - ADMIN_PASS=admin
       - AUTO_RELOAD=false
+      - KEYCLOAK_JWKS_URI=http://keycloak:8080/realms/automacao/protocol/openid-connect/certs
+      - KEYCLOAK_ISSUER=http://keycloak:8080/realms/automacao
+      - KEYCLOAK_AUDIENCE=automacao-frontend
 
   api_fastapi:
     build:
@@ -271,7 +274,7 @@ services:
     volumes:
       - /var/log:/var/log
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - ./Backend/promtail:/etc/promtail:ro
+      - ./Backend/promtail/config.yml:/etc/promtail/config.yml:ro
     command: -config.file=/etc/promtail/config.yml
     expose:
       - "9080"
@@ -359,6 +362,9 @@ services:
     restart: unless-stopped
     environment:
       - DATA_SOURCE_NAME=postgresql://admin:admin@postgresql:5432/AUTOMACAO?sslmode=disable
+    volumes:
+      - ./Backend/postgresql/postgres_exporter.yml:/etc/postgres-exporter/queries.yml:ro
+    command: ["--extend.query-path=/etc/postgres-exporter/queries.yml"]
     expose:
       - "9187"
     ports:
@@ -417,7 +423,7 @@ services:
     depends_on:
       - rabbitmq
 
-alertmanager:
+  alertmanager:
     image: prom/alertmanager:latest
     container_name: ALERTMANAGER
     restart: unless-stopped

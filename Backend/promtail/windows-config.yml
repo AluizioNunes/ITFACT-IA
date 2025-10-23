@@ -1,0 +1,23 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+positions:
+  filename: C:\\ProgramData\\promtail\\positions.yml
+
+scrape_configs:
+  - job_name: windows_events
+    windows_events:
+      use_incoming_timestamp: true
+      eventlog_name:
+        - Application
+        - System
+        - Security
+      bookmark_path: C:\\ProgramData\\promtail\\bookmarks.json
+    relabel_configs:
+      - source_labels: ['__host__']
+        target: 'job'
+        replacement: 'windows'
