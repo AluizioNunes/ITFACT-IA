@@ -74,10 +74,10 @@ scrape_configs:
           - https://nginx
     relabel_configs:
       - source_labels: [__address__]
-        target: __param_target
+        target_label: __param_target
       - source_labels: [__param_target]
-        target: instance
-      - target: __address__
+        target_label: instance
+      - target_label: __address__
         replacement: blackbox-exporter:9115
 
   - job_name: 'blackbox_tcp'
@@ -93,10 +93,10 @@ scrape_configs:
           - prometheus:9090
     relabel_configs:
       - source_labels: [__address__]
-        target: __param_target
+        target_label: __param_target
       - source_labels: [__param_target]
-        target: instance
-      - target: __address__
+        target_label: instance
+      - target_label: __address__
         replacement: blackbox-exporter:9115
 
   - job_name: 'blackbox_icmp'
@@ -110,8 +110,8 @@ scrape_configs:
           - nginx
     relabel_configs:
       - source_labels: [__address__]
-        target: __param_target
+        target_label: __param_target
       - source_labels: [__param_target]
-        target: instance
-      - target: __address__
+        target_label: instance
+      - target_label: __address__
         replacement: blackbox-exporter:9115

@@ -15,7 +15,17 @@ END$$;
 
 -- CRIAR BANCO DE DADOS EVOLUTIONAPI
 \c AUTOMACAO;
-DROP SCHEMA IF EXISTS public CASCADE;
+-- Manter schema public com permissões restritas para extensões
+CREATE SCHEMA IF NOT EXISTS public;
+ALTER SCHEMA public OWNER TO admin;
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+GRANT USAGE ON SCHEMA public TO admin;
+
+-- Extensões necessárias no banco principal
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+CREATE EXTENSION IF NOT EXISTS pg_wait_sampling;
+
 CREATE DATABASE evolutionapi OWNER admin;
 GRANT ALL PRIVILEGES ON DATABASE evolutionapi TO admin;
 
@@ -140,6 +150,11 @@ CREATE TABLE IF NOT EXISTS chatwoot.messages (
 GRANT ALL ON ALL TABLES IN SCHEMA chatwoot TO admin;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA chatwoot TO admin;
 
+-- CRIAR BANCO DE DADOS KEYCLOAK
+\c AUTOMACAO;
+CREATE DATABASE keycloak OWNER admin;
+GRANT ALL PRIVILEGES ON DATABASE keycloak TO admin;
+
 -- INSERIR DADOS INICIAIS NO EVOLUTIONAPI
 \c evolutionapi;
 INSERT INTO evolutionapi.instances (name, token, status) 
@@ -165,7 +180,7 @@ ON CONFLICT DO NOTHING;
 \c AUTOMACAO;
 DROP DATABASE IF EXISTS postgres;
 SELECT 'PostgreSQL 17.6 inicializado com sucesso para CMM Automação Platform' AS status_inicializacao,
-       'Bancos criados: evolutionapi, n8n, chatwoot' AS bancos_criados,
+       'Bancos criados: evolutionapi, n8n, chatwoot, keycloak' AS bancos_criados,
        'Usuários criados: admin (para todos os bancos)' AS usuarios_criados;
 
 -- Mensagem de confirmação

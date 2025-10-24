@@ -35,6 +35,16 @@ Criados scripts para fazer pull das imagens antes do deploy:
 - **Linux/Mac**: `Backend/scripts/pre-pull-images.sh`
 - **Windows**: `Backend/scripts/pre-pull-images.ps1`
 
+### 3. ✅ Correção do build do Postgres (pg_wait_sampling via APT)
+Para resolver o erro de build no `postgresql` (compose build operation failed ao clonar `pg_wait_sampling`), substituímos a compilação manual via `git clone && make && make install` pela instalação via repositório oficial PGDG:
+
+- Adicionado repositório APT PGDG e chave GPG
+- Instalado pacote `postgresql-17-pg-wait-sampling`
+- Ajustado `postgresql.conf` com `shared_preload_libraries = 'pg_stat_statements, pg_wait_sampling'`
+- Criadas extensões no `init-database.sql`
+
+Isso elimina dependências de rede do GitHub durante o build e aumenta a confiabilidade.
+
 ## Como Resolver
 
 ### Opção 1: Deploy Direto (Recomendado)
@@ -75,6 +85,7 @@ docker pull grafana/loki:2.9.8
 docker pull grafana/promtail:2.9.7
 docker pull redis:7-alpine
 docker pull gcr.io/cadvisor/cadvisor:v0.47.0
+docker pull quay.io/keycloak/keycloak:24.0.5
 ```
 
 ### Opção 4: Configurar Registry Mirror

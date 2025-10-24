@@ -1,0 +1,11 @@
+groups:
+  - name: general-alerts
+    rules:
+      - alert: TargetDown
+        expr: sum by (job) (up) == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target down (job {{ $labels.job }})"
+          description: "No targets are up for job {{ $labels.job }} for 2 minutes."

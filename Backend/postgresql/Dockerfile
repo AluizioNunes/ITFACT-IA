@@ -10,19 +10,15 @@ LABEL project="CMM-AUTOMACAO"
 # Definir timezone
 ENV TZ=America/Manaus
 
-# Instalar pacotes adicionais para monitoramento e utilitários
+# Instalar pacotes base e configurar timezone/locale
 RUN apt-get update && apt-get install -y \
     curl \
     tzdata \
     locales \
     vim \
     htop \
-    build-essential \
-    git \
-    make \
-    postgresql-server-dev-all \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
+    gnupg \
+    ca-certificates \
     && echo "America/Manaus" > /etc/timezone \
     && ln -snf /usr/share/zoneinfo/America/Manaus /etc/localtime \
     && dpkg-reconfigure -f noninteractive tzdata \
@@ -30,12 +26,14 @@ RUN apt-get update && apt-get install -y \
     && locale-gen pt_BR.UTF-8 \
     && update-locale LANG=pt_BR.UTF-8
 
-# Compilar e instalar pg_wait_sampling
-RUN git clone --depth 1 https://github.com/postgrespro/pg_wait_sampling.git /tmp/pg_wait_sampling \
-    && cd /tmp/pg_wait_sampling \
-    && make \
-    && make install \
-    && rm -rf /tmp/pg_wait_sampling
+# Instalar pg_wait_sampling via repositório oficial PGDG (evita git/make)
+RUN mkdir -p /usr/share/keyrings \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release; echo $VERSION_CODENAME)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y postgresql-17-pg-wait-sampling \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Criar diretório de scripts de inicialização
 RUN mkdir -p /docker-entrypoint-initdb.d

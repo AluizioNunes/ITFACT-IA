@@ -1,0 +1,29 @@
+groups:
+  - name: blackbox-alerts
+    rules:
+      - alert: BlackboxHTTPProbeFailed
+        expr: probe_success{job="blackbox_http"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP probe failed for {{ $labels.instance }}"
+          description: "Blackbox HTTP probe failed for target {{ $labels.instance }}."
+
+      - alert: BlackboxTCPProbeFailed
+        expr: probe_success{job="blackbox_tcp"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TCP probe failed for {{ $labels.instance }}"
+          description: "Blackbox TCP probe failed for target {{ $labels.instance }}."
+
+      - alert: BlackboxICMPProbeFailed
+        expr: probe_success{job="blackbox_icmp"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ICMP probe failed for {{ $labels.instance }}"
+          description: "Blackbox ICMP probe failed for target {{ $labels.instance }} for 5 minutes."

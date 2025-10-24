@@ -17,13 +17,14 @@ IMAGES=(
     "prom/alertmanager:v0.26.0"
     "redis:7-alpine"
     "rabbitmq:3-management"
-    "postgres:15"
+    "postgres:17.6"
     "nginx:alpine"
     "gcr.io/cadvisor/cadvisor:v0.47.0"
     "grafana/tempo:2.3.1"
     "oliver006/redis_exporter:v1.55.0"
     "kbudde/rabbitmq-exporter:v1.0.0-RC7.1"
     "nginx/nginx-prometheus-exporter:1.5.1"
+    "quay.io/keycloak/keycloak:24.0.5"
 )
 
 # Função para fazer pull com retry
