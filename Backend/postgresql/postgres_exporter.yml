@@ -1,18 +1,6 @@
 # Extended queries for postgres-exporter
 # Adds pg_wait_sampling and misc DB health metrics
 
-pg_stat_activity_count:
-  query: |
-    SELECT current_database() as datname, COUNT(*) AS count
-    FROM pg_stat_activity
-    WHERE datname = current_database();
-  metrics:
-    - datname:
-        usage: "LABEL"
-        description: "Database name"
-    - count:
-        usage: "GAUGE"
-        description: "Active connections count"
 
 pg_wait_sampling_event_count:
   query: |
@@ -29,7 +17,7 @@ pg_wait_sampling_event_count:
 
 pg_buffers_usage:
   query: |
-    SELECT buffers_clean, buffers_alloc, buffers_backend, buffers_checkpoint
+    SELECT buffers_clean, buffers_alloc
     FROM pg_stat_bgwriter;
   metrics:
     - buffers_clean:
@@ -38,9 +26,83 @@ pg_buffers_usage:
     - buffers_alloc:
         usage: "GAUGE"
         description: "Number of buffers allocated"
-    - buffers_backend:
+
+
+pg_stat_database_deadlocks_total:
+  query: |
+    SELECT current_database() AS datname, deadlocks AS total
+    FROM pg_stat_database
+    WHERE datname = current_database();
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Database name"
+    - total:
         usage: "GAUGE"
-        description: "Number of buffers written directly by a backend"
-    - buffers_checkpoint:
+        description: "Cumulative deadlocks since stats reset"
+
+pg_stat_checkpointer_num_timed_total:
+  query: |
+    SELECT num_timed AS total FROM pg_stat_checkpointer;
+  metrics:
+    - total:
         usage: "GAUGE"
-        description: "Number of buffers written during checkpoints"
+        description: "Cumulative timed checkpoints"
+
+pg_stat_checkpointer_num_requested_total:
+  query: |
+    SELECT num_requested AS total FROM pg_stat_checkpointer;
+  metrics:
+    - total:
+        usage: "GAUGE"
+        description: "Cumulative requested checkpoints"
+
+pg_stat_checkpointer_buffers_written_total:
+  query: |
+    SELECT buffers_written AS total FROM pg_stat_checkpointer;
+  metrics:
+    - total:
+        usage: "GAUGE"
+        description: "Buffers written during checkpoints"
+
+pg_locks_waiting_total:
+  query: |
+    SELECT current_database() AS datname, COUNT(*) AS waiting
+    FROM pg_locks
+    WHERE NOT granted AND database IS NOT NULL;
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Database name"
+    - waiting:
+        usage: "GAUGE"
+        description: "Number of sessions waiting on locks"
+
+pg_long_running_tx_seconds:
+  query: |
+    SELECT current_database() AS datname,
+           COALESCE(EXTRACT(EPOCH FROM now() - xact_start), 0)::int AS age_seconds
+    FROM pg_stat_activity
+    WHERE xact_start IS NOT NULL
+    ORDER BY xact_start ASC
+    LIMIT 1;
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Database name"
+    - age_seconds:
+        usage: "GAUGE"
+        description: "Age in seconds of longest running transaction"
+
+pg_stat_database_temp_files_total:
+  query: |
+    SELECT current_database() AS datname, temp_files AS total
+    FROM pg_stat_database
+    WHERE datname = current_database();
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Database name"
+    - total:
+        usage: "GAUGE"
+        description: "Cumulative temp files since stats reset"

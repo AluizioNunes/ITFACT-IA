@@ -8,13 +8,67 @@ groups:
           severity: warning
         annotations:
           summary: "High number of connections on {{ $labels.datname }}"
-          description: "Active connections exceed 80 for 5 minutes."
+          description: "Active connections exceed 80 for 5 minutes. (default exporter metric)"
 
       - alert: PostgresWaitLocksHigh
-        expr: sum by (instance) (pg_wait_sampling_event_count{event="Lock"}) > 1000
+        expr: sum by (instance) (pg_wait_sampling_event_count_count{event="Lock"}) > 1000
         for: 10m
         labels:
           severity: warning
         annotations:
           summary: "High lock waits on {{ $labels.instance }}"
-          description: "Wait sampling shows lock events > 1000 samples in 10m."
+          description: "pg_wait_sampling lock events > 1000 samples in 10m."
+
+      - alert: PostgresLockWaitPresent
+        expr: sum by (instance) (pg_locks_waiting_total_waiting{datname="AUTOMACAO"}) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Lock wait detected on {{ $labels.instance }}"
+          description: "Sessions waiting on locks for more than 2 minutes."
+
+      - alert: PostgresLongTransaction
+        expr: pg_long_running_tx_seconds_age_seconds{datname="AUTOMACAO"} > 600
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Long transaction on {{ $labels.datname }}"
+          description: "Oldest transaction age exceeds 10 minutes."
+
+      - alert: PostgresDeadlocksDetected
+        expr: increase(pg_stat_database_deadlocks_total_total{datname="AUTOMACAO"}[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Deadlock detected on {{ $labels.datname }}"
+          description: "At least one deadlock occurred within the last 5 minutes."
+
+      - alert: PostgresCheckpointsHigh
+        expr: (increase(pg_stat_checkpointer_num_timed_total_total[5m]) + increase(pg_stat_checkpointer_num_requested_total_total[5m])) > 3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Checkpoint frequency high"
+          description: "More than 3 checkpoints in 5m (timed+requested)."
+
+      - alert: PostgresBuffersPerCheckpointHigh
+        expr: increase(pg_stat_checkpointer_buffers_written_total_total[10m]) / (increase(pg_stat_checkpointer_num_timed_total_total[10m]) + increase(pg_stat_checkpointer_num_requested_total_total[10m]) + 1) > 50000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Buffers written per checkpoint high"
+          description: "Average buffers per checkpoint > 50k over 10m (≈400MB)."
+
+      - alert: PostgresTempFilesBurst
+        expr: increase(pg_stat_database_temp_files_total_total{datname="AUTOMACAO"}[15m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Many temp files on {{ $labels.datname }}"
+          description: "More than 100 temp files created within 15 minutes."
