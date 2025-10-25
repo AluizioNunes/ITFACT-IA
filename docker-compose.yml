@@ -274,7 +274,7 @@ services:
     volumes:
       - /var/log:/var/log
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - ./Backend/promtail/config.yml:/etc/promtail/config.yml:ro
+      - ./Backend/promtail:/etc/promtail:ro
     command: -config.file=/etc/promtail/config.yml
     expose:
       - "9080"
@@ -305,7 +305,7 @@ services:
     networks:
       - cmm_network
     volumes:
-      - ./Backend/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - ./Backend/tempo:/etc/tempo:ro
     command: -config.file=/etc/tempo/tempo.yaml
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:3200/metrics || wget -q -S --spider http://localhost:3200/metrics || exit 1"]
@@ -363,8 +363,8 @@ services:
     environment:
       - DATA_SOURCE_NAME=postgresql://admin:admin@postgresql:5432/AUTOMACAO?sslmode=disable
     volumes:
-      - ./Backend/postgresql/postgres_exporter.yml:/etc/postgres-exporter/queries.yml:ro
-    command: ["--extend.query-path=/etc/postgres-exporter/queries.yml"]
+      - ./Backend/postgresql:/etc/postgres-exporter:ro
+    command: ["--extend.query-path=/etc/postgres-exporter/postgres_exporter.yml"]
     expose:
       - "9187"
     ports:
@@ -432,7 +432,8 @@ services:
     ports:
       - "9093:9093"
     volumes:
-      - ./Backend/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./Backend/alertmanager:/etc/alertmanager:ro
+    command: --config.file=/etc/alertmanager/alertmanager.yml
     networks:
       - cmm_network
     healthcheck:
@@ -451,7 +452,8 @@ services:
     ports:
       - "9115:9115"
     volumes:
-      - ./Backend/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+      - ./Backend/blackbox:/etc/blackbox_exporter:ro
+    command: --config.file=/etc/blackbox_exporter/config.yml
     networks:
       - cmm_network
     healthcheck:

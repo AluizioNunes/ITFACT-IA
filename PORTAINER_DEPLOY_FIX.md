@@ -1,130 +1,63 @@
-# Solução para Erro de Deploy no Portainer
+# Guia GitOps com Portainer + GitHub Actions
 
-## Problema
-```
-Failed to pull images of the stack: compose pull operation failed: Error response from daemon: Head "https://registry-1.docker.io/v2/prometheuscommunity/postgres-exporter/manifests/latest": Get "https://auth.docker.io/token?scope=repository%3Aprometheuscommunity%2Fpostgres-exporter%3Apull&service=registry.docker.io": net/http: TLS handshake timeout
-```
+Este repositório está preparado para re-deploy automático no Portainer, sem passos manuais. O fluxo usa webhook do Portainer acionado por GitHub Actions.
 
-## Causa
-O erro ocorre devido a timeouts de conectividade com o Docker Hub durante o pull das imagens, especialmente quando se usa tags `:latest`.
+## Visão Geral
+- Stack: `automacao` (docker-compose.yml na raiz deste repositório)
+- Portainer: habilitar GitOps com Webhook no stack
+- GitHub Actions: workflow `.github/workflows/portainer-redeploy.yml` aciona o webhook em `push` para `main`
+- Montagens por diretório (configs): Alertmanager, Promtail, Blackbox, Tempo e Postgres-Exporter
 
-## 🔧 Soluções Implementadas
+## Passo a Passo
 
-### 1. **Fixação de Versões de Imagens**
-Alteramos as seguintes imagens de `:latest` para versões específicas:
+### 1) Habilitar Webhook no Portainer
+1. Acesse `Portainer → Stacks → automacao → Settings`.
+2. Ative “Webhook” e copie a URL gerada (formato `http(s)://<host>/api/webhooks/<uuid>`).
 
-| Serviço | Imagem Original | Imagem Atual |
-|---------|----------------|-------------|
-| postgres-exporter | `prometheuscommunity/postgres-exporter:latest` | `prometheuscommunity/postgres-exporter:v0.18.1` |
-| python (FastAPI) | `python:3.11-slim` | `python:3.11.10-slim` |
-| nginx-prometheus-exporter | `nginx/nginx-prometheus-exporter:latest` | `nginx/nginx-prometheus-exporter:1.5.1` |
-| grafana | `grafana/grafana:latest` | `grafana/grafana:10.2.3` |
-| tempo | `grafana/tempo:latest` | `grafana/tempo:2.3.1` |
-| redis-exporter | `oliver006/redis_exporter:latest` | `oliver006/redis_exporter:v1.55.0` |
-| rabbitmq-exporter | `kbudde/rabbitmq-exporter:latest` | `kbudde/rabbitmq-exporter:v1.0.0-RC7.1` |
-| alertmanager | `prom/alertmanager:latest` | `prom/alertmanager:v0.26.0` |
-| blackbox-exporter | `prom/blackbox-exporter:latest` | `prom/blackbox-exporter:v0.24.0` |
-| loki | `grafana/loki:2.9.4` | `grafana/loki:2.9.8` |
-| promtail | `grafana/promtail:2.9.4` | `grafana/promtail:2.9.7` |
-| redis | `redis:latest` | `redis:7-alpine` |
-| cadvisor | `gcr.io/cadvisor/cadvisor:latest` | `gcr.io/cadvisor/cadvisor:v0.47.0` |
+### 2) Definir o secret no GitHub
+1. No repositório → `Settings → Secrets and variables → Actions → New repository secret`.
+2. Nome: `PORTAINER_WEBHOOK_URL`.
+3. Valor: cole a URL do webhook copiada do Portainer.
 
-### 2. ✅ Scripts de Pré-Pull
-Criados scripts para fazer pull das imagens antes do deploy:
+### 3) Workflow de re-deploy
+- Arquivo: `.github/workflows/portainer-redeploy.yml`.
+- Disparo: `push` em `main` quando mudar `docker-compose.yml`, `Backend/**` ou `PORTAINER_DEPLOY_FIX.md`.
+- Ação: valida sintaxe YAML do compose e invoca `POST` no webhook do Portainer.
 
-- **Linux/Mac**: `Backend/scripts/pre-pull-images.sh`
-- **Windows**: `Backend/scripts/pre-pull-images.ps1`
+### 4) Montagens resilientes (sem manual)
+- Alertmanager: `./Backend/alertmanager:/etc/alertmanager:ro` + `--config.file=/etc/alertmanager/alertmanager.yml`
+- Promtail: `./Backend/promtail:/etc/promtail:ro` + `-config.file=/etc/promtail/config.yml`
+- Blackbox: `./Backend/blackbox:/etc/blackbox_exporter:ro` + `--config.file=/etc/blackbox_exporter/config.yml`
+- Tempo: `./Backend/tempo:/etc/tempo:ro` + `-config.file=/etc/tempo/tempo.yaml`
+- Postgres Exporter: `./Backend/postgresql:/etc/postgres-exporter:ro` + `--extend.query-path=/etc/postgres-exporter/postgres_exporter.yml`
 
-### 3. ✅ Correção do build do Postgres (pg_wait_sampling via APT)
-Para resolver o erro de build no `postgresql` (compose build operation failed ao clonar `pg_wait_sampling`), substituímos a compilação manual via `git clone && make && make install` pela instalação via repositório oficial PGDG:
+Essas mudanças evitam erros de “arquivo vs diretório” durante deploy no Portainer.
 
-- Adicionado repositório APT PGDG e chave GPG
-- Instalado pacote `postgresql-17-pg-wait-sampling`
-- Ajustado `postgresql.conf` com `shared_preload_libraries = 'pg_stat_statements, pg_wait_sampling'`
-- Criadas extensões no `init-database.sql`
+## Verificações Pós-Deploy (automáticas, sem ação manual)
+- Prometheus targets: `http://<host>:9090/api/v1/targets`
+- Regras carregadas: `http://<host>:9090/api/v1/rules`
+- Alertmanager health: `http://<host>:9093/-/healthy`
+- Exporter /metrics: `http://<host>:9187/metrics`
 
-Isso elimina dependências de rede do GitHub durante o build e aumenta a confiabilidade.
+## Opcional: Fallback via API (sem webhook)
+Se preferir usar API Token do Portainer em vez de Webhook:
+- Secrets adicionais:
+  - `PORTAINER_URL` (ex.: `http://172.18.1.32:9000`)
+  - `PORTAINER_STACK_ID` (ID do stack `automacao`)
+  - `PORTAINER_TOKEN` (API token de um usuário com permissão)
+- Ajuste o workflow para chamar:
+  - `POST $PORTAINER_URL/api/stacks/{id}/git/redeploy?endpointId=<endpoint>`
 
-## Como Resolver
+> Observação: o webhook é a rota recomendada por simplicidade e segurança (URL única e sem payload sensível).
 
-### Opção 1: Deploy Direto (Recomendado)
-1. Use o arquivo `docker-compose.yml` atualizado
-2. As versões fixas devem resolver o problema de timeout
-3. Tente o deploy novamente no Portainer
+## Troubleshooting
+- “Are you trying to mount a directory onto a file…”
+  - Resolvido com mounts por diretório (já aplicado neste repositório).
+- “out of bounds” em scrapes
+  - Alinhe TZ/horário nos containers (ideal `UTC`).
+- Promtail sem config
+  - O mount agora é de diretório; confirme que `config.yml` está em `Backend/promtail`.
 
-### Opção 2: Pré-Pull Manual
-Se ainda houver problemas, execute o pré-pull das imagens:
-
-**No Windows (PowerShell):**
-```powershell
-cd "d:\PROJETOS\AUTOMACAO"
-.\Backend\scripts\pre-pull-images.ps1
-```
-
-**No Linux/Mac:**
-```bash
-cd /path/to/AUTOMACAO
-chmod +x Backend/scripts/pre-pull-images.sh
-./Backend/scripts/pre-pull-images.sh
-```
-
-### Opção 3: Pull Individual
-Se uma imagem específica falhar, faça o pull manual:
-
-```bash
-docker pull prometheuscommunity/postgres-exporter:v0.18.1
-docker pull python:3.11.10-slim
-docker pull nginx/nginx-prometheus-exporter:1.5.1
-docker pull grafana/grafana:10.2.3
-docker pull grafana/tempo:2.3.1
-docker pull oliver006/redis_exporter:v1.55.0
-docker pull kbudde/rabbitmq-exporter:v1.0.0-RC7.1
-docker pull prom/alertmanager:v0.26.0
-docker pull prom/blackbox-exporter:v0.24.0
-docker pull grafana/loki:2.9.8
-docker pull grafana/promtail:2.9.7
-docker pull redis:7-alpine
-docker pull gcr.io/cadvisor/cadvisor:v0.47.0
-docker pull quay.io/keycloak/keycloak:24.0.5
-```
-
-### Opção 4: Configurar Registry Mirror
-Para ambientes corporativos, configure um registry mirror:
-
-1. Edite `/etc/docker/daemon.json` (Linux) ou Docker Desktop settings (Windows)
-2. Adicione:
-```json
-{
-  "registry-mirrors": ["https://your-mirror-url"]
-}
-```
-3. Reinicie o Docker
-
-## Verificação
-Após aplicar as correções:
-
-1. ✅ Verifique se o Docker está funcionando: `docker version`
-2. ✅ Teste conectividade: `docker pull hello-world`
-3. ✅ Execute o deploy no Portainer
-4. ✅ Monitore os logs para verificar se todos os serviços subiram
-
-## Imagens Atualizadas
-| Serviço | Imagem Anterior | Imagem Atual |
-|---------|----------------|--------------|
-| postgres-exporter | `prometheuscommunity/postgres-exporter:latest` | `prometheuscommunity/postgres-exporter:v0.18.1` |
-| redis | `redis:latest` | `redis:7-alpine` |
-| cadvisor | `gcr.io/cadvisor/cadvisor:latest` | `gcr.io/cadvisor/cadvisor:v0.47.0` |
-
-## Prevenção Futura
-- ✅ Sempre use versões específicas em produção
-- ✅ Teste pulls localmente antes do deploy
-- ✅ Configure timeouts adequados no Portainer
-- ✅ Monitore a conectividade com registries externos
-
-## Suporte Adicional
-Se o problema persistir:
-
-1. Verifique logs do Docker: `docker system events`
-2. Teste conectividade: `curl -I https://registry-1.docker.io/`
-3. Verifique configurações de proxy/firewall
-4. Considere usar um registry privado para imagens críticas
+## Fluxo Operacional
+- Você só faz `commit + push` → GitHub Actions valida e chama o Portainer → Portainer re-deploya o stack automaticamente.
+- Não há nenhuma etapa manual no servidor ou Portainer após configurado o webhook e o secret no GitHub.

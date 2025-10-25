@@ -1,0 +1,52 @@
+name: Portainer Auto Redeploy
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docker-compose.yml'
+      - 'Backend/**'
+      - 'PORTAINER_DEPLOY_FIX.md'
+  workflow_dispatch:
+
+concurrency:
+  group: portainer-redeploy
+  cancel-in-progress: true
+
+jobs:
+  validate_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate docker-compose YAML (syntax only)
+        run: |
+          python3 - <<'PY'
+          import sys, yaml
+          try:
+              with open('docker-compose.yml', 'r', encoding='utf-8') as f:
+                  yaml.safe_load(f)
+              print('docker-compose.yml parsed OK')
+          except Exception as e:
+              print('Invalid docker-compose.yml:', e)
+              sys.exit(1)
+          PY
+
+      - name: Trigger Portainer Webhook
+        if: ${{ secrets.PORTAINER_WEBHOOK_URL != '' }}
+        env:
+          PORTAINER_WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
+        run: |
+          echo "Invocando webhook do Portainer..."
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$PORTAINER_WEBHOOK_URL" -H 'Content-Type: application/json' -d '{}')
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "Falha ao invocar webhook. HTTP $code" >&2
+            exit 1
+          fi
+          echo "Webhook invocado com sucesso (HTTP $code)."
+
+      - name: Polling mode (no webhook defined)
+        if: ${{ secrets.PORTAINER_WEBHOOK_URL == '' }}
+        run: |
+          echo "Webhook não definido: somente validação executada. Em modo 'Polling', o Portainer deve detectar mudanças no Git e re-deployar automaticamente."
