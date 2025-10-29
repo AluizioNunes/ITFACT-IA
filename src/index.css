@@ -1,37 +1,86 @@
 @import 'antd/dist/reset.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Base escuro inspirado no TIDAL */
+html, body, #root {
+  height: 100%;
+}
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: #000;
+  color: #f2f2f2;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-/* Estilos para cards com sombra */
+/* Containers e cartões com superfícies escuras */
+.ant-layout, .ant-layout-content {
+  background: #000;
+}
+
 .ant-card {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s ease;
+  background: #0b0c0f;
+  border: 1px solid #1a1c20;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .ant-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(0,0,0,0.45);
 }
 
-/* Estilos para tabelas */
+/* Tabelas escuras com cabeçalho sutil */
+.ant-table {
+  background: #0b0c0f;
+}
+
 .ant-table-thead > tr > th {
-  background-color: #f0f2f5;
-  font-weight: 600;
+  background-color: #0f1114 !important;
+  color: #bfbfbf !important;
+  border-bottom: 1px solid #1a1c20 !important;
 }
 
-/* Estilos para divisores */
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid #15171b !important;
+}
+
+/* Divisores discretos */
 .ant-divider-horizontal.ant-divider-with-text-left::before,
 .ant-divider-horizontal.ant-divider-with-text-left::after {
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid #1a1c20;
+}
+
+.ant-typography {
+  color: #f2f2f2;
+}
+
+/* Botões primários com acento ciano */
+.ant-btn-primary {
+  background: #00E5FF;
+  border-color: #00E5FF;
+  color: #001316;
+}
+
+.ant-btn-primary:hover, .ant-btn-primary:focus {
+  background: #33F0FF;
+  border-color: #33F0FF;
+  color: #001316;
+}
+
+/* Botões de texto/ícones visíveis em fundo escuro */
+.ant-btn-text, .ant-btn-link {
+  color: #bfbfbf;
+}
+
+.ant-btn-text:hover, .ant-btn-link:hover {
+  color: #f2f2f2;
 }

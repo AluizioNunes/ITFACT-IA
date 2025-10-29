@@ -15,6 +15,7 @@ interface ServicePageProps {
     utilization: Array<{ time: string; value: number }>;
     performance: Array<{ time: string; value: number }>;
   };
+  children?: React.ReactNode;
 }
 
 // Variantes importadas do módulo compartilhado
@@ -29,7 +30,7 @@ interface ServicePageProps {
 
 // buttonVariants importado do módulo compartilhado
 
-const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, metrics = [], externalUrl, chartData }) => {
+const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, metrics = [], externalUrl, chartData, children }) => {
   // Gerar dados mock se não fornecidos
   const generateMockData = () => {
     const currentTime = new Date();
@@ -208,6 +209,21 @@ const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, met
         )}
       </AnimatePresence>
 
+      {/* Conteúdo adicional fornecido pela página (children) */}
+      <AnimatePresence>
+        {children && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200, delay: 0.6 }}
+            style={{ marginTop: 16 }}
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
@@ -240,7 +256,7 @@ const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, met
                     unit="%"
                     height={280}
                     type="area"
-                    theme="modern"
+                    theme="dark"
                     animation="smooth"
                     gradient={true}
                     showDataZoom={true}
@@ -262,7 +278,7 @@ const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, met
                     unit="ms"
                     height={280}
                     type="spline"
-                    theme="modern"
+                    theme="dark"
                     animation="elastic"
                     gradient={true}
                     showDataZoom={true}

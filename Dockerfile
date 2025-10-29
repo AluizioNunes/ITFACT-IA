@@ -9,7 +9,7 @@ COPY tsconfig.json ./
 COPY vite.config.ts ./
 
 # Instalar dependências
-RUN npm ci
+RUN npm install
 
 # Copiar o restante do código
 COPY . .

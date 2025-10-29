@@ -488,6 +488,27 @@ services:
     networks:
       - cmm_network
 
+  n8n:
+    image: n8nio/n8n
+    container_name: N8N
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=America/Manaus
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - .\Backend\N8N\Templates:/templates
+      - .\Backend\N8N\docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh
+    entrypoint: ["sh", "/usr/local/bin/docker-entrypoint.sh"]
+    networks:
+      - cmm_network
+
 volumes:
   postgres_data:
     driver: local
@@ -496,4 +517,8 @@ volumes:
   redis_data:
     driver: local
   rabbitmq_data:
+    driver: local
+  tempo_data:
+    driver: local
+  n8n_data:
     driver: local

@@ -140,7 +140,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
         }}
       >
         {!collapsed && (
-          <span style={{ marginRight: '8px' }}>AUTOMAÇÃO</span>
+          <span style={{ marginRight: '8px' }}>ITFACT - GESTÃO AUTOMATIZADA</span>
         )}
         <Button
           type="text"
@@ -182,17 +182,17 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
         position: 'absolute', 
         bottom: 0, 
         width: '100%',
-        backgroundColor: '#006400'
+        backgroundColor: 'black'
       }}>
         <Button
           type="primary"
           icon={<LogoutOutlined />}
           onClick={handleLogout}
           block
-          danger
           style={{
-            backgroundColor: '#8B0000',
-            borderColor: '#8B0000',
+            backgroundColor: '#FFD700',
+            borderColor: '#FFD700',
+            color: 'black',
             fontSize: collapsed ? '12px' : '14px'
           }}
         >

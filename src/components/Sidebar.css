@@ -1,62 +1,50 @@
-/* Estilos personalizados para o Sidebar */
-.custom-sidebar .ant-menu-dark .ant-menu-item-selected {
-  background-color: #D2691E !important; /* Cor laranja quando selecionado */
-  border-radius: 6px;
-  margin: 4px 8px;
-  color: white !important;
+/* Estilos personalizados para o Sidebar — paleta TIDAL */
+.custom-sidebar .ant-menu-dark {
+  background-color: #000 !important;
 }
 
-.custom-sidebar .ant-menu-dark .ant-menu-item-selected .ant-menu-title-content {
-  color: white !important;
-  font-weight: bold;
-}
-
-.custom-sidebar .ant-menu-dark .ant-menu-item-selected .anticon {
-  color: white !important;
-}
-
-.custom-sidebar .ant-menu-dark .ant-menu-item:hover:not(.ant-menu-item-selected) {
-  background-color: rgba(210, 105, 30, 0.3) !important; /* Hover com transparência */
-  border-radius: 6px;
-  margin: 4px 8px;
-  color: white !important;
+.custom-sidebar .ant-layout-sider,
+.custom-sidebar .ant-layout-sider-children {
+  background-color: #000 !important;
 }
 
 .custom-sidebar .ant-menu-dark .ant-menu-item {
   margin: 2px 8px;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  color: white !important;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  color: #bfbfbf !important;
 }
 
-.custom-sidebar .ant-menu-dark {
-  background-color: #006400 !important;
+.custom-sidebar .ant-menu-dark .ant-menu-item:hover:not(.ant-menu-item-selected) {
+  background-color: #0f1114 !important;
+  margin: 4px 8px;
+  color: #f2f2f2 !important;
 }
 
-.custom-sidebar .ant-layout-sider {
-  background-color: #006400 !important;
+.custom-sidebar .ant-menu-dark .ant-menu-item-selected {
+  background-color: rgba(0, 229, 255, 0.18) !important;
+  border: 1px solid rgba(0, 229, 255, 0.35) !important;
+  border-radius: 10px;
+  margin: 4px 8px;
+  color: #00E5FF !important;
 }
 
-.custom-sidebar .ant-layout-sider-children {
-  background-color: #006400 !important;
+.custom-sidebar .ant-menu-dark .ant-menu-item-selected .ant-menu-title-content,
+.custom-sidebar .ant-menu-dark .ant-menu-item-selected .anticon {
+  color: #00E5FF !important;
 }
 
 /* Botão de toggle personalizado */
 .toggle-button {
-  color: white !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  transition: all 0.3s ease;
+  color: #00E5FF !important;
+  border: 1px solid rgba(0, 229, 255, 0.35) !important;
+  background: rgba(0, 229, 255, 0.08) !important;
+  transition: all 0.2s ease;
 }
 
-.toggle-button:hover {
-  background: rgba(255, 255, 255, 0.2) !important;
-  color: white !important;
-  border-color: rgba(255, 255, 255, 0.5) !important;
-}
-
+.toggle-button:hover,
 .toggle-button:focus {
-  background: rgba(255, 255, 255, 0.2) !important;
-  color: white !important;
-  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(0, 229, 255, 0.18) !important;
+  color: #00E5FF !important;
+  border-color: rgba(0, 229, 255, 0.6) !important;
 }
