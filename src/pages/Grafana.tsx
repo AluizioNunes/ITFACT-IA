@@ -1,5 +1,6 @@
 import React from 'react';
 import ServicePage from '../components/ServicePage';
+import { getServiceUrl } from '../config/services';
 import { LineChartOutlined } from '@ant-design/icons';
 
 const Grafana: React.FC = () => {
@@ -12,10 +13,10 @@ const Grafana: React.FC = () => {
   return (
     <ServicePage
       title="Grafana"
-      description="Plataforma de análise e visualização de métricas. Acesse a aplicação real em grafana.cmm.am.gov.br"
+      description="Plataforma de análise e visualização de métricas."
       icon={<LineChartOutlined style={{ fontSize: '24px', color: '#f60' }} />}
       metrics={metrics}
-      externalUrl="http://localhost:3010"
+      externalUrl={getServiceUrl('grafana')}
     />
   );
 };

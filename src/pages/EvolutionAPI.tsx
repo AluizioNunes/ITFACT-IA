@@ -1,5 +1,6 @@
 import React from 'react';
 import ServicePage from '../components/ServicePage';
+import { getServiceUrl } from '../config/services';
 import { ApiOutlined } from '@ant-design/icons';
 
 const EvolutionAPI: React.FC = () => {
@@ -12,10 +13,10 @@ const EvolutionAPI: React.FC = () => {
   return (
     <ServicePage
       title="Evolution API"
-      description="API para integração com WhatsApp. Acesse a aplicação real em whatsapp.cmm.am.gov.br"
+      description="API para integração com WhatsApp (instâncias e webhooks)."
       icon={<ApiOutlined style={{ fontSize: '24px', color: '#25D366' }} />}
       metrics={metrics}
-      externalUrl="http://localhost:8081"
+      externalUrl={getServiceUrl('evolutionApi')}
     />
   );
 };

@@ -1,5 +1,6 @@
 import React from 'react';
 import ServicePage from '../components/ServicePage';
+import { getServiceUrl } from '../config/services';
 import { RobotOutlined } from '@ant-design/icons';
 import { mockData } from './N8N/mock-data';
 import { Line, Column, Pie } from '@ant-design/charts';
@@ -72,7 +73,7 @@ const N8N: React.FC = () => {
       description={templateInfo.description}
       icon={<RobotOutlined style={{ fontSize: '24px', color: '#ff6d5a' }} />}
       metrics={[]}
-      externalUrl="http://localhost:5678"
+      externalUrl={getServiceUrl('n8n')}
     >
       {/* Métricas gerais */}
       <Row gutter={[16, 16]}>

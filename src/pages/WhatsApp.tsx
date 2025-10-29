@@ -1,5 +1,6 @@
 import React from 'react';
 import ServicePage from '../components/ServicePage';
+import { getServiceUrl } from '../config/services';
 import { WhatsAppOutlined } from '@ant-design/icons';
 
 const WhatsApp: React.FC = () => {
@@ -12,10 +13,10 @@ const WhatsApp: React.FC = () => {
   return (
     <ServicePage
       title="WhatsApp"
-      description="Integração com WhatsApp Business. Acesse a aplicação real em whatsapp.cmm.am.gov.br"
+      description="Integração com WhatsApp via Evolution API."
       icon={<WhatsAppOutlined style={{ fontSize: '24px', color: '#25D366' }} />}
       metrics={metrics}
-      externalUrl="http://localhost:8081"
+      externalUrl={getServiceUrl('whatsapp')}
     />
   );
 };

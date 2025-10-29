@@ -1,5 +1,6 @@
 import React from 'react';
 import ServicePage from '../components/ServicePage';
+import { getServiceUrl } from '../config/services';
 import { AppstoreOutlined } from '@ant-design/icons';
 
 const RabbitMQ: React.FC = () => {
@@ -12,10 +13,10 @@ const RabbitMQ: React.FC = () => {
   return (
     <ServicePage
       title="RabbitMQ"
-      description="Broker de mensagens para comunicação assíncrona. Acesse a aplicação real em rabbitmq.cmm.am.gov.br"
+      description="Broker de mensagens para comunicação assíncrona."
       icon={<AppstoreOutlined style={{ fontSize: '24px', color: '#FF6600' }} />}
       metrics={metrics}
-      externalUrl="http://localhost:15672"
+      externalUrl={getServiceUrl('rabbitmq')}
     />
   );
 };

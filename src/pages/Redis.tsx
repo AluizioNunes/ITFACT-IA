@@ -1,5 +1,6 @@
 import React from 'react';
 import ServicePage from '../components/ServicePage';
+import { getServiceUrl } from '../config/services';
 import { ContainerOutlined } from '@ant-design/icons';
 
 const Redis: React.FC = () => {
@@ -12,10 +13,10 @@ const Redis: React.FC = () => {
   return (
     <ServicePage
       title="Redis"
-      description="Armazenamento de estrutura de dados em memória. Acesse a aplicação real em redis.cmm.am.gov.br"
+      description="Cache/armazenamento em memória. A UI web usa RedisInsight (porta 5540)."
       icon={<ContainerOutlined style={{ fontSize: '24px', color: '#DC382D' }} />}
       metrics={metrics}
-      externalUrl="http://localhost:6379"
+      externalUrl={getServiceUrl('redis')}
     />
   );
 };

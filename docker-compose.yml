@@ -489,7 +489,7 @@ services:
       - cmm_network
 
   n8n:
-    image: n8nio/n8n
+    image: n8nio/n8n:latest
     container_name: N8N
     restart: unless-stopped
     ports:
@@ -509,6 +509,71 @@ services:
     networks:
       - cmm_network
 
+  # RedisInsight (UI para Redis)
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: REDISINSIGHT
+    restart: unless-stopped
+    expose:
+      - "5540"
+    ports:
+      - "5540:5540"
+    networks:
+      - cmm_network
+    depends_on:
+      redis:
+        condition: service_started
+    volumes:
+      - redisinsight_data:/data
+    environment:
+      - TZ=America/Manaus
+
+  # Evolution API (porta dedicada para evitar conflito com Keycloak 8081)
+  evolution-api:
+    image: atendai/evolution-api:latest
+    container_name: EVOLUTION_API
+    restart: unless-stopped
+    expose:
+      - "8080"
+    ports:
+      - "8082:8080"
+    environment:
+      - TZ=America/Manaus
+      - AUTHENTICATION_API_KEY=change-me
+    depends_on:
+      postgresql:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - cmm_network
+
+  # Chatwoot (opcional, porta 3002)
+  chatwoot:
+    image: chatwoot/chatwoot:latest
+    container_name: CHATWOOT
+    restart: unless-stopped
+    expose:
+      - "3000"
+    ports:
+      - "3002:3000"
+    environment:
+      - RAILS_ENV=production
+      - FRONTEND_URL=http://localhost:3002
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://admin:admin@postgresql:5432/AUTOMACAO
+      - SECRET_KEY_BASE=dev-secret
+      - FORCE_SSL=false
+      - ENABLE_ACCOUNT_SIGNUP=false
+      - TZ=America/Manaus
+    depends_on:
+      postgresql:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - cmm_network
+
 volumes:
   postgres_data:
     driver: local
@@ -521,4 +586,6 @@ volumes:
   tempo_data:
     driver: local
   n8n_data:
+    driver: local
+  redisinsight_data:
     driver: local

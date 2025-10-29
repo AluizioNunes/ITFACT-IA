@@ -1,5 +1,6 @@
 import React from 'react';
 import ServicePage from '../components/ServicePage';
+import { getServiceUrl } from '../config/services';
 import { WechatOutlined } from '@ant-design/icons';
 
 const Chatwoot: React.FC = () => {
@@ -12,10 +13,10 @@ const Chatwoot: React.FC = () => {
   return (
     <ServicePage
       title="Chatwoot"
-      description="Plataforma de atendimento ao cliente. Acesse a aplicação real em chatwoot.cmm.am.gov.br"
+      description="Plataforma de atendimento ao cliente."
       icon={<WechatOutlined style={{ fontSize: '24px', color: '#1f93ff' }} />}
       metrics={metrics}
-      externalUrl="http://localhost:3002"
+      externalUrl={getServiceUrl('chatwoot')}
     />
   );
 };
