@@ -42,7 +42,7 @@ Essas mudanças evitam erros de “arquivo vs diretório” durante deploy no Po
 ## Opcional: Fallback via API (sem webhook)
 Se preferir usar API Token do Portainer em vez de Webhook:
 - Secrets adicionais:
-  - `PORTAINER_URL` (ex.: `http://172.18.1.32:9000`)
+  - `PORTAINER_URL` (ex.: `http://localhost:9000`)
   - `PORTAINER_STACK_ID` (ID do stack `automacao`)
   - `PORTAINER_TOKEN` (API token de um usuário com permissão)
 - Ajuste o workflow para chamar:

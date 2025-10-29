@@ -184,7 +184,7 @@ const Integrations: React.FC = () => {
     {
       key: '1',
       hostname: 'automacao.cmm.am.gov.br',
-      ip: '172.18.1.32',
+      ip: 'localhost',
       status: 'Online',
       services: ['nginx', 'docker', 'nodejs', 'postgresql'],
       os: 'Ubuntu 22.04 LTS',

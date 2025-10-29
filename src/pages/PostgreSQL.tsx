@@ -60,7 +60,7 @@ const PostgreSQL: React.FC = () => {
       setLoading(true);
       setConnectionError(false);
       
-      const baseUrl = 'http://172.18.1.32:3001'; // Usar IP do servidor remoto
+      const baseUrl = 'http://localhost:3001'; // Usar IP do servidor remoto
       
       const [statusRes, metricsRes, databasesRes] = await Promise.all([
         fetch(`${baseUrl}/api/postgresql/status`),
