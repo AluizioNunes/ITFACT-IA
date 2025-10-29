@@ -72,7 +72,7 @@ const N8N: React.FC = () => {
       description={templateInfo.description}
       icon={<RobotOutlined style={{ fontSize: '24px', color: '#ff6d5a' }} />}
       metrics={[]}
-      externalUrl="https://n8n.cmm.am.gov.br"
+      externalUrl="http://localhost:5678"
     >
       {/* Métricas gerais */}
       <Row gutter={[16, 16]}>

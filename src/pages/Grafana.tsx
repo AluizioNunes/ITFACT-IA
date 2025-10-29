@@ -15,7 +15,7 @@ const Grafana: React.FC = () => {
       description="Plataforma de análise e visualização de métricas. Acesse a aplicação real em grafana.cmm.am.gov.br"
       icon={<LineChartOutlined style={{ fontSize: '24px', color: '#f60' }} />}
       metrics={metrics}
-      externalUrl="https://grafana.cmm.am.gov.br"
+      externalUrl="http://localhost:3010"
     />
   );
 };

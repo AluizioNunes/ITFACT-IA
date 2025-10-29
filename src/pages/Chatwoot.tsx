@@ -15,7 +15,7 @@ const Chatwoot: React.FC = () => {
       description="Plataforma de atendimento ao cliente. Acesse a aplicação real em chatwoot.cmm.am.gov.br"
       icon={<WechatOutlined style={{ fontSize: '24px', color: '#1f93ff' }} />}
       metrics={metrics}
-      externalUrl="https://chatwoot.cmm.am.gov.br"
+      externalUrl="http://localhost:3002"
     />
   );
 };

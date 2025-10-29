@@ -15,7 +15,7 @@ const WhatsApp: React.FC = () => {
       description="Integração com WhatsApp Business. Acesse a aplicação real em whatsapp.cmm.am.gov.br"
       icon={<WhatsAppOutlined style={{ fontSize: '24px', color: '#25D366' }} />}
       metrics={metrics}
-      externalUrl="https://whatsapp.cmm.am.gov.br"
+      externalUrl="http://localhost:8081"
     />
   );
 };

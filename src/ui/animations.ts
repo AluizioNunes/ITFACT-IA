@@ -162,22 +162,20 @@ export const tableVariants: Variants = {
 };
 
 export const buttonVariants: Variants = {
-  hidden: { opacity: 0, scale: 0, rotate: -90 },
+  // Sem deslocamento: apenas opacidade e leve escala
+  hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     scale: 1,
-    rotate: 0,
-    transition: { type: 'spring', damping: 15, stiffness: 200, delay: 0.2 },
+    transition: { type: 'spring', damping: 15, stiffness: 200, delay: 0.1 },
   },
   hover: {
-    scale: 1.1,
-    rotate: 3,
-    boxShadow: '0 8px 20px rgba(24, 144, 255, 0.3)',
-    transition: { type: 'spring', damping: 15, stiffness: 400 },
+    scale: 1.03,
+    boxShadow: '0 8px 20px rgba(0, 229, 255, 0.25)',
+    transition: { type: 'spring', damping: 15, stiffness: 300 },
   },
   tap: {
-    scale: 0.95,
-    rotate: -3,
+    scale: 0.98,
     transition: { type: 'spring', damping: 25, stiffness: 500 },
   },
 };

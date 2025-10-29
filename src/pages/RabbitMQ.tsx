@@ -15,7 +15,7 @@ const RabbitMQ: React.FC = () => {
       description="Broker de mensagens para comunicação assíncrona. Acesse a aplicação real em rabbitmq.cmm.am.gov.br"
       icon={<AppstoreOutlined style={{ fontSize: '24px', color: '#FF6600' }} />}
       metrics={metrics}
-      externalUrl="https://rabbitmq.cmm.am.gov.br"
+      externalUrl="http://localhost:15672"
     />
   );
 };
