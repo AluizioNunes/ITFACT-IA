@@ -17,7 +17,8 @@ import {
   MenuFoldOutlined,
   MonitorOutlined,
   BugOutlined,
-  ToolOutlined
+  ToolOutlined,
+  RobotOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -43,6 +44,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
 
   const menuItems: MenuItem[] = [
     { key: 'dashboard', icon: <DashboardOutlined />, label: 'DASHBOARD', path: '/dashboard' },
+    { key: 'status', icon: <MonitorOutlined />, label: 'STATUS', path: '/status' },
+    { key: 'iatools', icon: <RobotOutlined />, label: 'IA TOOLS', path: '/iatools' },
     { key: 'observability', icon: <BarChartOutlined />, label: 'OBSERVABILIDADE', path: '/observability' },
     { key: 'reports', icon: <LineChartOutlined />, label: 'RELATÓRIOS', path: '/reports' },
     { key: 'nginx', icon: <CloudServerOutlined />, label: 'NGINX', path: '/nginxcore' },
@@ -81,6 +84,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => {
   const getSelectedKey = () => {
     const path = location.pathname;
     if (path === '/' || path === '/dashboard') return 'dashboard';
+    if (path === '/status') return 'status';
+    if (path === '/iatools') return 'iatools';
     
     // Mapear as novas rotas para as chaves do menu
     if (path === '/reports') return 'reports';

@@ -20,6 +20,8 @@ import Loki from './pages/Loki';
 import Integrations from './pages/Integrations';
 import Observability from './pages/Observability';
 import Reports from './pages/Reports';
+import Status from './pages/Status';
+import IA from './pages/IA';
 
 const { Content } = Layout;
 
@@ -42,6 +44,8 @@ const App: React.FC = () => {
           <div style={{ padding: 24, background: colorBgContainer, borderRadius: 8, minHeight: 360 }}>
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/status" element={<Status />} />
+              <Route path="/iatools" element={<IA />} />
               <Route path="/nginxcore" element={<Nginx />} />
               <Route path="/apis" element={<APIs />} />
               <Route path="/prometheuscore" element={<Prometheus />} />

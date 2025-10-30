@@ -71,6 +71,75 @@ def health():
 def performance():
     return {"summary": {"requests_per_min": 120, "avg_latency_ms": 85}}
 
+# ----------------------
+# IA Proxy - Google Gemini
+# ----------------------
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+
+def normalize_model(model: str) -> str:
+    """Ensure model name uses '-latest' suffix where applicable."""
+    try:
+        m = (model or "").strip()
+    except Exception:
+        m = ""
+    if not m:
+        return "gemini-1.5-pro-latest"
+    if m.endswith("-latest"):
+        return m
+    if m in {"gemini-1.5-pro", "gemini-1.5-flash"}:
+        return f"{m}-latest"
+    return m
+
+@app.post("/ai/gemini/chat")
+async def ai_gemini_chat(request: Request, model: str = Query("gemini-1.5-pro-latest")):
+    """Secure proxy endpoint for Google Gemini.
+    Accepts either Gemini-native payload or a simple {prompt} body,
+    uses server-side GEMINI_API_KEY, and forwards the response transparently.
+    """
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not configured")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    # If client sent a simple prompt, convert to Gemini format
+    prompt = payload.get("prompt")
+    if prompt and "contents" not in payload:
+        payload = {
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": payload.get(
+                "generationConfig",
+                {
+                    "temperature": float(payload.get("temperature", 0.7)),
+                    "topP": float(payload.get("topP", 0.9)),
+                    "topK": int(payload.get("topK", 40)),
+                },
+            ),
+        }
+
+    resolved_model = normalize_model(model)
+    endpoint = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/{resolved_model}:generateContent?key={GEMINI_API_KEY}"
+    )
+    try:
+        r = requests.post(endpoint, json=payload, timeout=30)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Upstream error: {e}")
+
+    if r.status_code >= 400:
+        try:
+            err = r.json()
+        except Exception:
+            err = {"error": r.text}
+        raise HTTPException(status_code=r.status_code, detail=err)
+
+    try:
+        return r.json()
+    except Exception:
+        return {"raw": r.text}
+
 
 # ----------------------
 # Discovery Utilities

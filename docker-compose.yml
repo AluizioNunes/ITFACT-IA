@@ -98,6 +98,7 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
       - POSTGRES_DB=AUTOMACAO
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || wget -q -S --spider http://localhost:8000/health || exit 1"]
       interval: 10s
@@ -487,6 +488,12 @@ services:
         condition: service_started
     networks:
       - cmm_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/ || wget -q -S --spider http://localhost:8080/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
   n8n:
     image: n8nio/n8n:latest
@@ -501,10 +508,14 @@ services:
       - NODE_ENV=production
       - WEBHOOK_URL=http://localhost:5678/
       - GENERIC_TIMEZONE=America/Manaus
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-admin}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-dev-secret}
     volumes:
       - n8n_data:/home/node/.n8n
-      - .\Backend\N8N\Templates:/templates
-      - .\Backend\N8N\docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh
+      - ./Backend/N8N/Templates:/templates:ro
+      - ./Backend/N8N/docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
     entrypoint: ["sh", "/usr/local/bin/docker-entrypoint.sh"]
     networks:
       - cmm_network
@@ -527,6 +538,12 @@ services:
       - redisinsight_data:/data
     environment:
       - TZ=America/Manaus
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5540/ || wget -q -S --spider http://localhost:5540/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
 
   # Evolution API (porta dedicada para evitar conflito com Keycloak 8081)
   evolution-api:
@@ -547,6 +564,12 @@ services:
         condition: service_started
     networks:
       - cmm_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/ || wget -q -S --spider http://localhost:8080/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
 
   # Chatwoot (opcional, porta 3002)
   chatwoot:
@@ -561,10 +584,24 @@ services:
       - RAILS_ENV=production
       - FRONTEND_URL=http://localhost:3002
       - REDIS_URL=redis://redis:6379
-      - DATABASE_URL=postgresql://admin:admin@postgresql:5432/AUTOMACAO
+      - POSTGRES_HOST=postgresql
+      - POSTGRES_PORT=5432
+      - POSTGRESQL_DATABASE=chatwoot
+      - POSTGRESQL_USERNAME=admin
+      - POSTGRESQL_PASSWORD=admin
       - SECRET_KEY_BASE=dev-secret
       - FORCE_SSL=false
       - ENABLE_ACCOUNT_SIGNUP=false
+      - INSTALLATION_ENV=docker
+      # SMTP para envio de e-mails
+      - MAILER_SENDER_EMAIL=${MAILER_SENDER_EMAIL:-no-reply@itfact.com.br}
+      - SMTP_ADDRESS=${SMTP_ADDRESS:-smtp.itfact.com.br}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-noreply@itfact.com.br}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-changeme}
+      - SMTP_AUTHENTICATION=${SMTP_AUTHENTICATION:-login}
+      - SMTP_ENABLE_STARTTLS_AUTO=${SMTP_ENABLE_STARTTLS_AUTO:-true}
+      - SMTP_OPENSSL_VERIFY_MODE=${SMTP_OPENSSL_VERIFY_MODE:-none}
       - TZ=America/Manaus
     depends_on:
       postgresql:
@@ -573,6 +610,12 @@ services:
         condition: service_started
     networks:
       - cmm_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/ || wget -q -S --spider http://localhost:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
 volumes:
   postgres_data:

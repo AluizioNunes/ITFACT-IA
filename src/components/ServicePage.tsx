@@ -1,5 +1,5 @@
-import React from 'react';
-import { Card, Divider, Row, Col, Statistic, Button } from 'antd';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Card, Divider, Row, Col, Statistic, Button, Tag } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import { containerVariants, headerVariants, cardVariants, metricCardVariants as metricVariants, chartVariants, buttonVariants } from '../ui/animations';
 import { BarChartOutlined, LinkOutlined, LineChartOutlined, DashboardOutlined } from '@ant-design/icons';
@@ -55,6 +55,60 @@ const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, met
     ...item,
     value: 20 + Math.floor(Math.random() * 60) // 20-80ms para performance
   }));
+
+  // Status simples do serviço baseado em reachability do externalUrl
+  const [isOnline, setIsOnline] = useState<boolean | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [lastCheckedAt, setLastCheckedAt] = useState<Date | undefined>(undefined);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const healthUrl = useMemo(() => externalUrl, [externalUrl]);
+
+  const checkStatus = async () => {
+    if (!healthUrl) return;
+    try {
+      setChecking(true);
+      // Cancelar ping anterior se existir
+      if (abortRef.current) {
+        abortRef.current.abort();
+      }
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const timeout = setTimeout(() => controller.abort(), 3500);
+      // Tenta um HEAD; se CORS bloquear, usa no-cors para apenas detectar erro de rede
+      const res = await fetch(healthUrl, {
+        method: 'HEAD',
+        mode: 'no-cors',
+        cache: 'no-store',
+        credentials: 'omit',
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      // Se chegou aqui sem erro de rede, consideramos online
+      setIsOnline(true);
+      setLastCheckedAt(new Date());
+    } catch (e) {
+      setIsOnline(false);
+      setLastCheckedAt(new Date());
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!healthUrl) {
+      setIsOnline(null);
+      return;
+    }
+    // ping imediato e agendamento a cada 30s
+    checkStatus();
+    const interval = setInterval(checkStatus, 30000);
+    return () => {
+      clearInterval(interval);
+      if (abortRef.current) abortRef.current.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [healthUrl]);
 
   return (
     <motion.div
@@ -140,13 +194,20 @@ const ServicePage: React.FC<ServicePageProps> = ({ title, description, icon, met
                 whileTap="tap"
                 style={{ marginTop: 16 }}
               >
-                <Button 
-                  type="primary" 
-                  icon={<LinkOutlined />}
-                  onClick={() => window.open(externalUrl, '_blank')}
-                >
-                  Acessar {title}
-                </Button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Button 
+                    type="primary" 
+                    icon={<LinkOutlined />}
+                    onClick={() => window.open(externalUrl, '_blank')}
+                  >
+                    Acessar {title}
+                  </Button>
+                  <Tag color={isOnline === null ? 'default' : isOnline ? 'green' : 'red'}>
+                    {checking ? 'Verificando…' : isOnline === null ? 'Sem URL' : isOnline ? 'Online' : 'Offline'}
+                  </Tag>
+                  <Button size="small" onClick={checkStatus} disabled={checking}>Verificar agora</Button>
+                  <span style={{ color: '#888' }}>Última verificação: {lastCheckedAt ? lastCheckedAt.toLocaleTimeString('pt-BR') : '—'}</span>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
