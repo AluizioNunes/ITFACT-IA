@@ -499,7 +499,6 @@ services:
     build:
       context: ./Backend/N8N
       dockerfile: Dockerfile
-    image: itfactia-n8n:latest
     container_name: N8N
     restart: unless-stopped
     ports:
