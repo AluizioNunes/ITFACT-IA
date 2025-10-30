@@ -1,5 +1,7 @@
 export type ServiceKey =
   | 'grafana'
+  | 'prometheus'
+  | 'loki'
   | 'n8n'
   | 'rabbitmq'
   | 'redis'
@@ -11,6 +13,8 @@ export type ServiceKey =
 // Hoje: ambiente local com localhost:porta
 export const SERVICE_URLS: Record<ServiceKey, string> = {
   grafana: 'http://localhost:3010',
+  prometheus: 'http://localhost:9090',
+  loki: 'http://localhost:3100',
   n8n: 'http://localhost:5678',
   rabbitmq: 'http://localhost:15672',
   // RedisInsight UI (v2) na porta 5540
