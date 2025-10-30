@@ -496,7 +496,10 @@ services:
       start_period: 60s
 
   n8n:
-    image: n8nio/n8n:latest
+    build:
+      context: ./Backend/N8N
+      dockerfile: Dockerfile
+    image: itfactia-n8n:latest
     container_name: N8N
     restart: unless-stopped
     ports:
@@ -515,8 +518,7 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
       - ./Backend/N8N/Templates:/templates:ro
-      - ./Backend/N8N/docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
-    entrypoint: ["sh", "/usr/local/bin/docker-entrypoint.sh"]
+    # Entry point já definido na imagem customizada
     networks:
       - cmm_network
 
