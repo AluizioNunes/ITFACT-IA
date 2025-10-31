@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Card, Row, Col, Statistic, Divider, Spin, Alert, Button, Tag, Progress, Space } from 'antd';
+import { Card, Row, Col, Statistic, Divider, Spin, Alert, Button, Tag, Progress, Space, Modal, Select, Table } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import { containerVariants, cardVariants, statisticVariants, chartVariants, serviceCardVariants } from '../ui/animations';
 import type { Variants } from 'framer-motion';
@@ -22,6 +22,7 @@ import {
   ThunderboltOutlined
 } from '@ant-design/icons';
 import { useDashboardData } from '../hooks/useDashboardData';
+import { useDockerFleet } from '../hooks/useDockerFleet';
 import ApiChart from '../components/ApiChart';
 
 // Variantes importadas do módulo compartilhado
@@ -42,13 +43,25 @@ const Dashboard: React.FC = () => {
     alerts, 
     totalServices, 
     activeServices, 
-    containers,
     postgresData,
     chartData,
     loading, 
     error, 
     refetch 
   } = useDashboardData();
+
+  // Fleet Docker (dados reais agregados)
+  const {
+    servers,
+    selectedIps,
+    setSelectedIps,
+    containers: fleetContainers,
+    summary: fleetSummary,
+    loading: fleetLoading,
+    refetch: fleetRefetch,
+  } = useDockerFleet();
+
+  const [dockerModalOpen, setDockerModalOpen] = React.useState(false);
 
   // Evitar dupla chamada em modo Strict no dev
   const fetchedOnce = useRef(false);
@@ -157,33 +170,29 @@ const Dashboard: React.FC = () => {
                 whileHover="hover"
                 whileTap="tap"
               >
-                <Card>
+                <Card onClick={() => setDockerModalOpen(true)} style={{ cursor: 'pointer' }}>
                   <motion.div variants={statisticVariants}>
                     <Statistic 
                       title="Containers Docker" 
-                      value={containers.running} 
-                      suffix={`/ ${containers.total}`}
+                      value={fleetSummary.running} 
+                      suffix={`/ ${fleetSummary.total}`}
                       prefix={<DockerOutlined style={{ color: '#1890ff' }} />}
-                      valueStyle={{ color: containers.running === containers.total ? '#3f8600' : '#faad14' }}
+                      valueStyle={{ color: fleetSummary.running === fleetSummary.total ? '#3f8600' : '#faad14' }}
                     />
                   </motion.div>
-                  {containers.details && (
+                  {fleetContainers && fleetContainers.length > 0 && (
                     <motion.div 
                       style={{ marginTop: 8, fontSize: '12px', color: '#888' }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.5 }}
                     >
-                      {containers.details.length > 0 ? (
-                        <div>
-                          <div>{containers.details[0].name}: {containers.details[0].status}</div>
-                          {containers.details.length > 1 && (
-                            <div>+{containers.details.length - 1} outros containers</div>
-                          )}
-                        </div>
-                      ) : (
-                        <div>Sem containers em execução</div>
-                      )}
+                      <div>
+                        <div>{fleetContainers[0].host} • {fleetContainers[0].name}: {fleetContainers[0].status || fleetContainers[0].state}</div>
+                        {fleetContainers.length > 1 && (
+                          <div>+{fleetContainers.length - 1} outros containers</div>
+                        )}
+                      </div>
                     </motion.div>
                   )}
                 </Card>
@@ -555,6 +564,51 @@ const Dashboard: React.FC = () => {
           </motion.div>
         </motion.div>
       </Spin>
+
+      {/* Modal: Detalhes dos Containers Docker */}
+      <Modal
+        title="Containers Docker - Detalhes"
+        open={dockerModalOpen}
+        onCancel={() => setDockerModalOpen(false)}
+        width={900}
+        footer={null}
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
+            <Space>
+              <strong>Filtrar por servidor:</strong>
+              <Select
+                mode="multiple"
+                allowClear
+                style={{ minWidth: 320 }}
+                options={servers.map((s) => ({ label: s.hostname || s.ip, value: s.ip }))}
+                value={selectedIps}
+                onChange={(vals) => setSelectedIps(vals)}
+              />
+            </Space>
+            <Space>
+              <Button type="primary" icon={<ReloadOutlined />} loading={fleetLoading} onClick={() => fleetRefetch()}>
+                Atualizar
+              </Button>
+              <Tag color="blue">Servidores: {servers.length}</Tag>
+              <Tag color="geekblue">Selecionados: {selectedIps.length}</Tag>
+              <Tag color="green">Running: {fleetSummary.running}</Tag>
+              <Tag color="default">Total: {fleetSummary.total}</Tag>
+            </Space>
+          </Space>
+
+          <Table
+            dataSource={fleetContainers.map((c, idx) => ({ ...c, key: c.id || `${c.host}-${c.name}-${idx}` }))}
+            pagination={{ pageSize: 10 }}
+            columns={[
+              { title: 'Servidor', dataIndex: 'host', key: 'host', width: 220 },
+              { title: 'Nome', dataIndex: 'name', key: 'name', render: (t: string) => <strong>{t}</strong> },
+              { title: 'Imagem', dataIndex: 'image', key: 'image' },
+              { title: 'Status', dataIndex: 'status', key: 'status' },
+            ]}
+          />
+        </Space>
+      </Modal>
     </motion.div>
   );
 };

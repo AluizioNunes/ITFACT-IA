@@ -1,14 +1,20 @@
 import React from 'react';
-import { Card, Row, Col, Divider, Statistic, Table, Tag, Spin, Alert, Descriptions } from 'antd';
+import { Card, Row, Col, Divider, Statistic, Table, Tag, Spin, Alert, Descriptions, Select } from 'antd';
 import { motion } from 'framer-motion';
 import { containerVariants } from '../ui/animations';
 import { DockerOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
-import { useDockerContainers } from '../hooks/useRealData';
+import { useDockerFleet } from '../hooks/useDockerFleet';
 
 const Docker: React.FC = () => {
-  const { containers, loading, error, dockerInfo } = useDockerContainers();
+  const { servers, selectedIps, setSelectedIps, containers, summary, loading, error, refetch } = useDockerFleet();
 
   const columns = [
+    {
+      title: 'Servidor',
+      dataIndex: 'host',
+      key: 'host',
+      width: 220,
+    },
     {
       title: 'Nome',
       dataIndex: 'name',
@@ -53,30 +59,7 @@ const Docker: React.FC = () => {
     },
   ];
 
-  const getStatusCounts = () => {
-    const counts = {
-      running: 0,
-      stopped: 0,
-      total: containers.length,
-    };
-
-    containers.forEach((container: any) => {
-      // Verificar diferentes formas de determinar se o container está rodando
-      const isRunning = container.isRunning || 
-                       (container.status && (container.status.includes('running') || container.status.includes('up'))) ||
-                       false;
-      
-      if (isRunning) {
-        counts.running++;
-      } else {
-        counts.stopped++;
-      }
-    });
-
-    return counts;
-  };
-
-  const statusCounts = getStatusCounts();
+  const statusCounts = summary;
 
   return (
     <motion.div
@@ -85,6 +68,26 @@ const Docker: React.FC = () => {
       animate="visible"
     >
       <Divider orientation="left">Visão Geral do Docker</Divider>
+      <Row gutter={[16, 16]} style={{ marginBottom: 8 }}>
+        <Col span={24}>
+          <Card size="small">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <strong>Filtrar por servidor:</strong>
+              <Select
+                mode="multiple"
+                allowClear
+                style={{ minWidth: 320 }}
+                placeholder="Selecione servidores"
+                options={servers.map((s) => ({ label: s.hostname || s.ip, value: s.ip }))}
+                value={selectedIps}
+                onChange={(vals) => setSelectedIps(vals)}
+              />
+              <Tag color="blue">Total servidores: {servers.length}</Tag>
+              <Tag color="geekblue">Selecionados: {selectedIps.length}</Tag>
+            </div>
+          </Card>
+        </Col>
+      </Row>
       
       {error && (
         <Alert 
@@ -127,8 +130,8 @@ const Docker: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic 
-              title="Versão" 
-              value={dockerInfo.version || '28.3.3'} 
+              title="Hosts monitorados" 
+              value={selectedIps.length} 
               prefix={<InfoCircleOutlined />} 
             />
           </Card>
@@ -159,12 +162,12 @@ const Docker: React.FC = () => {
       <Divider orientation="left" style={{ marginTop: 32 }}>Detalhes Técnicos</Divider>
       <Row gutter={[16, 16]}>
         <Col span={12}>
-          <Card title="Informações do Docker" extra={<DockerOutlined />}>
+          <Card title="Informações do Fleet" extra={<DockerOutlined />}>
             <Descriptions column={1} size="small">
-              <Descriptions.Item label="Versão">{dockerInfo.version || '28.3.3'}</Descriptions.Item>
-              <Descriptions.Item label="Status">{dockerInfo.status || 'running'}</Descriptions.Item>
-              <Descriptions.Item label="Última Verificação">
-                {dockerInfo.lastCheck ? new Date(dockerInfo.lastCheck).toLocaleString('pt-BR') : 'N/A'}
+              <Descriptions.Item label="Servidores">{servers.length}</Descriptions.Item>
+              <Descriptions.Item label="Selecionados">{selectedIps.length}</Descriptions.Item>
+              <Descriptions.Item label="Última Atualização">
+                {new Date().toLocaleString('pt-BR')}
               </Descriptions.Item>
             </Descriptions>
           </Card>
@@ -172,9 +175,9 @@ const Docker: React.FC = () => {
         <Col span={12}>
           <Card title="Resumo dos Containers" extra={<DockerOutlined />}>
             <Descriptions column={1} size="small">
-              <Descriptions.Item label="Total">{dockerInfo.containers?.total || statusCounts.total}</Descriptions.Item>
-              <Descriptions.Item label="Executando">{dockerInfo.containers?.running || statusCounts.running}</Descriptions.Item>
-              <Descriptions.Item label="Parados">{dockerInfo.containers?.stopped || statusCounts.stopped}</Descriptions.Item>
+              <Descriptions.Item label="Total">{statusCounts.total}</Descriptions.Item>
+              <Descriptions.Item label="Executando">{statusCounts.running}</Descriptions.Item>
+              <Descriptions.Item label="Parados">{statusCounts.stopped}</Descriptions.Item>
             </Descriptions>
           </Card>
         </Col>
